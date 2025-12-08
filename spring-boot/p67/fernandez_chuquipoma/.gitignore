@@ -1,0 +1,56 @@
+# Dependencias Node.js (NestJS)
+node_modules/
+package-lock.json
+
+# Dependencias Java (Spring Boot)
+target/
+.gradle/
+build/
+*.jar
+*.war
+*.ear
+*.class
+
+# Archivos de compilación
+dist/
+out/
+.next/
+
+# Archivos de entorno
+.env
+.env.local
+.env.*.local
+application-*.properties
+application-*.yml
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Base de datos local
+*.db
+*.sqlite
+*.sqlite3
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.classpath
+.project
+.settings/
+*.iml
+
+# Cache
+.cache/
+.temp/
+.mvn/
