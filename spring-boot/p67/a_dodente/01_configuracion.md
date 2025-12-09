@@ -292,7 +292,7 @@ ec.edu.ups.icc
 Nombre técnico del proyecto, utilizado para generar el .jar:
 
 ```
-01-fundamentos
+fundamentos01
 ```
 
 ### **Name**
@@ -300,7 +300,7 @@ Nombre técnico del proyecto, utilizado para generar el .jar:
 Nombre descriptivo del proyecto:
 
 ```
-01-fundamentos
+fundamentos01
 ```
 
 ### **Description**
@@ -316,7 +316,7 @@ Proyecto de práctica para fundamentos de Spring Boot en Programación y Platafo
 Paquete raíz del código generado:
 
 ```
-ec.edu.ups.icc.fundamentos
+ec.edu.ups.icc.fundamentos01
 ```
 
 ### **Packaging**
@@ -337,6 +337,14 @@ Properties
 17
 ```
 
+### **Dependencies**
+
+```
+- Spring Web
+- Spring Boot DevTools
+```
+
+
 ---
 
 ## **4.4 Descarga y apertura del proyecto**
@@ -356,7 +364,7 @@ El proyecto genera la siguiente estructura base:
 src/
  └── main/
       ├── java/
-      │    └── com.example.demo/
+      │    └── ec.edu.ups.icc.fundamentos01/
       │          └── DemoApplication.java
       └── resources/
            ├── application.properties
@@ -402,18 +410,22 @@ http://localhost:8080
 
 ---
 
+## Salida esperada
+![Salida de consola](assets/01-configuracion_01.png)
+
+
 # 7. Creación del primer endpoint 
 
 Se implementará un endpoint REST que devuelva el estado del servicio.
 
 Crear el archivo:
 
-`src/main/java/com/example/demo/controllers/StatusController.java`
+`src/main/java/ec/edu/ups/icc/fundamentos01/controllers/StatusController.java`
 
 Contenido:
 
 ```java
-package com.example.demo.controllers;
+package ec.edu.ups.icc.fundamentos01.controllers;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -449,6 +461,10 @@ Ejemplo de salida:
   "timestamp": "2025-02-28T14:33:15.192"
 }
 ```
+
+## Salida esperada
+
+![alt text](assets/02-configuracion_01.png.png)
 
 ---
 
@@ -524,27 +540,26 @@ Debe mostrarse:
 Tomcat started on port 8080
 ```
 
-### 3. Captura del endpoint `/api/status` funcionando en el navegador o Postman
+### 3. Captura del endpoint `/api/status` funcionando en el navegador o Postman o Bruno
 
 Debe incluir la respuesta JSON.
 
-### 4. Captura de la estructura del proyecto en su IDE
+### 4. Captura del siguiente comando en terminal 
+
+```bash
+ls ./src/main/java/ec/edu/ups/icc/fundamentos01/controllers/
+```
 
 Mostrando:
 
-* el archivo `build.gradle`
-* el archivo `DemoApplication.java`
-* la carpeta `/controllers` con `StatusController.java`
+* el archivo `StatusController.java`
 
-### 5. Inserción del fragmento del código creado
 
-Incluyendo el controlador implementado.
-
-### 6. Explicación breve escrita por el estudiante
+### 5. Explicación breve escrita por el estudiante
 
 Debe describir:
 
 * qué entendió sobre el funcionamiento del endpoint
-* cómo se relaciona con los conceptos del tema 01
-* la función general de Spring Boot en la creación del servidor
+* y sobre la función general de Spring Boot en la 
+* creación del servidor
 
