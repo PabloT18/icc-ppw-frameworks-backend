@@ -332,6 +332,11 @@ Cada estudiante o grupo debe agregar en su archivo:
 node -v
 ```
 
+
+
+<img src="f1.jpg" alt="router"> 
+
+
 ### 2. Captura del servidor NestJS iniciándose correctamente
 
 Debe mostrar:
@@ -340,15 +345,24 @@ Debe mostrar:
 Nest application successfully started
 ```
 
+<img src="f2.jpg" alt="router"> 
+
+
 ### 3. Captura del endpoint `/api/status` funcionando
 
 En navegador, Postman, Bruno o VS Code REST client.
+
+<img src="f3.jpg" alt="router"> 
+
 
 ### 4. Captura del siguiente comando en terminal 
 
 ```bash
 ls ./src/status/
 ```
+
+<img src="f4.jpg" alt="router"> 
+
 
 ### 5. Explicación breve escrita por el estudiante
 
@@ -358,3 +372,8 @@ Incluyendo:
 * cómo funciona el servidor NestJS
 * qué similitudes encontró con Spring Boot
 
+🦉 Estructura y Funcionamiento del Servidor NestJS
+NestJS usa decoradores como @Controller para marcar clases que manejarán las peticiones HTTP, y @Get (junto con otros como @Post) para definir los métodos específicos que responden a las rutas y verbos HTTP. La estructura de la aplicación se organiza mediante Módulos, que son contenedores lógicos que agrupan controladores y servicios relacionados para mantener la escalabilidad. El servidor en sí está construido sobre Node.js y Express (o Fastify); cuando llega una petición, el framework utiliza su sistema de routing basado en los @Controller para delegar la solicitud al método @Get correcto. Este método generalmente llama a un Servicio para ejecutar la lógica de negocio (como interactuar con una base de datos) y finalmente devuelve una respuesta estructurada al cliente.
+
+🔄 Similitudes con Spring Boot
+La filosofía central de NestJS es tomar la arquitectura robusta y organizada de frameworks de backend maduros, como Spring Boot, y aplicarla al ecosistema de JavaScript/TypeScript. Las similitudes son notables: ambos promueven una fuerte separación de responsabilidades (controladores para rutas, servicios para lógica), utilizan la Inyección de Dependencias para facilitar la gestión de componentes y dependen fuertemente de anotaciones (decoradores en NestJS) para la configuración de rutas y la identificación de clases de componentes. En esencia, ambos frameworks buscan ofrecer una estructura modular, testeable y de alto rendimiento que prioriza la organización y el diseño arquitectónico sobre la implementación rápida y desordenada.

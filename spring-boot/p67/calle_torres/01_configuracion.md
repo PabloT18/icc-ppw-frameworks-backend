@@ -531,6 +531,11 @@ Cada estudiante o grupo debe completar su archivo agregando:
 
 Salida del comando `java -version`.
 
+<img src="h1.jpg" alt="router"> 
+
+
+
+
 ### 2. Captura del servidor Spring Boot ejecutándose
 
 Debe mostrarse:
@@ -540,9 +545,15 @@ Debe mostrarse:
 Tomcat started on port 8080
 ```
 
+<img src="h2.jpg" alt="router"> 
+
+
 ### 3. Captura del endpoint `/api/status` funcionando en el navegador o Postman o Bruno
 
 Debe incluir la respuesta JSON.
+
+
+<img src="h3.jpg" alt="router"> 
 
 ### 4. Captura del siguiente comando en terminal 
 
@@ -554,6 +565,9 @@ Mostrando:
 
 * el archivo `StatusController.java`
 
+<img src="h4.jpg" alt="router"> 
+
+
 
 ### 5. Explicación breve escrita por el estudiante
 
@@ -563,3 +577,9 @@ Debe describir:
 * y sobre la función general de Spring Boot en la 
 * creación del servidor
 
+💻 Endpoint y Spring Boot: Explicación Breve
+
+Shutterstock
+Un endpoint es una dirección específica (como una URL) en el servidor que actúa como un punto de contacto para las peticiones externas. Define qué acción se debe realizar (GET, POST, etc.) cuando un cliente solicita información o intenta enviar datos. Cuando un cliente hace una solicitud HTTP a este punto, el servidor, que tiene mapeada esa dirección, ejecuta una función de código específica (controlador) para procesar el pedido, interactuar con la lógica de negocio (por ejemplo, una base de datos) y finalmente devolver una respuesta estructurada (como JSON) junto con un código de estado. El endpoint es esencialmente la interfaz de nuestra aplicación web.
+
+Spring Boot es un framework de Java que tiene como función principal simplificar drásticamente la creación de aplicaciones de servidor robustas, como las APIs REST. Se encarga de la configuración automática, lo que reduce el código repetitivo y permite que el desarrollador se centre solo en la lógica de negocio. Además, incluye un servidor web integrado (como Tomcat), lo que facilita la ejecución inmediata de la aplicación sin configuraciones externas complejas. En esencia, Spring Boot es la herramienta que proporciona la estructura y las facilidades necesarias para definir y administrar eficientemente todos los endpoints de nuestro servidor.
