@@ -272,6 +272,9 @@ export class AppModule {}
 
 ### 6.4 Acceder al endpoint
 
+Al ejecutar el servidor:
+![alt text](../../../spring-boot/p67/a_dodente/assets/03-configuracion_01.png.png)
+
 ```
 http://localhost:3000/api/status
 ```
@@ -285,6 +288,7 @@ Salida esperada:
   "timestamp": "2025-02-28T15:44:10.192Z"
 }
 ```
+
 
 ---
 
