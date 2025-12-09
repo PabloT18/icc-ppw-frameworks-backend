@@ -1,85 +1,13 @@
 {
-    "commit-template": {
-        "prefix": "commit",
-        "body": [
-            "$1($2): $3",
-            "",
-            "$4"
-        ],
-        "description": "Plantilla base para commits"
+    "github.copilot.enable": {
+        "*": true,
+        "git-commit": true,
+        "plaintext": true
     },
-    "docs-commit": {
-        "prefix": "cdocs",
-        "body": [
-            "docs($1): $2",
-            "",
-            "- $3"
-        ],
-        "description": "Commit para cambios de documentación (docs y README)"
-    },
-    "feat-commit": {
-        "prefix": "cfeat",
-        "body": [
-            "feat($1): $2",
-            "",
-            "- $3"
-        ],
-        "description": "Commit para agregar nueva sección, archivo o tema"
-    },
-    "update-commit": {
-        "prefix": "cupdate",
-        "body": [
-            "update($1): $2",
-            "",
-            "- $3"
-        ],
-        "description": "Commit para mejoras de contenido ya existente"
-    },
-    "fix-commit": {
-        "prefix": "cfix",
-        "body": [
-            "fix($1): corregir $2",
-            "",
-            "- $3"
-        ],
-        "description": "Commit para correcciones menores"
-    },
-    "assets-commit": {
-        "prefix": "cassets",
-        "body": [
-            "assets($1): $2",
-            "",
-            "- $3"
-        ],
-        "description": "Commit para añadir o actualizar imágenes"
-    },
-    "scripts-commit": {
-        "prefix": "cscripts",
-        "body": [
-            "scripts: $1",
-            "",
-            "- $2"
-        ],
-        "description": "Commit para cambios en scripts del repositorio"
-    },
-    "init-student": {
-        "prefix": "cinit",
-        "body": [
-            "init($1): crear carpeta para $2",
-            "",
-            "- Estructura inicial de markdown",
-            "- Carpeta assets creada",
-            "- Archivo 01_configuracion.md incluido"
-        ],
-        "description": "Commit para inicializar carpetas de estudiantes"
-    },
-    "feat-student": {
-        "prefix": "cfeat-student",
-        "body": [
-            "feat($1/$2): $3",
-            "",
-            "- $4"
-        ],
-        "description": "Commit para avances documentados de estudiantes"
+    "github.copilot.gitHubAuthentication": true,
+    "github.copilot.generateCommitMessages.enabled": true,
+    "github.copilot.chat.workspacePrompts.enabled": true,
+    "github.copilot.advanced": {
+        "showCommitPrompt": true
     }
 }
