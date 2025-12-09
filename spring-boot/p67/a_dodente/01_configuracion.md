@@ -6,6 +6,7 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="100" alt="Spring Boot Logo">
 </div>
 
+
 ## Práctica 1 (Spring Boot): Instalación, Configuración Inicial y Primer Endpoint
 
 ### Autores
