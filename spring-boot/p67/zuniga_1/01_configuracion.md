@@ -549,16 +549,10 @@ ls ./src/main/java/ec/edu/ups/icc/fundamentos01/controllers/
 
 ### 5. Explicación breve escrita por el estudiante
 
-Debe describir:
-
-* qué entendió sobre el funcionamiento del endpoint
-* y sobre la función general de Spring Boot en la 
-* creación del servidor
-
 El objetivo de esta practica tiene como objetivo exponer un recurso REST, su funcionamiento se basa en 3 componentes claves.
 
 * `@RestController` Indicando que devolvera JSON.
 
 * `GetMapping` Indica que existira un GET en esa URL.
 
-Spring Boot usa el concepto de servidor embebido, con integracion automatica 
+Spring Boot usa el concepto de servidor embebido, con integracion automatica.
