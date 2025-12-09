@@ -367,3 +367,10 @@ Incluyendo:
 * cómo funciona el servidor NestJS
 * qué similitudes encontró con Spring Boot
 
+El proyecto tiene como objetivo establecer una respuesta REST, utiliza:
+
+* `@controller` para definir la ruta a la que respondera.
+
+* `@Get` para indicar que responde solicitud de tipo `GET`.
+
+NestJS actua como framework para Node.JS inspirandose en arquitecturas como JAVA. Usando arquitectura modular, ademas, proporciona un `CLI`.
