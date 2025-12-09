@@ -78,6 +78,22 @@ update(docs): ampliar sección MVC en 02_arquitectura_backend
 fix(docs): corregir tabla en 01_conceptos_backend
 ```
 
+
+### Para `/spring-boot/p67/a_docente` y `/nest/p67/a_docente`
+
+- Archivo nuevo → feat(spring-boot) o feat(nest)  
+- Ampliación de contenido → update(spring-boot) o update(nest)  
+- Corrección menor → fix(spring-boot) o fix(nest)
+- Creación de carpeta de estudiante → init(spring-boot) o init(nest)
+
+Ejemplos:
+
+```
+feat(spring-boot): crear 10_documentacion_openapi.md
+update(spring-boot): ampliar sección MVC en 02_arquitectura_backend
+fix(spring-boot): corregir tabla en 01_conceptos_backend
+```
+
 ---
 
 ### Para carpetas de estudiantes
@@ -127,6 +143,7 @@ Ejemplo:
 
 ```
 scripts: mejorar generador de carpetas p67
+scripts: ejecutar validación de nombres de estudiantes
 ```
 
 ---
@@ -167,4 +184,6 @@ Cuando generes un mensaje de commit:
 
 ```
 <tipo>(<alcance>): <descripción>
+<tipo>(<framework>): <descripción>
+
 ```
