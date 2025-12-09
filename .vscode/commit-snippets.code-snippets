@@ -1,0 +1,94 @@
+{
+    // Plantilla base
+    "commit-template": {
+        "prefix": "commit",
+        "body": [
+            "$1($2): $3",
+            "",
+            "$4"
+        ],
+        "description": "Plantilla base para commits"
+    },
+    // Commits orientados a DOCUMENTACIÓN / DOCS
+    "docs-commit": {
+        "prefix": "cdocs",
+        "body": [
+            "docs($1): $2",
+            "",
+            "- $3"
+        ],
+        "description": "Commit para cambios de documentación"
+    },
+    // Commits para NUEVO ARCHIVO o NUEVA SECCIÓN
+    "feat-commit": {
+        "prefix": "cfeat",
+        "body": [
+            "feat($1): $2",
+            "",
+            "- $3"
+        ],
+        "description": "Commit para agregar nueva sección o archivo"
+    },
+    // Commits para ACTUALIZAR contenido existente
+    "update-commit": {
+        "prefix": "cupdate",
+        "body": [
+            "update($1): $2",
+            "",
+            "- $3"
+        ],
+        "description": "Commit para mejoras de un archivo existente"
+    },
+    // Correcciones pequeñas
+    "fix-commit": {
+        "prefix": "cfix",
+        "body": [
+            "fix($1): corregir $2",
+            "",
+            "- $3"
+        ],
+        "description": "Commit para correcciones menores"
+    },
+    // Scripts del proyecto
+    "scripts-commit": {
+        "prefix": "cscripts",
+        "body": [
+            "scripts: $1",
+            "",
+            "- $2"
+        ],
+        "description": "Commit para scripts de utilidad"
+    },
+    // Inicialización de carpetas de estudiantes
+    "init-student": {
+        "prefix": "cinit",
+        "body": [
+            "init($1): crear carpeta para $2",
+            "",
+            "- Estructura inicial Markdown",
+            "- Creación de carpeta assets",
+            "- Archivo 01_configuracion.md"
+        ],
+        "description": "Inicialización de un nuevo estudiante"
+    },
+    // Commits de avance de estudiantes
+    "feat-student": {
+        "prefix": "cfeat-student",
+        "body": [
+            "feat($1/$2): $3",
+            "",
+            "- $4"
+        ],
+        "description": "Commit para avances documentados de estudiantes"
+    },
+    // Cambios en assets (capturas, diagramas, etc.)
+    "assets-commit": {
+        "prefix": "cassets",
+        "body": [
+            "assets($1): $2",
+            "",
+            "- $3"
+        ],
+        "description": "Commit para manejo de imágenes y recursos"
+    }
+}
