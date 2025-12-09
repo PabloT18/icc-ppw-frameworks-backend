@@ -331,7 +331,7 @@ Cada estudiante o grupo debe agregar en su archivo:
 ```
 node -v
 ```
-![node-v](/icc-ppw-frameworks-backend/nest/p67/avila_cabrera/assets/node-v.png)
+![node-v](/nest/p67/avila_cabrera/assets/node-v.png)
 ### 2. Captura del servidor NestJS iniciándose correctamente
 
 Debe mostrar:
@@ -339,17 +339,17 @@ Debe mostrar:
 ```
 Nest application successfully started
 ```
-![nestJS](/icc-ppw-frameworks-backend/nest/p67/avila_cabrera/assets/nestJS.jpg)
+![nestJS](/nest/p67/avila_cabrera/assets/nestJS.jpg)
 ### 3. Captura del endpoint `/api/status` funcionando
 
 En navegador, Postman, Bruno o VS Code REST client.
-![navegador](/icc-ppw-frameworks-backend/nest/p67/avila_cabrera/assets/navegador.png)
+![navegador](/nest/p67/avila_cabrera/assets/navegador.png)
 ### 4. Captura del siguiente comando en terminal 
 
 ```bash
 ls ./src/status/
 ```
-![ls](/icc-ppw-frameworks-backend//nest/p67/avila_cabrera/assets/ls.jpg)
+![ls](/nest/p67/avila_cabrera/assets/ls.jpg)
 ### 5. Explicación breve escrita por el estudiante
 
 Incluyendo:

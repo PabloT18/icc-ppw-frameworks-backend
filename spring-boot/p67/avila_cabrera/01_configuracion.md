@@ -530,7 +530,7 @@ Cada estudiante o grupo debe completar su archivo agregando:
 ### 1. Captura de verificación de Java
 
 Salida del comando `java -version`.
-![java-v](/icc-ppw-frameworks-backend/spring-boot/p67/avila_cabrera/assets/java-v'.jpg)
+![java-v](/spring-boot/p67/avila_cabrera/assets/java-v'.jpg)
 
 ### 2. Captura del servidor Spring Boot ejecutándose
 
@@ -540,12 +540,12 @@ Debe mostrarse:
 :: Spring Boot :: (v4.0.0)
 Tomcat started on port 8080
 ```
-![servidor](/icc-ppw-frameworks-backend/spring-boot/p67/avila_cabrera/assets/Servidor.png)
+![servidor](/spring-boot/p67/avila_cabrera/assets/Servidor.png)
 
 ### 3. Captura del endpoint `/api/status` funcionando en el navegador o Postman o Bruno
 
 Debe incluir la respuesta JSON.
-![servidor](/icc-ppw-frameworks-backend/spring-boot/p67/avila_cabrera/assets/Bruno_s.png)
+![servidor](/spring-boot/p67/avila_cabrera/assets/Bruno_s.png)
 
 ### 4. Captura del siguiente comando en terminal 
 
@@ -556,7 +556,7 @@ ls ./src/main/java/ec/edu/ups/icc/fundamentos01/controllers/
 Mostrando:
 
 * el archivo `StatusController.java`
-![servidor](/icc-ppw-frameworks-backend/spring-boot/p67/avila_cabrera/assets/ls_s.png)
+![servidor](/spring-boot/p67/avila_cabrera/assets/ls_s.png)
 
 ### 5. Explicación breve escrita por el estudiante
 
