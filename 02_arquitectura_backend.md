@@ -12,10 +12,7 @@
 
 ### Autores
 
-**Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: [PabloT18](https://github.com/PabloT18)
-
+**Juan Alvarez - David Villa**
 ---
 
 # Introducción
@@ -717,19 +714,51 @@ Funciones:
 
 ---
 
-# Resultados Esperados
+# Resultados y evidencias
 
-Al finalizar este tema se debe comprender:
+# 1. Captura del comando de verificación de Node.js
 
-* Qué es una arquitectura backend
-* Qué son controladores, servicios y repositorios
-* Cómo fluye una petición a través del sistema
-* Diferencias entre modelos arquitectónicos
-* Qué estilos de comunicación existen y cuándo usarlos
+![alt text](nest/p67/alvarez_villa/assets/Imagen5.png)
 
-Estos conceptos se aplicarán directamente en:
+# 2. Captura del servidor NestJS iniciándose correctamente
+
+![alt text](nest/p67/alvarez_villa/assets/Imagen6.png)
+
+![alt text](nest/p67/alvarez_villa/assets/Imagen7.png)
+
+# 3. Captura del endpoint /api/status funcionando
+
+![alt text](nest/p67/alvarez_villa/assets/Imagen8.png)
+
+![alt text](nest/p67/alvarez_villa/assets/Imagen9.png)
+
+# 5. Explicación breve escrita por el estudiante
+
+Es una ruta que recibe peticiones (como /api/datos) y devuelve respuestas (JSON). En Spring Boot, se crea con @Controller y @GetMapping (u otros métodos HTTP).
+
+Entendí de @Controller y @Get:
+
+ - @Controller: Marca una clase como controlador.
+
+- @GetMapping: Mapea un método a una ruta GET.
+
+Módulos:
+Son contenedores que organizan partes relacionadas de la app (controladores, servicios). En Spring se usa @Configuration o @ComponentScan.
+
+Cómo funciona NestJS:
+Usa un servidor HTTP (Express o Fastify) que recibe peticiones y las dirige a los controladores según sus rutas.
+
+Similitudes con Spring Boot:
+
+ 1. Usan decoradores/anotaciones para rutas.
+
+ 2.  Tienen inyección de dependencias.
+
+3. Usan módulos para organizar.
+
+4. Arrancan un servidor embebido automáticamente.
 
 
-* [`spring-boot/02_estructura_proyecto.md`](../spring-boot/p67/02_estructura_proyecto/01_configuracion.md)
-* [`nest/02_estructura_proyecto.md`](../nest/p67/a_dodente/02_estructura_proyecto.md)
+
+
 

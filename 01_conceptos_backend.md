@@ -12,10 +12,7 @@
 
 ### Autores
 
-**Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: [PabloT18](https://github.com/PabloT18)
-
+**Juan Alvarez - David Villa**
 ---
 
 # Introducción al Backend
@@ -583,10 +580,29 @@ Al finalizar este tema, debes comprender:
 
 Estos fundamentos se aplicarán en:
 
+# 1. Captura de verificación de Java
 
-* [`spring-boot/01_configuracion.md`](../spring-boot/p67/a_dodente/01_configuracion.md)
-* [`nest/01_configuracion.md`](../nest/p67/a_dodente/01_configuracion.md)
+![alt text](nest/p67/alvarez_villa/assets/Imagen.png)
 
+# 2. Captura del servidor Spring Boot ejecutándose
+
+![alt text](nest/p67/alvarez_villa/assets/Imagen2.png)
+
+# 3. Captura del endpoint /api/status funcionando en el navegador
+
+![alt text](nest/p67/alvarez_villa/assets/Imagen3.png)
+
+# 4. Captura del siguiente comando en terminal
+
+ls ./src/main/java/ec/edu/ups/icc/fundamentos01/controllers/
+
+![alt text](nest/p67/alvarez_villa/assets/Imagen4.png)
+
+# 5. Explicación breve escrita por el estudiante
+
+ - Un endpoint en Spring Boot es una ruta URL (como /api/usuarios) que recibe solicitudes HTTP (GET, POST, etc.). Cuando un cliente hace una petición a esa ruta, Spring ejecuta el método Java asociado (controlador), que procesa la solicitud, interactúa con la lógica de negocio si es necesario, y devuelve una respuesta (normalmente en JSON).
+
+ - Spring Boot simplifica la creación de servidores web. Automáticamente configura un servidor embebido (como Tomcat), gestiona las dependencias y permite definir rápidamente endpoints mediante anotaciones, evitando gran parte de la configuración manual y permitiendo centrarse en la lógica de la aplicación.
 
 ---
 
