@@ -561,4 +561,4 @@ El objetivo de esta practica tiene como objetivo exponer un recurso REST, su fun
 
 * `GetMapping` Indica que existira un GET en esa URL.
 
-* `Map<String,Object>`
+Spring Boot usa el concepto de servidor embebido, con integracion automatica 

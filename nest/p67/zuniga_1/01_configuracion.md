@@ -332,6 +332,9 @@ Cada estudiante o grupo debe agregar en su archivo:
 node -v
 ```
 
+![node v](assets/01/node-v.png)
+
+
 ### 2. Captura del servidor NestJS iniciándose correctamente
 
 Debe mostrar:
@@ -340,15 +343,21 @@ Debe mostrar:
 Nest application successfully started
 ```
 
+![nest v](assets/01/nest-v.png)
+
 ### 3. Captura del endpoint `/api/status` funcionando
 
 En navegador, Postman, Bruno o VS Code REST client.
+
+![api end](assets/01/api-end.png)
 
 ### 4. Captura del siguiente comando en terminal 
 
 ```bash
 ls ./src/status/
 ```
+
+![command](assets/01/command.png)
 
 ### 5. Explicación breve escrita por el estudiante
 
