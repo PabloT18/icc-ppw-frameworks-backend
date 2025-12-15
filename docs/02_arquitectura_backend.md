@@ -1,4 +1,5 @@
 
+
 # Programación y Plataformas Web
 
 # Frameworks Backend: Arquitectura Backend
@@ -628,6 +629,7 @@ Al finalizar este tema se debe comprender:
 Estos conceptos se aplicarán directamente en:
 
 
-* [`spring-boot/02_estructura_proyecto.md`](../spring-boot/p67/02_estructura_proyecto/01_configuracion.md)
+* [`spring-boot/02_estructura_proyecto.md`](../spring-boot/p67/a_dodente/02_estructura_proyecto.md)
+
 * [`nest/02_estructura_proyecto.md`](../nest/p67/a_dodente/02_estructura_proyecto.md)
 
