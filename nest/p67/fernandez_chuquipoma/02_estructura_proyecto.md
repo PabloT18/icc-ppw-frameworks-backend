@@ -364,7 +364,7 @@ Alexander Chuquipoma
  ![IDE](./assets/IDE.png)
 
 Juan Fernandez
- ![IDE](./assets/.png)
+ ![IDE](./assets/IDE2.png)
 ---
 
 ### 2. Captura del archivo `Fundamentos01Application.java`
@@ -378,7 +378,7 @@ Alexander Chuquipoma
 ![funda](./assets/funda.png)
 
 Juan Fernandez
- ![IDE](./assets/.png)
+ ![IDE](./assets/funda2.png)
 ---
 
 ### 3. Captura del árbol generado desde terminal:
@@ -393,7 +393,7 @@ Alexander Chuquipoma
 
 
 Juan Fernandez
- ![IDE](./assets/.png)
+ ![IDE](./assets/arbol2.png)
 ---
 
 ### 4. Explicación breve
@@ -401,7 +401,16 @@ Juan Fernandez
 Se debe redactar:
 
 * por qué es importante tener módulos separados
+
+Permite organizar el proyecto por dominios funcionales, mejora la mantenibilidad del código, facilita el trabajo en equipo y permite escalar la aplicación sin generar dependencias innecesarias entre componentes.
+
 * cómo se relacionan controllers, services y repositories
+
+Los controllers reciben las solicitudes HTTP, los services contienen la lógica de negocio y los repositories gestionan el acceso a la base de datos. Esta separación asegura un flujo claro y ordenado de la información.
+
 * qué problema evita mantener una estructura clara
+
+Evita código desordenado, dependencias circulares, dificultades para realizar pruebas, errores en el escaneo de componentes y problemas de mantenimiento a largo plazo.
+
 
 
