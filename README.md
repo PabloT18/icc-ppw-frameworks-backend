@@ -83,7 +83,17 @@ El objetivo es:
    └── p67
        └── estudiante1_estudiante2
            ├── 01_configuracion.md
-           ├── .....
+           ├── 02_estructura_proyecto.md
+           ├── 03_api_rest.md
+           ├── 04_rutas_controladores.md
+           ├── 05_servicios.md
+           ├── 06_dtos_validacion.md
+           ├── 07_bd_jpa.md
+           ├── 08_excepciones.md
+           ├── 09_seguridad.md
+           ├── 10_swagger.md
+           ├── 11_testing.md
+           └── 12_despliegue.md
 /nest
    └── p67
        └── estudiante1_estudiante2
