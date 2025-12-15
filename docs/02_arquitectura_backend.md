@@ -1,4 +1,5 @@
 
+
 # Programación y Plataformas Web
 
 # Frameworks Backend: Arquitectura Backend
@@ -74,7 +75,7 @@ El backend moderno funciona dividido en **capas lógicas**, cada una con una res
 [Cliente Web/Móvil] → (HTTP Request) → [Controlador] → [Servicio]
                                             ↓
                                      (HTTP Response)
-
+```
 ---
 
 ## 1.2 Capa de Negocio (Servicios)
@@ -240,7 +241,6 @@ Es el patrón usado en:
 * **Django Rest Framework**
 * **Express con servicios**
 
----
 
 ## 2.3 Arquitectura en Capas (Layered Architecture)
 
@@ -248,8 +248,8 @@ Organiza el código según responsabilidades:
 
 * capa de presentación
 * capa de negocio
-* capa de datos
-* capa de infraestructura
+* capa de dominio
+* capa de persistencia
 
 Frameworks como Spring Boot están diseñados para apoyar este estilo.
 
@@ -271,6 +271,119 @@ Entidades  →  Casos de Uso  →  Adaptadores  →  Framework
 
 ---
 
+
+
+## 2.5 Relación entre MVCS y Capas Lógicas
+En la práctica, los frameworks backend modernos combinan patrones arquitectónicos (MVCS) con capas lógicas.
+
+La siguiente tabla muestra cómo los componentes más comunes de un backend moderno se relacionan tanto con el patrón MVCS como con las capas lógicas, usando Spring Boot como referencia conceptual. 
+
+Componentes comunes en Backends Modernos (Referencia: Spring Boot / NestJS)
+
+| Componente         | Rol MVCS       | Capa lógica  | Descripción                                                                                                             |
+| ------------------ | -------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Controller         | Controller (C) | Presentación | Recibe las peticiones HTTP, valida el formato básico y delega la lógica al Service. No contiene lógica de negocio.      |
+| DTO (Request)      | View (V)       | Presentación | Transporta los datos de entrada desde el cliente hacia el backend. Vive entre Controller y Service. No contiene lógica. |
+| DTO (Response)     | View (V)       | Presentación | Transporta los datos de salida hacia el cliente. Define la estructura del JSON de respuesta. No contiene lógica.        |
+| Service            | Service (S)    | Negocio      | Define los métodos de negocio y las reglas que gobiernan el sistema. Orquesta las operaciones.                          |
+| ServiceImpl        | Service (S)    | Negocio      | Implementa la lógica de negocio definida en la interfaz Service. Coordina validaciones, mappers y repositorios.         |
+| Validators         | Service (S)    | Negocio      | Contienen validaciones de negocio y reglas complejas que no dependen solo del formato de datos.                         |
+| Mappers            | Service (S)    | Negocio      | Convierten entre Entity ↔ Model ↔ DTO, desacoplando la capa de persistencia de la presentación.                         |
+| Model (Dominio)    | Model (M)      | Dominio      | Representa los conceptos del dominio. No depende de base de datos ni de frameworks.                                     |
+| Entity (`@Entity`) | Model (M)      | Persistencia | Representa una tabla de base de datos. Depende de JPA / Hibernate y refleja la estructura persistida.                   |
+| Repository         | —              | Persistencia | Accede a la base de datos y provee operaciones CRUD. No contiene lógica de negocio.                                     |
+| Utils              | —              | Transversal  | Proveen funciones reutilizables (fechas, cadenas, cálculos). No dependen del dominio ni del framework.                  |
+| JSON Response      | View (V)       | Presentación | Es la vista final enviada al cliente en formato JSON, construida a partir de DTOs de respuesta.                         |
+
+
+
+---
+
+Nota: Aunque los ejemplos suelen mostrarse con Spring Boot, esta organización es aplicable a cualquier backend moderno que utilice controladores, servicios y capas bien definidas (NestJS, Django REST, ASP.NET, Express estructurado). 
+
+
+
+* **DTO** → comunica
+* **Model** → representa el dominio
+* **Entity** → persiste
+* **Service** → decide
+* **Controller** → enruta
+* **Vista (JSON)** → responde
+
+### 2.5.1 Relación entre capas con MVCS
+```
+┌───────────────────────────────────────────────┐
+│                CAPA DE PRESENTACIÓN           │
+│                                               │
+│  ┌───────────────┐     ┌───────────────────┐  │
+│  │ Controller (C)│ ──▶ │ DTO Request (V)   │  │
+│  └───────────────┘     └───────────────────┘  │
+│            │                                  │
+│            ▼                                  │
+│       JSON Response (V)                       │
+└───────────────┬───────────────────────────────┘
+                │
+                ▼
+┌───────────────────────────────────────────────┐
+│                CAPA DE NEGOCIO                │
+│                                               │
+│  ┌─────────────────────────────────────────┐  │
+│  │ Service / ServiceImpl (S)               │  │
+│  │                                         │  │
+│  │  - Lógica de negocio                    │  │
+│  │  - Validaciones de negocio              │  │
+│  │  - Orquestación de flujos               │  │
+│  │  - Uso de Mappers y Validators          │  │
+│  └─────────────────────────────────────────┘  │
+│         ▲                 ▲                   │
+│         │                 │                   │
+│    Mappers (S)       Validators (S)           │
+└───────────────┬───────────────────────────────┘
+                │
+                ▼
+┌───────────────────────────────────────────────┐
+│              CAPA DE DOMINIO                  │
+│                                               │
+│  ┌─────────────────────────────────────────┐  │
+│  │ Model (M)                               │  │
+│  │                                         │  │
+│  │  - Conceptos del dominio                │  │
+│  │  - No depende de BD                     │  │
+│  │  - No depende de frameworks             │  │
+│  └─────────────────────────────────────────┘  │
+└───────────────┬───────────────────────────────┘
+                │
+                ▼
+┌───────────────────────────────────────────────┐
+│            CAPA DE PERSISTENCIA               │
+│                                               │
+│  ┌─────────────────────────────────────────┐  │
+│  │ Repository                              │  │
+│  └─────────────────────────────────────────┘  │
+│                │                              │
+│                ▼                              │
+│  ┌─────────────────────────────────────────┐  │
+│  │ Entity (@Entity) (M)                    │  │
+│  │                                         │  │
+│  │  - Representa tablas                    │  │
+│  │  - Depende de JPA / ORM                 │  │
+│  └─────────────────────────────────────────┘  │
+└───────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────┐
+│            CAPA TRANSVERSAL                   │
+│                                               │
+│  Utils                                        │
+│  - Fechas                                     │
+│  - Strings                                    │
+│  - Cálculos reutilizables                     │
+└───────────────────────────────────────────────┘
+```
+
+![alt text](assets/01_arquitectura_backend-02.png)
+
+---
+
 # 3. Estilos de Construcción del Backend
 
 ---
@@ -279,9 +392,9 @@ Entidades  →  Casos de Uso  →  Adaptadores  →  Framework
 
 Toda la aplicación vive en un solo proyecto.
 
-✔ Ideal para aprendizaje y proyectos pequeños
-✔ Fácil de desplegar
-✔ Rápido de desarrollar
+* Ideal para aprendizaje y proyectos pequeños
+* Fácil de desplegar
+* Rápido de desarrollar
 
 ---
 
@@ -289,8 +402,8 @@ Toda la aplicación vive en un solo proyecto.
 
 Dividido en módulos independientes dentro del mismo proyecto.
 
-✔ Mejor organización
-✔ Facilita crecimiento
+* Mejor organización
+* Facilita crecimiento
 
 ---
 
@@ -298,10 +411,10 @@ Dividido en módulos independientes dentro del mismo proyecto.
 
 La aplicación se divide en servicios independientes.
 
-✔ Escalabilidad
-✔ Tolerancia a fallos
-❗ Mucho más complejo
-❗ Requiere infraestructura avanzada
+* Escalabilidad
+* Tolerancia a fallos
+* Mucho más complejo
+* Requiere infraestructura avanzada
 
 ---
 
@@ -315,11 +428,13 @@ Los clientes pueden comunicarse con el backend de diferentes formas dependiendo 
 
 Cada estilo tiene sus propias características, ventajas y casos de uso específicos.
 
-A continuación se explica **cómo funciona cada uno** y **cómo se consume desde el cliente**.
+
 
 ---
 
 ## 4.1 REST (Representational State Transfer)
+
+Para ver ejemplos de consumo REST, visita el archivo [02_arquitectura_backend-consumo-rest.md](02_arquitectura_backend-consumo-rest.md).
 
 ### Definición
 
@@ -344,224 +459,8 @@ PATCH  /api/users/123      → Actualizar parcialmente
 DELETE /api/users/123      → Eliminar usuario
 ```
 
-### Ejemplo de servidor REST (Spring Boot)
 
-```java
-@RestController
-@RequestMapping("/api/products")
-public class ProductController {
-    
-    @Autowired
-    private ProductService productService;
-    
-    // GET /api/products
-    @GetMapping
-    public List<Product> getAllProducts() {
-        return productService.findAll();
-    }
-    
-    // GET /api/products/5
-    @GetMapping("/{id}")
-    public Product getProduct(@PathVariable Long id) {
-        return productService.findById(id);
-    }
-    
-    // POST /api/products
-    @PostMapping
-    public Product createProduct(@RequestBody ProductDTO dto) {
-        return productService.create(dto);
-    }
-    
-    // PUT /api/products/5
-    @PutMapping("/{id}")
-    public Product updateProduct(@PathVariable Long id, @RequestBody ProductDTO dto) {
-        return productService.update(id, dto);
-    }
-    
-    // DELETE /api/products/5
-    @DeleteMapping("/{id}")
-    public void deleteProduct(@PathVariable Long id) {
-        productService.delete(id);
-    }
-}
-```
-
-### Ejemplo de servidor REST (NestJS)
-
-```typescript
-@Controller('products')
-export class ProductController {
-    constructor(private readonly productService: ProductService) {}
-    
-    @Get()
-    async getAllProducts(): Promise<Product[]> {
-        return this.productService.findAll();
-    }
-    
-    @Get(':id')
-    async getProduct(@Param('id') id: string): Promise<Product> {
-        return this.productService.findById(+id);
-    }
-    
-    @Post()
-    async createProduct(@Body() dto: CreateProductDto): Promise<Product> {
-        return this.productService.create(dto);
-    }
-    
-    @Put(':id')
-    async updateProduct(
-        @Param('id') id: string,
-        @Body() dto: UpdateProductDto
-    ): Promise<Product> {
-        return this.productService.update(+id, dto);
-    }
-    
-    @Delete(':id')
-    async deleteProduct(@Param('id') id: string): Promise<void> {
-        return this.productService.delete(+id);
-    }
-}
-```
-
-### Cómo consumir API REST desde el cliente
-
-#### **JavaScript/TypeScript (Frontend)**
-
-```javascript
-// GET - Obtener todos los productos
-fetch('http://localhost:3000/api/products')
-    .then(response => response.json())
-    .then(products => console.log(products))
-    .catch(error => console.error(error));
-
-// GET - Obtener un producto específico
-fetch('http://localhost:3000/api/products/5')
-    .then(response => response.json())
-    .then(product => console.log(product));
-
-// POST - Crear producto
-fetch('http://localhost:3000/api/products', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer token123'
-    },
-    body: JSON.stringify({
-        name: 'Laptop HP',
-        price: 899.99,
-        stock: 15
-    })
-})
-    .then(response => response.json())
-    .then(newProduct => console.log('Creado:', newProduct));
-
-// PUT - Actualizar producto completo
-fetch('http://localhost:3000/api/products/5', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        name: 'Laptop HP Actualizada',
-        price: 799.99,
-        stock: 20
-    })
-})
-    .then(response => response.json())
-    .then(updated => console.log('Actualizado:', updated));
-
-// PATCH - Actualizar parcialmente
-fetch('http://localhost:3000/api/products/5', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        stock: 25  // Solo actualizar stock
-    })
-})
-    .then(response => response.json())
-    .then(updated => console.log('Stock actualizado:', updated));
-
-// DELETE - Eliminar producto
-fetch('http://localhost:3000/api/products/5', {
-    method: 'DELETE'
-})
-    .then(response => {
-        if (response.ok) {
-            console.log('Producto eliminado');
-        }
-    });
-```
-
-#### **Usando Axios (más moderno)**
-
-```javascript
-import axios from 'axios';
-
-const api = axios.create({
-    baseURL: 'http://localhost:3000/api',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer token123'
-    }
-});
-
-// GET
-const products = await api.get('/products');
-console.log(products.data);
-
-// POST
-const newProduct = await api.post('/products', {
-    name: 'Laptop HP',
-    price: 899.99
-});
-
-// PUT
-const updated = await api.put('/products/5', {
-    name: 'Laptop HP Pro',
-    price: 999.99
-});
-
-// DELETE
-await api.delete('/products/5');
-```
-
-#### **cURL (Línea de comandos)**
-
-```bash
-# GET
-curl http://localhost:3000/api/products
-
-# GET específico
-curl http://localhost:3000/api/products/5
-
-# POST
-curl -X POST http://localhost:3000/api/products \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Laptop HP","price":899.99}'
-
-# PUT
-curl -X PUT http://localhost:3000/api/products/5 \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Laptop Updated","price":799.99}'
-
-# DELETE
-curl -X DELETE http://localhost:3000/api/products/5
-```
-
-#### **Postman / Insomnia**
-
-```
-Method: GET
-URL: http://localhost:3000/api/products
-Headers:
-  - Content-Type: application/json
-  - Authorization: Bearer token123
-```
-
-** Cuándo usar REST**:
-- APIs públicas y privadas
-- Aplicaciones web y móviles
-- CRUD tradicional
-- Sistemas que requieren caché
-- Integraciones simples
+Para ver ejemplos de consumo REST, visita el archivo [02_arquitectura_backend-consumo-rest.md](02_arquitectura_backend-consumo-rest.md).
 
 ---
 
@@ -730,6 +629,7 @@ Al finalizar este tema se debe comprender:
 Estos conceptos se aplicarán directamente en:
 
 
-* [`spring-boot/02_estructura_proyecto.md`](../spring-boot/p67/02_estructura_proyecto/01_configuracion.md)
+* [`spring-boot/02_estructura_proyecto.md`](../spring-boot/p67/a_dodente/02_estructura_proyecto.md)
+
 * [`nest/02_estructura_proyecto.md`](../nest/p67/a_dodente/02_estructura_proyecto.md)
 
