@@ -393,9 +393,11 @@ tree src/main/java/ec/edu/ups/icc/fundamentos01
 Se debe redactar:
 
 * por qué es importante tener módulos separados
+
 Mantener módulos separados (como products, users, auth) permite organizar el código por dominios funcionales. Esto facilita la mantenibilidad, ya que cada carpeta contiene solo lo relacionado con una funcionalidad específica, permitiendo que el proyecto escale sin volverse caótico. Además, favorece el trabajo en equipo, ya que diferentes desarrolladores pueden trabajar en distintos módulos sin generar conflictos constantes.
 
 * cómo se relacionan controllers, services y repositories
+
 La relación sigue un flujo jerárquico de responsabilidad única:
 
 Controller: Es la puerta de entrada. Recibe la petición HTTP (del usuario o frontend) y decide qué hacer, pero no ejecuta la lógica de negocio. Delega la tarea al Service.
@@ -405,6 +407,7 @@ Service: Contiene la lógica de negocio pura (validaciones, cálculos, reglas). 
 Repository: Es la capa de acceso a datos. Se encarga de interactuar directamente con la base de datos (guardar, buscar, eliminar) y devuelve la información al Service.
 
 * qué problema evita mantener una estructura clara
+
 Evita el problema conocido como "Código Espagueti" (Spaghetti Code), donde la lógica de negocio, el acceso a datos y las rutas HTTP están mezclados en una sola clase o archivo. Una estructura clara previene el alto acoplamiento (dependencias desordenadas), haciendo que el código sea testeable, legible y fácil de corregir ante errores.
 
 
