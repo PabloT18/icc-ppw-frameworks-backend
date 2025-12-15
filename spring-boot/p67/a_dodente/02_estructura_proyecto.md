@@ -1,4 +1,3 @@
-
 # Programación y Plataformas Web
 
 # Frameworks Backend: Spring Boot – Estructura del Proyecto
@@ -387,5 +386,5 @@ Se debe redactar:
 * cómo se relacionan controllers, services y repositories
 * qué problema evita mantener una estructura clara
 
----
+
 
