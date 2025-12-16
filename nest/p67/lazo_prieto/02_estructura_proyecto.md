@@ -11,9 +11,15 @@
 
 ### Autores
 
-**Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: [PabloT18](https://github.com/PabloT18)
+### Autores
+
+**Rafael Prieto**
+📧 pprietos@est.ups.edu.ec
+💻 GitHub: [Raet0](https://github.com/Raet0)
+
+**Adrian Lazo**
+📧 blazoc@est.ups.edu.ec
+💻 GitHub: [scomygod](https://github.com/scomygod)
 
 ---
 
