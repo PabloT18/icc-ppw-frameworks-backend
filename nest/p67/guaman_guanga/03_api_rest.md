@@ -302,11 +302,20 @@ Cada estudiante debe agregar en su archivo:
 * PATCH /api/products/:id
 * DELETE /api/products/:id
 
+![alt text](assets/imageF03.png)
+
+![alt text](assets/imageF03-2.png)
+
+![alt text](assets/imageF03-3.png)
+
+![alt text](assets/imageF03-4.png)
+
+![alt text](assets/imageF03-5.png)
 
 
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
-Debe visualizarse la estructura completa en el IDE.
+![alt text](assets/imageF03-6.png)
 
 ### ✔ 3. Explicación breve
 
