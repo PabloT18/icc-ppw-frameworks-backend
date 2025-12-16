@@ -346,13 +346,13 @@ Debe mostrar:
 Nest application successfully started
 ```
 
-![Captura de iniciado](./assets/01_neststarted.png)
+![Captura de iniciado](./assets/capturas/practicas01/01_neststarted.png)
 
 ### 3. Captura del endpoint `/api/status` funcionando
 
 En navegador, Postman, Bruno o VS Code REST client.
 
-![Captura del navegador](./assets/01_nestapi.png)
+![Captura del navegador](./assets/capturas/practicas01/01_nestapi.png)
 
 ### 4. Captura del siguiente comando en terminal 
 
@@ -360,7 +360,7 @@ En navegador, Postman, Bruno o VS Code REST client.
 ls ./src/status/
 ```
 
-![Captura de src/status](./assets/01_src_status.png)
+![Captura de src/status](./assets/capturas/practicas01/01_src_status.png)
 
 ### 5. Explicación breve escrita por el estudiante
 
