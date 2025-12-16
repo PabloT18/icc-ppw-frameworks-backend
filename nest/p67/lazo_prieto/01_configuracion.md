@@ -336,7 +336,7 @@ Cada estudiante o grupo debe agregar en su archivo:
 node -v
 ```
 
-![Captura node v](./assets/01_nodev.png)
+![Captura node v](./assets/capturas/practicas01/01_nodev.png)
 
 ### 2. Captura del servidor NestJS iniciándose correctamente
 
