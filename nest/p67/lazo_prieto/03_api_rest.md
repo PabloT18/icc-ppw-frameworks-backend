@@ -299,20 +299,24 @@ Cada estudiante debe agregar en su archivo:
 
 ### ✔ 1. Captura del consumo de cada endpoint de Products:
 
+![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180434.png>)
 * GET /api/products
+
+
+![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180818.png>)
 * GET /api/products/:id
+
+![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180440.png>)
 * POST /api/products
+
+![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180425.png>)
 * PUT /api/products/:id
 * PATCH /api/products/:id
-* DELETE /api/products/:id
-
-dada
 
 ![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180412.png>)
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180425.png>)
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180434.png>)
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180440.png>)
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180818.png>)
+* DELETE /api/products/:id
+
+
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
 Debe visualizarse la estructura completa en el IDE.
