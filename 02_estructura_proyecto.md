@@ -10,7 +10,7 @@
 
 ### Autores
 
-**Pablo Torres**
+**Juan Alvarez - David Villa**
 📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 💻 GitHub: [PabloT18](https://github.com/PabloT18)
 
