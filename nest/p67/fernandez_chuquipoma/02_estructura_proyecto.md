@@ -1,416 +1,602 @@
+
 # Programación y Plataformas Web
 
-# Frameworks Backend: Spring Boot – Estructura del Proyecto
+# Frameworks Backend: NestJS – Estructura del Proyecto
 
 <div align="center">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="100" alt="Spring Boot Logo">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nestjs/nestjs-original.svg" width="100" alt="Nest Logo">
 </div>
 
-## Práctica 2 (Spring Boot): Estructura del Proyecto, Arquitectura Interna y Organización Modular
+## Práctica 2 (NestJS): Arquitectura Interna, Organización del Proyecto y Estructura Modular
 
 ### Autores
 
-**Alexander Chuquipoma**  
-📧 [achuquipoma@est.ups.edu.ec](mailto:achuquipoma@est.ups.edu.ec)  
-💻 GitHub: [AlexChuquipoma](https://github.com/AlexChuquipoma)
-
-**Juan Fernandez**  
-📧 jfernandezl6@est.ups.edu.ec  
-💻 GitHub: [Juan0Fernandedez](https://github.com/Juan0Fernandez)
+**Pablo Torres**
+📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+💻 GitHub: [PabloT18](https://github.com/PabloT18)
 
 ---
 
 # 1. Introducción
 
-En el tema anterior se revisó cómo crear un proyecto Spring Boot y ejecutar un primer endpoint.
-En esta práctica se profundiza en cómo se **estructura internamente un proyecto backend profesional**, cómo Spring Boot organiza sus componentes, cómo detecta controladores y servicios, y cómo aplicar una arquitectura modular basada en dominios.
+En la práctica anterior se revisó cómo crear un proyecto NestJS y cómo definir un endpoint básico.
+En esta práctica se estudiará cómo NestJS organiza internamente sus componentes, cómo funciona su arquitectura modular, qué elementos conforman un backend profesional y cómo estructurar el proyecto siguiendo buenas prácticas empresariales.
 
 El objetivo es comprender:
 
-* cómo se organiza un proyecto Spring Boot a nivel de carpetas
-* cómo funcionan controladores, servicios, repositorios y entidades dentro de MVCS
-* por qué la estructura del paquete raíz es fundamental
-* cómo escanea Spring Boot los componentes
-* cómo organizar el proyecto como si fuera una aplicación empresarial real
+* cómo se organiza un proyecto NestJS a nivel de carpetas
+* cómo se relacionan módulos, controladores y servicios
+* cómo funciona la inyección de dependencias
+* cómo dividir la aplicación por dominios
+* cómo estandarizar una arquitectura que permita escalar el sistema
+
+NestJS está diseñado desde su núcleo para trabajar con:
+
+* módulos
+* controladores
+* servicios
+* proveedores
+* pipes, filters, interceptors
+* componentes reutilizables
+
+Esto hace que la estructura del proyecto sea clara, mantenible y adecuada para proyectos grandes.
 
 ---
 
-# 2. ¿Cómo organiza Spring Boot un proyecto?
+# 2. ¿Cómo organiza NestJS un proyecto?
 
-Spring Boot utiliza tres elementos clave:
-
-### **1. Package root (paquete raíz)**
-
-Es el paquete donde vive la clase principal:
-
-```
-Fundamentos01Application.java
-```
-
-Ejemplo:
-
-```
-ec.edu.ups.icc.fundamentos01
-```
-
-Spring Boot aplica `@ComponentScan` de forma automática para **buscar controladores, servicios, repositorios, configuraciones y componentes** **solamente dentro del package root y sus subpaquetes**.
-
-Esto significa:
-
-* si un controller está fuera de este paquete → ❌ **no lo detecta**
-* si un servicio está en otro nivel no incluido → ❌ **no se registra como Bean**
+NestJS sigue tres pilares fundamentales:
 
 ---
 
-### **2. ComponentScan**
+## **1. Arquitectura modular**
 
-Al iniciar la aplicación, Spring Boot:
+Todo en NestJS gira alrededor de módulos.
+
+Un módulo:
+
+* agrupa controladores, servicios y proveedores
+* encapsula lógica por dominio
+* puede ser importado por otros módulos
+* permite mantener el proyecto ordenado
+
+Ejemplo de módulo inicial:
 
 ```
-1. Ejecuta Fundamentos01Application
-2. Activa @SpringBootApplication
-3. Ejecuta @ComponentScan
-4. Busca automáticamente:
-   - @RestController
-   - @Service
-   - @Repository
-   - @Configuration
-   - @Component
-5. Registra los beans
-6. Inicia Tomcat embebido
+AppModule → módulo raíz
+StatusModule → módulo creado por el estudiante
+UsersModule → módulo del dominio usuarios
+ProductsModule → módulo del dominio productos
 ```
 
 ---
 
-### **3. Auto-Configuration**
+## **2. Decoradores**
 
-Spring Boot analiza las dependencias del proyecto, por ejemplo:
+NestJS utiliza decoradores para definir comportamientos:
 
+| Decorador             | Función                         |
+| --------------------- | ------------------------------- |
+| `@Module()`           | Declara un módulo               |
+| `@Controller()`       | Declara un controlador          |
+| `@Get()`, `@Post()`   | Manejan rutas HTTP              |
+| `@Injectable()`       | Declara un servicio o proveedor |
+| `@Param()`, `@Body()` | Obtienen valores del request    |
+
+Esta sintaxis permite un código limpio y expresivo.
+
+---
+
+## **3. Inyección de dependencias (DI)**
+
+NestJS utiliza un contenedor de inyección de dependencias que:
+
+* crea instancias de servicios
+* administra el ciclo de vida de objetos
+* permite reutilizar lógica en otros módulos
+* ordena las responsabilidades de manera clara
+
+Por ejemplo, un controlador solicita un servicio:
+
+```ts
+constructor(private readonly usersService: UsersService) {}
 ```
-spring-boot-starter-web
-```
 
-y automáticamente:
-
-* habilita Spring MVC
-* registra el servidor embebido Tomcat
-* expone rutas HTTP
-* configura JSON con Jackson
+NestJS suministra automáticamente la instancia correcta.
 
 ---
 
-# 3. Maven, Gradle 
+# 3. Archivos esenciales de un proyecto NestJS
 
-Spring Boot permite dos herramientas principales de construcción (build tools):
-
----
-
-## 3.1 Maven
-
-**Características**:
-
-* basado en XML (`pom.xml`)
-* estructura estricta y muy estandarizada
-* ampliamente usado en proyectos legacy o corporativos
-* dependencias declaradas mediante `<dependency>`
-
-**Ventajas**:
-
-* documentación abundante
-* comportamiento predecible
-
-**Limitaciones**:
-
-* archivos extensos en XML
-* poca flexibilidad para scripts modernos
+| Archivo             | Función                                                |
+| ------------------- | ------------------------------------------------------ |
+| `main.ts`           | Punto de entrada del servidor                          |
+| `app.module.ts`     | Módulo raíz donde se registran los módulos principales |
+| `app.controller.ts` | Controlador raíz                                       |
+| `app.service.ts`    | Servicio raíz                                          |
+| `nest-cli.json`     | Configuración del CLI                                  |
+| `tsconfig.json`     | Configuración de TypeScript                            |
+| `package.json`      | Dependencias del proyecto                              |
 
 ---
 
-## 3.2 Gradle
-
-**Características**:
-
-* basado en lenguaje Groovy/Kotlin
-* archivos compactos (`build.gradle`)
-* permite configuraciones dinámicas
-* más rápido gracias a su sistema de cache incremental
-
-**Ventajas**:
-
-* sintaxis clara
-* builds más rápidos
-* ideal para proyectos modernos (Spring Boot, Android, Kotlin)
-
-**Por qué se utilizará Gradle en este curso**:
-
-* es más eficiente para  proyectos iterativos
-* facilita la integración con CI/CD
-* posee scripts más legibles que XML
-* recomendado en documentación moderna de Spring Boot
-* varias empresas migran a Gradle por rendimiento
-
----
-
-# 4. Archivos esenciales en un proyecto Spring Boot
-
-| Archivo                                      | Función                                               |
-| -------------------------------------------- | ----------------------------------------------------- |
-| `Fundamentos01Application.java`              | Punto de entrada de Spring Boot, activa ComponentScan |
-| `build.gradle`                               | Define dependencias, plugins, versiones, tareas       |
-| `settings.gradle`                            | Define el nombre raíz del proyecto                    |
-| `application.properties` o `application.yml` | Configuraciones del servidor, BD, logs                |
-| `/resources/static/`                         | Archivos públicos estáticos                           |
-| `/resources/templates/`                      | Plantillas (no usadas en este curso)                  |
-| `/resources/application.properties`          | Configuración principal                               |
-
----
-
-# 5. Estructura interna generada por Spring Boot
-
-Estructura inicial:
+# 4. Estructura inicial generada por NestJS
 
 ```
 src/
- └── main/
-      ├── java/
-      │    └── ec.edu.ups.icc.fundamentos01/
-      │          └── Fundamentos01Application.java
-      └── resources/
-           ├── application.properties
-           ├── static/
-           └── templates/
-build.gradle
-settings.gradle
+ ├── app.controller.ts
+ ├── app.service.ts
+ ├── app.module.ts
+ ├── main.ts
+test/
+package.json
+tsconfig.json
+nest-cli.json
 ```
 
-Pero esta estructura es insuficiente para un proyecto real.
-A continuación se presenta cómo organizar una API profesional.
+Esta estructura es funcional, pero insuficiente para un proyecto real.
+En adelante se organizará el backend siguiendo una arquitectura modular por dominio.
 
 ---
 
-# 6. Arquitectura MVCS aplicada a Spring Boot
+# 5. Arquitectura MVCS aplicada en NestJS
 
-En Spring Boot, MVCS se distribuye así:
+NestJS implementa MVCS de forma natural:
 
-| Capa                     | Elemento Spring |
-| ------------------------ | --------------- |
-| Presentación             | `controllers/`  |
-| Negocio                  | `services/`     |
-| Dominio                  | `models/`       |
-| Persistencia             | `repositories/` |
-| Comunicación DTO         | `dtos/`         |
-| Utilidades transversales | `utils/`        |
-| Configuraciones globales | `config/`       |
+| Capa          | Carpeta sugerida             |
+| ------------- | ---------------------------- |
+| Presentación  | `controllers/`               |
+| Negocio       | `services/`                  |
+| Dominio       | `entities/`                  |
+| Persistencia  | (posterior) ORM/Repositorios |
+| Comunicación  | `dtos/`                      |
+| Configuración | `config/`                    |
+| Utilidades    | `utils/`                     |
 
----
-
-# 7. Estructura modular recomendada (proyecto grande)
-
-Para enseñar arquitectura moderna, se utilizará **estructura por dominios**.
-
-### Proyecto base:
-
-```
-src/main/java/ec/edu/ups/icc/fundamentos01/
-    ├── config/
-    ├── utils/
-    ├── products/
-    ├── users/
-    ├── auth/
-    └── Fundamentos01Application.java
-```
+A diferencia de otros frameworks, NestJS NO distribuye estas carpetas de manera automática, sino que permite organizarlas dentro de **módulos por dominio**.
 
 ---
 
-# 8. Estructura modular dentro de cada dominio
+# 6. Estructura modular recomendada (proyecto grande)
 
-Cada módulo contiene **todas las capas necesarias**:
+Se recomienda organizar el proyecto por **dominios**, replicando la estructura de una aplicación real.
+
+Estructura principal:
 
 ```
-products/
-    ├── controllers/
-    ├── services/
-    ├── repositories/
-    ├── entities/
-    ├── dtos/
-    ├── mappers/
-    ├── utils/
+src/
+ ├── config/
+ ├── utils/
+ ├── users/
+ ├── products/
+ ├── auth/
+ └── app.module.ts
 ```
 
-Lo mismo aplica para:
+Cada dominio contiene:
 
 ```
 users/
-auth/
-orders/
-payments/
-etc.
+  ├── controllers/
+  ├── services/
+  ├── dtos/
+  ├── entities/
+  ├── mappers/
+  ├── utils/
+  └── users.module.ts
 ```
 
-### Ventajas pedagógicas:
+Esta arquitectura:
 
-* permite que cada grupo cree módulos distintos
-* imita arquitectura empresarial real
-* facilita escalar funcionalidades
-* ordena responsabilidades
-* simplifica pruebas unitarias
+* facilita asignar módulos por grupos de estudiantes
+* escala sin desorden
+* permite que cada dominio crezca sin afectar otros
+* imita la estructura de microservicios pero dentro de un monolito modular
 
 ---
 
-# 9. Flujo interno de Spring Boot dentro de esta estructura
+# 7. Flujo interno de NestJS dentro de esta estructura
 
 ```
-HTTP Request → Tomcat embebido
+HTTP Request → Nest Runtime
         ↓
-DispatcherServlet
+Module Resolver
         ↓
-Controller (products/controllers)
+Controller (users/controllers)
         ↓
-Service (products/services)
+Service (users/services)
         ↓
-Repository (products/repositories)
+Base de Datos (posterior)
         ↓
-JPA / Hibernate
-        ↓
-Base de Datos
-        ↓
-HTTP Response (DTO o JSON)
+DTO o respuesta JSON
+```
+
+NestJS utiliza su motor interno para:
+
+* encontrar el módulo correcto
+* inyectar el servicio solicitado
+* procesar decoradores
+* manejar tuberías, filtros, interceptores
+
+---
+
+# 8. Actividad práctica del tema 02
+
+
+
+## 1. Crear carpetas base para configuración y utilidades
+
+**Estas carpetas NO tienen comandos CLI específicos, crear manualmente:**
+
+```bash
+# Desde la raíz del proyecto
+mkdir src/config
+mkdir src/utils
+```
+
+Estructura:
+```
+src/
+  ├── config/     # Configuraciones globales (BD, env, etc.)
+  ├── utils/      # Funciones auxiliares reutilizables
+  └── app.module.ts
 ```
 
 ---
 
-# 10. Actividad práctica del tema 02
+## 2. Generar módulos de dominio usando NestJS CLI
 
-En esta práctica se debe:
+**Usar comandos oficiales de NestJS para generar módulos completos:**
 
-### 1. Reorganizar el proyecto con la estructura modular:
+**EN LA PRACTICA SE DEBEN CREAR 3 MÓDULOS: `users`, `products` y `auth`.**
+**PARA  `users`, `products` VER COMANDOS DE  (3. Crear subcarpetas adicionales dentro de cada módulo)** 
+**PARA `auth` SE MUESTRA COMPLETO A CONTINUACIÓN (VERISON ESTANDAR):**
 
-Crear dentro de:
+### Generar módulo de Auth
 
-```
-src/main/java/ec/edu/ups/icc/fundamentos01/
-```
+```bash
+# Generar el módulo
+nest generate module auth
 
-las carpetas:
+# Generar el controlador
+nest generate controller auth
 
-```
-config/
-utils/
-products/
-users/
-auth/
-```
-
-### 2. Dentro de `products/` crear carpetas:
-
-```
-controllers/
-services/
-repositories/
-entities/
-dtos/
-mappers/
-utils/
+# Generar el servicio
+nest generate service auth
 ```
 
-### 3. Crear clases vacías para verificar ComponentScan:
-
-Ejemplo en `products/controllers`:
-
-```java
-package ec.edu.ups.icc.fundamentos01.products.controllers;
-
-public class ProductsController {
-}
+**Forma abreviada:**
+```bash
+nest g mo auth     # module
+nest g co auth     # controller
+nest g s auth      # service
 ```
 
-Y en `products/services`:
-
-```java
-package ec.edu.ups.icc.fundamentos01.products.services;
-
-public class ProductsService {
-}
+**Resultado automático:**
+```
+src/auth/
+  ├── auth.controller.ts
+  ├── auth.controller.spec.ts
+  ├── auth.service.ts
+  ├── auth.service.spec.ts
+  └── auth.module.ts
 ```
 
-### 4. Ejecutar la aplicación
-
+```bash
+# Desde src/users/
+mkdir dtos
+mkdir entities
+mkdir mappers
+mkdir utils
 ```
-./gradlew bootRun
+Estructura final de `auth/` versión estandar:
+```auth/
+  ├── controllers/
+  ├── services/
+  ├── dtos/           # ← Manual
+  ├── entities/       # ← Manual
+  ├── mappers/        # ← Manual
+  ├── utils/          # ← Manual
+  ├── auth.controller.ts
+  ├── auth.controller.spec.ts
+  ├── auth.service.ts
+  ├── auth.service.spec.ts
+  └── auth.module.ts
 ```
 
-El proyecto debe compilar correctamente aun con clases vacías.
+ **El CLI automáticamente**:
+- Crea el módulo con la estructura correcta
+- Registra el controller y service en `auth.module.ts`
+- Importa el módulo en `app.module.ts`
+- Añade decoradores necesarios
+
+
+
 
 ---
 
-# 11. Resultados y Evidencias
+## 3. Crear subcarpetas adicionales dentro de cada módulo
 
-Cada estudiante debe agregar en su documento:
+**Las subcarpetas para DTOs, entities, mappers y utils NO tienen comandos CLI, crear manualmente:**
+
+Crear perviamente los modulos `users` y `products` con los comandos CLI indicados anteriormente.
+
+### Dentro del módulo `users/`, `products/`:
+
+
+**Nota**: Se deria organizar en subcarpetas `controllers/` y `services/` si se generan múltiples controladores o servicios en el futuro.
+
+```bash
+# Opción con estructura más organizada
+nest g mo users
+mkdir src/users/controllers
+mkdir src/users/services
+mkdir src/users/dtos
+mkdir src/users/entities
+mkdir src/users/mappers
+mkdir src/users/utils
+
+# Luego generar componentes en sus carpetas
+nest g co users/controllers/users --flat
+nest g s users/services/users --flat
+```
+
+---
+
+## 4. Verificar archivos generados automáticamente
+
+### `users/users.controller.ts` (generado por CLI):
+
+```ts
+import { Controller } from '@nestjs/common';
+
+@Controller('users')
+export class UsersController {}
+```
+
+### `users/users.service.ts` (generado por CLI):
+
+```ts
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class UsersService {}
+```
+
+### `users/users.module.ts` (generado por CLI):
+
+```ts
+import { Module } from '@nestjs/common';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
+
+@Module({
+  controllers: [UsersController],
+  providers: [UsersService],
+})
+export class UsersModule {}
+```
+
+### `app.module.ts` (actualizado automáticamente por CLI):
+
+```ts
+import { Module } from '@nestjs/common';
+import { UsersModule } from './users/users.module';
+import { ProductsModule } from './products/products.module';
+import { AuthModule } from './auth/auth.module';
+
+@Module({
+  imports: [
+    UsersModule,
+    ProductsModule,
+    AuthModule,
+  ],
+})
+export class AppModule {}
+```
+
+---
+
+## 5. Comandos adicionales útiles del CLI de NestJS (Los verás en el futuro, en las siguetes practicas)
+
+### Generar otros componentes:
+
+```bash
+# Generar Guard (protección de rutas)
+nest g guard auth/guards/jwt
+
+# Generar Interceptor (transformar respuestas)
+nest g interceptor common/interceptors/transform
+
+# Generar Pipe (validación)
+nest g pipe common/pipes/validation
+
+# Generar Filter (manejo de errores)
+nest g filter common/filters/http-exception
+
+# Generar Middleware
+nest g middleware common/middleware/logger
+
+# Generar DTO (clase)
+nest g class users/dtos/create-user.dto --no-spec
+
+# Generar Entity (clase)
+nest g class users/entities/user.entity --no-spec
+```
+
+### Ver ayuda del CLI:
+
+```bash
+nest --help
+nest generate --help
+```
+
+---
+
+## 6. Iniciar el servidor y verificar
+
+```bash
+# Modo desarrollo
+pnpm start:dev
+
+# o
+npm run start:dev
+```
+
+
+---
+
+
+
+
+
+---
+
+## 8. Estructura final del proyecto
+
+**Estructura resultante:**
+
+
+
+###  Estructura organizada (con subcarpetas controllers/ y services/)
+
+La organización deber qedar así:
+
+`auth/` version estandar
+`users/` y `products/` con subcarpetas
+
+en subcarpetas, debes usar comandos específicos indicados anteriormente
+
+**Estructura resultante**:
+
+```
+src/
+  ├── config/
+  ├── utils/
+  ├── users/
+  │   ├── controllers/           # ← Manual
+  │   │   └── users.controller.ts # ← CLI: nest g co users/controllers/users --flat
+  │   ├── services/              # ← Manual
+  │   │   └── users.service.ts    # ← CLI: nest g s users/services/users --flat
+  │   ├── dtos/                  # ← Manual
+  │   ├── entities/              # ← Manual
+  │   ├── mappers/               # ← Manual
+  │   ├── utils/                 # ← Manual
+  │   └── users.module.ts        # ← CLI
+  ├── products/
+  │   ├── controllers/
+  │   │   └── products.controller.ts
+  │   ├── services/
+  │   │   └── products.service.ts
+  │   ├── dtos/
+  │   ├── entities/
+  │   ├── mappers/
+  │   ├── utils/
+  │   └── products.module.ts
+  ├── auth/                      # ← CLI: nest g mo auth
+  │   ├── dtos/                  # ← Manual
+  │   ├── entities/              # ← Manual
+  │   ├── strategies/            # ← Manual
+  │   ├── guards/                # ← Manual
+  │   ├── auth.controller.ts     # ← CLI: nest g co auth (raíz del módulo)
+  │   ├── auth.service.ts        # ← CLI: nest g s auth (raíz del módulo)
+  │   └── auth.module.ts         # ← CLI
+  ├── app.module.ts
+  └── main.ts
+```
+
+⚠️ **Nota importante**: Si se usa subcarperas se debe actualizar las importaciones en los módulos:
+
+```ts
+// users/users.module.ts
+import { Module } from '@nestjs/common';
+import { UsersController } from './controllers/users.controller';  // ← Cambio de ruta
+import { UsersService } from './services/users.service';            // ← Cambio de ruta
+
+@Module({
+  controllers: [UsersController],
+  providers: [UsersService],
+})
+export class UsersModule {}
+```
+
+
+
+---
+
+# 9. Resultados y Evidencias
+
+Cada estudiante debe entregar:
 
 ---
 
 ### 1. Captura del IDE mostrando la estructura modular:
 
-Debe visualizarse claramente:
+Debe visualizarse:
 
 ```
-products/
-users/
-auth/
 config/
 utils/
+users/
+products/
+auth/
 ```
+
 Alexander Chuquipoma
- ![IDE](./assets/IDE.png)
+  ![Despejar la web con el puerto 3000](./assets/id.png)
 
 Juan Fernandez
- ![IDE](./assets/IDE2.png)
+
+  ![Despejar la web con el puerto 3000](./assets/id2.png)
+
 ---
 
-### 2. Captura del archivo `Fundamentos01Application.java`
+### 2. Captura del archivo `users.module.ts`
 
-Se debe verificar:
+Verificando que:
 
-* el package raíz
-* la ubicación correcta que permite ComponentScan
+* controla el dominio
+* contiene controller y service
+* está bien configurado
 
-Alexander Chuquipoma 
-![funda](./assets/funda.png)
+Alexander Chuquipoma
+  ![Despejar la web con el puerto 3000](./assets/module.png)
 
 Juan Fernandez
- ![IDE](./assets/funda2.png)
+
+  ![Despejar la web con el puerto 3000](./assets/module2.png)
+
 ---
 
-### 3. Captura del árbol generado desde terminal:
+### 3. Captura del árbol desde terminal
 
 Ejemplo:
 
 ```bash
-tree src/main/java/ec/edu/ups/icc/fundamentos01
+tree src/users
 ```
 Alexander Chuquipoma
-![arbol](./assets/arbol.png)
-
+  ![Despejar la web con el puerto 3000](./assets/arb.png)
 
 Juan Fernandez
- ![IDE](./assets/arbol2.png)
+
+  ![Despejar la web con el puerto 3000](./assets/arb2.png)
 ---
 
-### 4. Explicación breve
+### 4. Explicación breve escrita por el estudiante
 
-Se debe redactar:
+Debe describir:
 
-* por qué es importante tener módulos separados
+* cómo entiende la arquitectura modular
 
-Permite organizar el proyecto por dominios funcionales, mejora la mantenibilidad del código, facilita el trabajo en equipo y permite escalar la aplicación sin generar dependencias innecesarias entre componentes.
+La arquitectura modular en NestJS organiza la aplicación por dominios funcionales, donde cada módulo encapsula su propia lógica, controladores y servicios, permitiendo un proyecto ordenado, escalable y fácil de mantener.
+* qué relación hay entre controller, service y módulo
 
-* cómo se relacionan controllers, services y repositories
+El controller recibe las solicitudes HTTP, el service maneja la lógica de negocio y el módulo agrupa y registra estos componentes para que NestJS los gestione mediante inyección de dependencias.
 
-Los controllers reciben las solicitudes HTTP, los services contienen la lógica de negocio y los repositories gestionan el acceso a la base de datos. Esta separación asegura un flujo claro y ordenado de la información.
+* por qué separar dominios mejora la mantenibilidad
 
-* qué problema evita mantener una estructura clara
+Separar dominios reduce el acoplamiento, facilita el trabajo en equipo, permite escalar funcionalidades sin afectar otras partes del sistema y evita desorden en proyectos grandes.
 
-Evita código desordenado, dependencias circulares, dificultades para realizar pruebas, errores en el escaneo de componentes y problemas de mantenimiento a largo plazo.
-
-
+---
 
