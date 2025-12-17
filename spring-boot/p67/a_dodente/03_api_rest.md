@@ -13,8 +13,10 @@
 ### Autores
 
 **Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: PabloT18
+
+ 📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+
+ 💻 GitHub: PabloT18
 
 ---
 
