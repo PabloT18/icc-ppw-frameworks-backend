@@ -342,17 +342,12 @@ En GitHub:
 
 ##  GISTs de apoyo
 
-(igual que en el proyecto frontend)
-
----
-
-# **LISTO PARA COPIAR EN TU REPOSITORIO**
-
 
 * [VS Code](https://gist.github.com/PabloT18/683e6d950b240f9620a98903cf92e87a)
 
 * [Git y GitHub](https://gist.github.com/PabloT18/96343b6be1b5cfe237fe53e48eeeb6ef)
 
 * [Node y PNPM](https://gist.github.com/PabloT18/8c0728e24b14c1c63a879b819f628299)
+
 
 
