@@ -481,7 +481,7 @@ Cada estudiante debe entregar:
 ![users.controller.java](assets/Users_Controller3.png)
 
 
-### 3. Explicación breve
+### 5. Explicación breve
 
 
 #### 1. ¿Por qué existen DTOs distintos para entrada y salida?
