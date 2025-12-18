@@ -301,19 +301,19 @@ Y su controlador debe incluir **los mismos endpoints REST** que `users/`.
 
 Cada estudiante debe agregar en su archivo:
 
-
-
 ### ✔ 1. Captura del consumo de cada endpoint de Users:
 * GET /api/users
 ![get users](assets/get_users.jpeg)
 * GET /api/users/:id
-![get users](assets/get_user.jpeg)
+![get user](assets/get_user.jpeg)
 * POST /api/users
-![get users](assets/post.jpeg)
-* PUT /api/users/:id
+![post users](assets/post.jpeg)
+<!-- * PUT /api/users/:id -->
 * PATCH /api/users/:id
-![get users](assets/patch.jpeg)
+![patch users](assets/patch.jpeg)
 * DELETE /api/users/:id
+![Delete users](assets/Delete.jpeg)
+
 
 ### ✔ 2. Captura del archivo `Users.controller.ts`
 
@@ -321,7 +321,29 @@ Debe visualizarse la estructura completa en el IDE.
 
 ![controller](assets/controller.jpeg)
 
-### ✔ 3. Explicación breve
+---
+
+### ✔ 3. Captura del consumo de cada endpoint de Products:
+* GET /api/users
+![get Products](assets/prodcuts.jpeg)
+* GET /api/users/:id
+![get Product](assets/prodcut.jpeg)
+* POST /api/users
+![post Products](assets/prodcuts_post.jpeg)
+<!-- * PUT /api/users/:id -->
+* PATCH /api/users/:id
+![patch Products](assets/prodcuts_patch.jpeg)
+* DELETE /api/users/:id
+![Delete Products](assets/prodcuts_delete.jpeg)
+
+
+### ✔ 4. Captura del archivo `Products.controller.ts`
+
+Debe visualizarse la estructura completa en el IDE.
+
+![controller](assets/prodducts_controller.png)
+
+### ✔ 5. Explicación breve
 
 Debe incluir:
 
