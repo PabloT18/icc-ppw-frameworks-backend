@@ -324,16 +324,16 @@ Debe visualizarse la estructura completa en el IDE.
 ---
 
 ### ✔ 3. Captura del consumo de cada endpoint de Products:
-* GET /api/users
+* GET /api/products
 ![get Products](assets/prodcuts.jpeg)
-* GET /api/users/:id
+* GET /api/products/:id
 ![get Product](assets/prodcut.jpeg)
-* POST /api/users
+* POST /api/products
 ![post Products](assets/prodcuts_post.jpeg)
 <!-- * PUT /api/users/:id -->
-* PATCH /api/users/:id
+* PATCH /api/products/:id
 ![patch Products](assets/prodcuts_patch.jpeg)
-* DELETE /api/users/:id
+* DELETE /api/products/:id
 ![Delete Products](assets/prodcuts_delete.jpeg)
 
 
