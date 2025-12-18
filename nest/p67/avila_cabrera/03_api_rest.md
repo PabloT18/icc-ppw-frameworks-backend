@@ -334,7 +334,7 @@ Debe visualizarse la estructura completa en el IDE.
 * PATCH /api/products/:id
 ![patch Products](assets/prodcuts_patch.jpeg)
 * DELETE /api/products/:id
-![Delete Products](assets/prodcuts_delete.jpeg)
+![Delete Products](assets/Products_delete.png)
 
 
 ### ✔ 4. Captura del archivo `Products.controller.ts`
