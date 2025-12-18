@@ -341,7 +341,7 @@ Debe visualizarse la estructura completa en el IDE.
 
 Debe visualizarse la estructura completa en el IDE.
 
-![controller](assets/prodducts_controller.png)
+![controller](assets/Products_Controller.png)
 
 ### ✔ 5. Explicación breve
 

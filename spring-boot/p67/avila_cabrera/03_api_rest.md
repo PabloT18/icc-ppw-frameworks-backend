@@ -15,8 +15,15 @@
 **Pablo Torres**
 
  📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-
  💻 GitHub: PabloT18
+
+ *Diana Avila* 
+📧 davilam3@est.ups.edu.ec 
+💻 GitHub: [Diana Avila](https://github.com/davilam3)
+
+*Sebastian Cabrera*
+📧 ccabreram1@est.ups.edu.ec 
+💻 GitHub: [Sebastian Cabrera](https://github.com/Ccabreram1)
 
 ---
 
@@ -431,22 +438,93 @@ Cada estudiante debe entregar:
 Incluyendo:
 
 * GET /api/products
+![get](assets/Products_get.png)
 * GET /api/products/:id
+![get id](assets/Products_get_id.png)
 * POST /api/products
+![post](assets/Products_post.png)
 * PUT /api/products/:id
+![put](assets/Products_put.png)
 * PATCH /api/products/:id
+![patch](assets/Products_patch.png)
 * DELETE /api/products/:id
+![delete](assets/Products_delete.png)
 
 ### 2. Captura del archivo
 
 `products.controller.java`
+![products.controller.java](assets/ProductsController1.png)
+![products.controller.java](assets/ProductsController2.png)
 
-Mostrando toda la estructura.
 
-### 3. Explicación breve
+
+---
+
+### 3. Captura de consumo de endpoints de Users desde Postman.
 
 Incluyendo:
 
-* por qué existen DTOs distintos para entrada y salida
-* por qué la entidad nunca se devuelve al cliente
-* cómo funciona el mapper
+* GET /api/users
+![get](assets/Users_get.png)
+* GET /api/users/:id
+![get id](assets/Users_get_id.png)
+* POST /api/users
+![post](assets/Users_post.png)
+* PUT /api/users/:id
+![put](assets/Users_put.png)
+* PATCH /api/users/:id
+![patch](assets/Users_patch.png)
+* DELETE /api/users/:id
+![delete](assets/Users_delete.png)
+
+### 4. Captura del archivo
+
+`users.controller.java`
+
+![users.controller.java](assets/Users_Controller1.png)
+![users.controller.java](assets/Users_Controller2.png)
+![users.controller.java](assets/Users_Controller3.png)
+
+
+### 3. Explicación breve
+
+
+#### 1. ¿Por qué existen DTOs distintos para entrada y salida?
+
+Los DTOs (Data Transfer Objects) se utilizan para controlar exactamente qué datos entran y salen de la API.
+
+* DTOs de entrada (Create, Update, Patch) definen qué información puede enviar el cliente y evitan que se envíen campos no permitidos, como id, password u otros datos internos.
+
+* DTOs de salida (Response DTO) definen qué información se devuelve al cliente, mostrando únicamente datos seguros y necesarios.
+
+Esto aplica el principio de responsabilidad única y mejora la seguridad, claridad y mantenibilidad de la API.
+
+#### 2. ¿Por qué la entidad nunca se devuelve al cliente?
+
+La entidad representa el modelo interno del sistema, no el contrato de la API.
+
+No se devuelve directamente porque:
+
+* Puede contener datos sensibles (password, fechas internas, estados).
+
+* Puede cambiar por razones internas sin que deba afectar al cliente.
+
+* Exponerla acopla al cliente con la lógica interna del backend.
+
+* En su lugar, se devuelve un DTO de respuesta, que actúa como una capa de protección entre el sistema y el consumidor de la API.
+
+#### 3. ¿Cómo funciona el mapeo (Mapper)?
+
+El mapper es una clase encargada de transformar datos entre entidades y DTOs.
+
+* Convierte datos de entrada (DTO → Entidad) al crear o actualizar información.
+
+* Convierte datos internos (Entidad → DTO) antes de enviarlos al cliente.
+
+Esto permite:
+
+* Separar lógica de transformación del controlador.
+
+* Evitar duplicación de código.
+
+* Mantener el controlador limpio y enfocado en manejar requests y responses.
