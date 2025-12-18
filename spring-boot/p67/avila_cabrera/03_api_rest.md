@@ -435,8 +435,6 @@ Cada estudiante debe entregar:
 
 ### 1. Captura de consumo de endpoints de Products desde Postman.
 
-Incluyendo:
-
 * GET /api/products
 ![get](assets/Products_get.png)
 * GET /api/products/:id
@@ -457,13 +455,9 @@ Incluyendo:
 ![products.controller.java](assets/ProductsController1.png)
 ![products.controller.java](assets/ProductsController2.png)
 
-
-
 ---
 
 ### 3. Captura de consumo de endpoints de Users desde Postman.
-
-Incluyendo:
 
 * GET /api/users
 ![get](assets/Users_get.png)
