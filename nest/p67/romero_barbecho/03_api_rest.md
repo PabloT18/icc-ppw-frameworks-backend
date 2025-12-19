@@ -357,7 +357,8 @@ Flexibilidad: La entidad puede tener relaciones y datos que no son necesarios en
 * ¿Cómo funciona un Mapper?
 
 
-DTO de Entrada → Entidad (para operaciones de creación/actualización).
+DTO de Entrada → Entidad (para operaciones de creación/actualización)
 
-Entidad → DTO de Salida (para respuestas de la API).
+Entidad → DTO de Salida (para respuestas de la API)
+
 
