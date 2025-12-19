@@ -83,7 +83,17 @@ El objetivo es:
    └── p67
        └── estudiante1_estudiante2
            ├── 01_configuracion.md
-           ├── .....
+           ├── 02_estructura_proyecto.md
+           ├── 03_api_rest.md
+           ├── 04_rutas_controladores.md
+           ├── 05_servicios.md
+           ├── 06_dtos_validacion.md
+           ├── 07_bd_jpa.md
+           ├── 08_excepciones.md
+           ├── 09_seguridad.md
+           ├── 10_swagger.md
+           ├── 11_testing.md
+           └── 12_despliegue.md
 /nest
    └── p67
        └── estudiante1_estudiante2
@@ -332,17 +342,12 @@ En GitHub:
 
 ##  GISTs de apoyo
 
-(igual que en el proyecto frontend)
-
----
-
-# **LISTO PARA COPIAR EN TU REPOSITORIO**
-
 
 * [VS Code](https://gist.github.com/PabloT18/683e6d950b240f9620a98903cf92e87a)
 
 * [Git y GitHub](https://gist.github.com/PabloT18/96343b6be1b5cfe237fe53e48eeeb6ef)
 
 * [Node y PNPM](https://gist.github.com/PabloT18/8c0728e24b14c1c63a879b819f628299)
+
 
 

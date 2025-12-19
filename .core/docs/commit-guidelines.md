@@ -1,6 +1,25 @@
 
 # Guías de Commits – PRW-P67 Frameworks Backend
 
+# COMMIT Lunes 15
+## MENSAJE DEL COMMIT DEL PUSH A SU RAMA 
+
+### feat(spring-boot): 02_estructura_proyecto (nest): 02_estructura_proyecto - Lunes 15/12
+
+
+
+
+
+
+
+
+
+___
+___
+___
+___
+___
+
 **Repositorio académico basado en documentación, prácticas y material teórico.**
 
 Este archivo define convenciones para escribir mensajes de commit **claros, consistentes y adecuados al tipo de repositorio**, cuyo objetivo principal es:
@@ -62,32 +81,32 @@ Como el proyecto contiene solo **Markdown + assets + scripts**, los alcances se 
 
 ---
 
-# 4. **Reglas Especiales para `/docs`**
+# 4. **Reglas Especiales para cada framework**
 
 Cada tema teórico se encuentra en:
 
 ```
-/docs/01_conceptos_backend.md
-/docs/02_arquitectura_backend.md
+/spring-boot/p#/01_conceptos_backend.md
+/nest/p#/02_arquitectura_backend.md
 ...
 ```
 
 ### **Cuando agregas un tema nuevo:**
 
 ```
-feat(docs): agregar archivo 04_estructura_servidor.md
+feat(nest): agregar archivo 04_estructura_servidor.md
 ```
 
 ### **Cuando amplías un tema existente:**
 
 ```
-update(docs): extender explicación de MVC en 02_arquitectura_backend
+update(nest): extender explicación de MVC en 02_arquitectura_backend
 ```
 
 ### **Cuando haces correcciones menores en teoría:**
 
 ```
-fix(docs): corregir diagrama en 01_conceptos_backend
+fix(nest): corregir diagrama en 01_conceptos_backend
 ```
 
 ---
@@ -140,47 +159,8 @@ scripts: optimizar validación de nombres de estudiantes
 
 ---
 
-# 7. **Ejemplos adaptados a tu proyecto**
 
-### **Al agregar una nueva práctica teórica**
-
-```
-feat(docs): crear 10_documentacion_openapi.md
-```
-
-### **Al corregir un enlace**
-
-```
-fix(docs): corregir enlace roto en tabla de contenidos
-```
-
-### **Al agregar capturas**
-
-```
-assets(nest): añadir capturas de 01_configuracion para estudiante perez_torres
-```
-
-### **Al modificar el README**
-
-```
-docs(readme): actualizar descripción general del repositorio
-```
-
-### **Al agregar una aplicación de los conceptos en Spring Boot**
-
-```
-feat(spring-boot): documentar aplicación del concepto de capas en 02_practica.md
-```
-
-### **Al corregir errores menores**
-
-```
-fix(spring-boot): corregir título y formato en 01_configuracion.md
-```
-
----
-
-# 8. **Buenas Prácticas**
+# 7. **Buenas Prácticas**
 
 ### ✔ Hacer
 
@@ -199,12 +179,12 @@ fix(spring-boot): corregir título y formato en 01_configuracion.md
 
 ---
 
-# 9. **Plantillas listas para copiar**
+# 8. **Plantillas listas para copiar**
 
 ### **Nuevo tema teórico**
 
 ```
-feat(docs): agregar <numero>_<titulo>.md
+feat(sprin): agregar <numero>_<titulo>.md
 ```
 
 ### **Modificar un tema**
