@@ -313,7 +313,7 @@ Cada estudiante debe agregar en su archivo:
 
 * PUT /api/products/:id
 
-![alt text](assets/capturas/practicas03/Metodo-PUT.png)
+![metodo-put](assets/capturas/practicas03/metodoPut.png)
 
 * PATCH /api/products/:id
 
