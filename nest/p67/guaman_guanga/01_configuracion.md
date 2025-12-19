@@ -331,6 +331,7 @@ Cada estudiante o grupo debe agregar en su archivo:
 ```
 node -v
 ```
+![alt text](assets/node-v.png)
 
 ### 2. Captura del servidor NestJS iniciándose correctamente
 
@@ -339,22 +340,30 @@ Debe mostrar:
 ```
 Nest application successfully started
 ```
+![alt text](assets/nest-start.png)
 
 ### 3. Captura del endpoint `/api/status` funcionando
 
 En navegador, Postman, Bruno o VS Code REST client.
-
+![alt text](assets/api-status.png)
 ### 4. Captura del siguiente comando en terminal 
 
 ```bash
 ls ./src/status/
 ```
-
+![alt text](assets/comando-src.png)
 ### 5. Explicación breve escrita por el estudiante
 
-Incluyendo:
+**¿Qué entendí de `@Controller`, `@Get` y los módulos?**  
+`@Controller` define una clase que maneja las rutas HTTP.  
+`@Get` indica que un método responde a peticiones GET.  
+Los módulos (`@Module`) sirven para organizar la aplicación en partes, agrupando controladores y lógica relacionada.
 
-* qué entendió de `@Controller`, `@Get` y módulos
-* cómo funciona el servidor NestJS
-* qué similitudes encontró con Spring Boot
+**¿Cómo funciona el servidor NestJS?**  
+El servidor se inicia desde `main.ts`, donde NestJS levanta un servidor HTTP en el puerto 3000.  
+Cuando llega una petición, NestJS la envía al controlador y método correspondiente según la ruta y el tipo de solicitud.
+
+**¿Qué similitudes encontré con Spring Boot?**  
+Ambos usan controladores para manejar rutas, anotaciones/decoradores para definir comportamientos y una estructura modular que facilita el orden, la escalabilidad y el mantenimiento del proyecto.
+
 
