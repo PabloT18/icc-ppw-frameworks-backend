@@ -310,11 +310,15 @@ Cada estudiante debe agregar en su archivo:
 
 * PUT /api/products/:id
 
+![alt text](nest/p67/alvarez_villa/assets/Imagen22.png)
+
 * PATCH /api/products/:id
 
 ![alt text](nest/p67/alvarez_villa/assets/Imagen19.png)
 
 * DELETE /api/products/:id
+
+![alt text](nest/p67/alvarez_villa/assets/Imagen21.png)
 
 
 
