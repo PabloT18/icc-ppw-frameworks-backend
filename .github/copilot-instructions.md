@@ -16,11 +16,18 @@ El mensaje principal debe seguir esta estructura:
 [detalles opcionales]
 ```
 
-Ejemplo:
+**IMPORTANTE: El alcance depende de la ruta del archivo modificado:**
 
-```
-update(docs): mejorar explicación de API REST en 03_api_rest_conceptos
-```
+| Ruta del archivo                  | Alcance a usar    | Ejemplo                                           |
+|-----------------------------------|-------------------|---------------------------------------------------|
+| `/docs/**`                        | `docs`            | `feat(docs): crear 10_documentacion_openapi.md`   |
+| `/spring-boot/p67/**`             | `spring-boot`     | `feat(spring-boot): documentar instalación`       |
+| `/nest/p67/**`                    | `nest`            | `update(nest): ampliar sección MVC`               |
+| `/.core/**`                       | `core`            | `update(core): actualizar guías internas`         |
+| `**/assets/**`                    | `assets`          | `assets(spring-boot): agregar capturas`           |
+| `/scripts/**`                     | `scripts`         | `scripts: mejorar generador de carpetas`          |
+| `README.md`                       | `readme`          | `docs: actualizar README principal`               |
+| `.gitignore`, `.vscode`, etc.     | `config`          | `config: agregar reglas gitignore`                |
 
 ---
 
@@ -174,16 +181,43 @@ update(docs): ampliar ejemplos de arquitectura en 02_arquitectura_backend
 
 ## 7. Resumen para Copilot
 
-Cuando generes un mensaje de commit:
+**PROCESO OBLIGATORIO para generar cada commit:**
 
-1. Identifica qué archivos cambiaron.  
-2. Selecciona el alcance correspondiente: `docs`, `spring-boot`, `nest`, `assets`, `scripts`, `readme`, `repo`.  
-3. Selecciona un tipo válido: `feat`, `update`, `fix`, `docs`, `assets`, `init`, `scripts`, `config`, `structure`.  
-4. Escribe un mensaje claro y breve en imperativo.  
-5. Usa el formato:
+1. **Identifica la ruta del archivo modificado**:
+   - Si está en `/docs/` → usa alcance `docs`
+   - Si está en `/spring-boot/p67/` → usa alcance `spring-boot`
+   - Si está en `/nest/p67/` → usa alcance `nest`
+   - Si está en `/.core/` → usa alcance `core`
+   - Si está en `/assets/` → usa alcance `assets` (o el framework correspondiente)
+
+2. **Determina el tipo de cambio**:
+   - ¿Archivo nuevo? → `feat`
+   - ¿Ampliar contenido existente? → `update`
+   - ¿Corrección menor? → `fix`
+   - ¿Imágenes/capturas? → `assets`
+   - ¿Scripts? → `scripts`
+   - ¿Nueva carpeta estudiante? → `init`
+
+3. **Escribe el mensaje en imperativo**:
+   ```
+   <tipo>(<alcance>): <descripción breve>
+   ```
+
+**Ejemplos según la ruta:**
 
 ```
-<tipo>(<alcance>): <descripción>
-<tipo>(<framework>): <descripción>
+# Archivo: /docs/03_api_rest_conceptos.md
+update(docs): ampliar ejemplos de API REST
 
+# Archivo: /spring-boot/p67/a_docente/02_estructura_proyecto.md
+update(spring-boot): mejorar explicación de estructura
+
+# Archivo: /nest/p67/perez_torres/01_configuracion.md
+feat(nest): documentar instalación de NestJS
+
+# Archivo: /.core/docs/commit-guidelines.md
+update(core): actualizar guías de commit
+
+# Archivo: /spring-boot/p67/ortiz_taco/assets/instalacion.png
+assets(spring-boot): agregar capturas de instalación
 ```

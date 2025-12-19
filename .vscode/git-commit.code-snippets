@@ -9,17 +9,12 @@
         ],
         "description": "Plantilla base para commits"
     },
-    // Commits orientados a DOCUMENTACIÓN / DOCS
-    "docs-commit": {
-        "prefix": "cdocs",
-        "body": [
-            "docs($1): $2",
-            "",
-            "- $3"
-        ],
-        "description": "Commit para cambios de documentación"
-    },
+
     // Commits para NUEVO ARCHIVO o NUEVA SECCIÓN
+    // cada $1 sera el alcance que depente de la cartpera
+    // (docs) carpeta de documentación /docs
+    // (spring-boot) carpeta de Spring Boot /spring-boot
+    // (nest) carpeta de Nest /nest
     "feat-commit": {
         "prefix": "cfeat",
         "body": [
@@ -72,8 +67,8 @@
         "description": "Inicialización de un nuevo estudiante"
     },
     // Commits de avance de estudiantes
-    "feat-student": {
-        "prefix": "cfeat-student",
+    "feat-modules": {
+        "prefix": "cfeat-modules",
         "body": [
             "feat($1/$2): $3",
             "",
