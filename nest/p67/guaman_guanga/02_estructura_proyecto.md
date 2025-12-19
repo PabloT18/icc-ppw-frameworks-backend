@@ -541,7 +541,7 @@ users/
 products/
 auth/
 ```
-
+![alt text](assets/imageF02.png)
 ---
 
 ### 2. Captura del archivo `users.module.ts`
@@ -552,6 +552,8 @@ Verificando que:
 * contiene controller y service
 * está bien configurado
 
+![alt text](assets/imageF02-2.png)
+
 ---
 
 ### 3. Captura del árbol desde terminal
@@ -561,7 +563,7 @@ Ejemplo:
 ```bash
 tree src/users
 ```
-
+![alt text](assets/imageF02-3.png)
 ---
 
 ### 4. Explicación breve escrita por el estudiante
@@ -569,8 +571,22 @@ tree src/users
 Debe describir:
 
 * cómo entiende la arquitectura modular
+La arquitectura modular en NestJS se basa en dividir la aplicación en módulos independientes, donde cada módulo representa una funcionalidad o dominio del sistema. Un módulo agrupa todos los elementos necesarios para una característica específica, como controladores, servicios, entidades y utilidades. Esta forma de organización permite que la aplicación sea más ordenada, escalable y fácil de mantener, ya que cada módulo tiene responsabilidades claras y bien definidas.
+
 * qué relación hay entre controller, service y módulo
+En NestJS, la relación entre controller, service y módulo sigue un flujo estructurado:
+
+> Controller:
+Es el encargado de manejar las solicitudes HTTP entrantes. Define las rutas y recibe los datos del cliente, delegando el procesamiento al servicio correspondiente.
+
+> Service:
+Contiene la lógica de negocio. Procesa la información recibida desde el controller y realiza las operaciones necesarias, como validaciones, transformaciones o llamadas a la base de datos.
+
+> Módulo:
+Actúa como el contenedor que organiza y conecta los controllers y services. El módulo declara qué componentes forman parte de él y cuáles pueden ser reutilizados por otros módulos.
+
 * por qué separar dominios mejora la mantenibilidad
+Separar dominios mejora la mantenibilidad porque cada parte del sistema se enfoca en una única responsabilidad. Por ejemplo, el dominio users gestiona todo lo relacionado con usuarios sin depender directamente de products o auth. Esto reduce el acoplamiento entre funcionalidades, facilita la localización de errores y permite realizar cambios o mejoras en un dominio sin afectar a los demás. Además, esta separación favorece la reutilización de código, la escritura de pruebas unitarias y el crecimiento ordenado de la aplicación.
 
 ---
 

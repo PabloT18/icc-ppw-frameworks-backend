@@ -302,18 +302,101 @@ Cada estudiante debe agregar en su archivo:
 * PATCH /api/products/:id
 * DELETE /api/products/:id
 
+![alt text](assets/imageF03.png)
+
+![alt text](assets/imageF03-2.png)
+
+![alt text](assets/imageF03-3.png)
+
+![alt text](assets/imageF03-4.png)
+
+![alt text](assets/imageF03-5.png)
+
+![alt text](assets/imageF03-6.png)
+
+![alt text](assets/imageF03-7.png)
+
+![alt text](assets/GETProd.png)
+
+![alt text](assets/POSTProd.png)
+
+![alt text](assets/PATCHProd.png)
+
+![alt text](assets/DELETEProd.png)
 
 
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
-Debe visualizarse la estructura completa en el IDE.
+![alt text](assets/imageF03-6.png)
+
+![alt text](assets/imageProductsController.png)
 
 ### ✔ 3. Explicación breve
 
 Debe incluir:
 
 * por qué se usa DTO de entrada y DTO de salida
+
+En nuestro controlador se usan DTOs para controlar qué datos entran y cuáles salen de la API.
+
+-> DTO de entrada (CreateUserDto)
+
+    Se usa en @Body() para recibir datos del cliente.
+
+    Define exactamente qué campos puede enviar el usuario (por ejemplo: name, email).
+
+    Evita que el cliente envíe propiedades que no deberían modificarse, como id u otros campos internos.
+
+    Facilita validaciones y reglas de negocio antes de crear o actualizar la entidad.
+
+-> DTO de salida (Response DTO)
+
+    Se genera con UserMapper.toResponseDto(user).
+
+    Permite controlar la respuesta que se envía al cliente.
+
+    Evita exponer datos internos o sensibles de la entidad.
+
 * por qué la entidad no debe devolverse a la API
+
+La entidad User representa el modelo interno del dominio, no el contrato de la API.
+
+-> No devolver la entidad directamente es importante porque:
+
+    Seguridad: la entidad puede tener campos sensibles o técnicos que no deben exponerse.
+
+    Desacoplamiento: si cambia la entidad (base de datos, relaciones, campos internos), la API no se rompe.
+
+    Control de la respuesta: puedes cambiar el formato del JSON sin modificar la entidad.
+
+    Buenas prácticas de arquitectura: la entidad pertenece a la capa de dominio, no a la capa de presentación.
+
 * cómo funciona el mapper
 
+El mapper es el encargado de transformar datos entre capas.
 
+En nuestro proyecto, UserMapper cumple tres funciones clave:
+
+1. DTO → Entidad
+
+  const entity: User = UserMapper.toEntity(this.currentId++, dto);
+
+    Convierte los datos recibidos (CreateUserDto) en una entidad User.
+
+    Asigna campos internos como id.
+
+    Centraliza la lógica de creación del objeto de dominio.
+
+2. Entidad → DTO de salida
+
+  UserMapper.toResponseDto(user);
+
+    Convierte la entidad en un objeto listo para la API.
+
+    Filtra y da formato a los datos que se enviarán al cliente.
+
+    Separación de responsabilidades
+
+    El controlador no sabe cómo se construye la entidad ni cómo se arma la respuesta.
+
+    El mapper se encarga de esa transformación, haciendo el código más limpio y mantenible.
