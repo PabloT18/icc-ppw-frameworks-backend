@@ -299,22 +299,29 @@ Cada estudiante debe agregar en su archivo:
 
 ### ✔ 1. Captura del consumo de cada endpoint de Products:
 
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180434.png>)
 * GET /api/products
 
+![metodo-status](assets/capturas/practicas03/Metodo-STATUS.png)
 
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180818.png>)
 * GET /api/products/:id
 
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180440.png>)
+![metodo-get](assets/capturas/practicas03/Metodo-get2.png)
+
 * POST /api/products
 
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180425.png>)
+![metodo-agregar](assets/capturas/practicas03/Metodo-Agregar.png)
+
 * PUT /api/products/:id
+
+![alt text](assets/capturas/practicas03/Metodo-PUT.png)
+
 * PATCH /api/products/:id
 
-![alt text](<assets/capturas/practicas03/Screenshot 2025-12-16 180412.png>)
+![metodo-path](assets/capturas/practicas03/Metodo-Actualizar.png)
+
 * DELETE /api/products/:id
+
+![metodo-delete](assets/capturas/practicas03/Metodo-DELETE.png)
 
 
 ### ✔ 2. Captura del archivo `products.controller.ts`
