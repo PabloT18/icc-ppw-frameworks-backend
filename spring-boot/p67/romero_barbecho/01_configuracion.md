@@ -530,7 +530,7 @@ Cada estudiante o grupo debe completar su archivo agregando:
 ### 1. Captura de verificación de Java
 
 Salida del comando `java -version`.
-
+![Imagen](\assets\paso1.png)
 ### 2. Captura del servidor Spring Boot ejecutándose
 
 Debe mostrarse:
@@ -539,11 +539,11 @@ Debe mostrarse:
 :: Spring Boot :: (v4.0.0)
 Tomcat started on port 8080
 ```
-
+![Imagen](\assets\paso2.png)
 ### 3. Captura del endpoint `/api/status` funcionando en el navegador o Postman o Bruno
 
 Debe incluir la respuesta JSON.
-
+![Imagen](\assets\paso3.png)
 ### 4. Captura del siguiente comando en terminal 
 
 ```bash
@@ -553,7 +553,7 @@ ls ./src/main/java/ec/edu/ups/icc/fundamentos01/controllers/
 Mostrando:
 
 * el archivo `StatusController.java`
-
+![Imagen](\assets\paso4.png)
 
 ### 5. Explicación breve escrita por el estudiante
 
@@ -563,3 +563,6 @@ Debe describir:
 * y sobre la función general de Spring Boot en la 
 * creación del servidor
 
+Sobre el funcionamiento del endpoint, entendí que es básicamente una dirección del servidor a la que el usuario puede entrar para pedir o enviar información. Cuando el usuario accede a esa ruta, Spring Boot ejecuta el método que está asociado a ese endpoint y devuelve una respuesta.
+
+En cuanto a la función general de Spring Boot en la creación del servidor, entendí que Spring Boot facilita mucho el trabajo porque ya tiene configuraciones listas para usar. Solo con iniciar el proyecto, Spring Boot levanta un servidor que queda escuchando peticiones y nos permite crear endpoints de forma sencilla. En resumen, Spring Boot se encarga de arrancar el servidor y de manejar la comunicación entre las rutas que creamos y las solicitudes que llegan.
