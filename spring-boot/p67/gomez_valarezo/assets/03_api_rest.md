@@ -12,11 +12,11 @@
 
 ### Autores
 
-**Pablo Torres**
-
- 📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-
- 💻 GitHub: PabloT18
+**Jean Pierre Valarezo & Sebastian Gomez**
+📧 [jvalarezov@ups.edu.ec](mailto:jvalarezov@ups.edu.ec)
+💻 GitHub: [jean-pierre-valarezo](https://github.com/jean-pierre-valarezo)
+📧 [agomezm12@ups.edu.ec](mailto:agomezm12@ups.edu.ec)
+💻 GitHub: [SebastianGomez0910](https://github.com/SebastianGomez0910)
 
 ---
 
@@ -431,11 +431,28 @@ Cada estudiante debe entregar:
 Incluyendo:
 
 * GET /api/products
+
+![Versión de Java](p3.png)
+
 * GET /api/products/:id
+
+![Versión de Java](p4.png)
+
 * POST /api/products
+
+![Versión de Java](p1.png)
+
 * PUT /api/products/:id
+
+![Versión de Java](p2.png)
+
 * PATCH /api/products/:id
+
+![Versión de Java](p5.png)
+
 * DELETE /api/products/:id
+
+![Versión de Java](p6.png)
 
 ### 2. Captura del archivo
 
@@ -443,10 +460,23 @@ Incluyendo:
 
 Mostrando toda la estructura.
 
+![Versión de Java](pc1.png)
+
+
+![Versión de Java](pc2.png)
+
 ### 3. Explicación breve
 
 Incluyendo:
 
 * por qué existen DTOs distintos para entrada y salida
+
+por seguridad ya que al tenerlos separados permite que la API evolucione sin romper lo que el usuario envia o recibe.
+
 * por qué la entidad nunca se devuelve al cliente
+
+las entidades de user  o product es el reflejo excato de la base de datos y puede tener datos sensibles que no deben salir.
+
 * cómo funciona el mapper
+
+funciona como un traductor es una clase intermedia que se encarga de copiar y transformar los datos de un objeto a otro toma los datos crudos de la entidad y los pasa limpios al DTO, toma los datos del DTO  que viene y los convierte en una entidad valida esto ayuda a que el controlador no tenga codigo sucio. 
