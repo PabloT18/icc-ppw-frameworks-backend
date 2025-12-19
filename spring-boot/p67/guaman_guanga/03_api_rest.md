@@ -415,13 +415,14 @@ dtos/
 entities/
 mappers/
 ```
+![alt text](assets/estructura.png)
 
 ### 2. Implementar los 6 endpoints REST para productos
 
 Con funcionamiento idéntico al de usuarios.
 
 ---
-
+![alt text](assets/endpoints.png)
 # 10. Resultados y evidencias
 
 Cada estudiante debe entregar:
@@ -431,22 +432,56 @@ Cada estudiante debe entregar:
 Incluyendo:
 
 * GET /api/products
+![alt text](assets/getproductos.png)
 * GET /api/products/:id
+![alt text](assets/getid.png)
 * POST /api/products
+![alt text](assets/postproductos.png)
 * PUT /api/products/:id
+![alt text](assets/putproductos.png)
 * PATCH /api/products/:id
+![alt text](assets/patchproductos.png)
 * DELETE /api/products/:id
+![alt text](assets/deleteproductos.png)
 
-### 2. Captura del archivo
-
-`products.controller.java`
-
-Mostrando toda la estructura.
-
-### 3. Explicación breve
+### 1.2. Captura de consumo de endpoints de Users desde Postman
 
 Incluyendo:
 
-* por qué existen DTOs distintos para entrada y salida
-* por qué la entidad nunca se devuelve al cliente
-* cómo funciona el mapper
+* GET /api/users
+![alt text](assets/get-users.png)
+* GET /api/users/:id
+![alt text](assets/getusers.png)
+* POST /api/users
+![alt text](assets/postusers.png)
+* PUT /api/users/:id
+![alt text](assets/put-users.png)
+* PATCH /api/users/:id
+![alt text](assets/patchusers.png)
+* DELETE /api/users/:id
+![alt text](assets/deleteusers.png)
+### 2. Captura del archivo
+
+`products.controller.java`(programacion tradicional iterativa)
+![alt text](assets/codigo-spring.png)
+Mostrando toda la estructura.
+
+### 2.1. Captura del archivo
+
+`userscontroller.java` (programacion tradicional iterativa)
+![alt text](assets/usercontroller.png)
+Mostrando toda la estructura.
+
+
+### 3. Explicación brevepr
+
+**1) ¿Por qué existen DTOs distintos para entrada y salida?**  
+Porque los DTOs de **entrada** controlan qué datos acepta la API (create/update), y el DTO de **salida** muestra solo lo necesario al cliente (datos “seguros”). Así se evita exponer campos internos.
+
+**2) ¿Por qué la entidad nunca se devuelve al cliente?**  
+La entidad `User` tiene datos internos como `password` y `createdAt`. Si se devuelve directamente, se podrían filtrar datos sensibles. Por eso se responde con `UserResponseDto`.
+
+**3) ¿Cómo funciona el mapper?**  
+El mapper convierte entre **DTO ↔ Entidad**:  
+- `toEntity(...)` crea un `User` a partir de datos del DTO (y genera/usa el id).  
+- `toResponse(user)` transforma el `User` a `UserResponseDto` para responder sin información sensible.
