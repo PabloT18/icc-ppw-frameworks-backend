@@ -293,6 +293,25 @@ Y su controlador debe incluir **los mismos endpoints REST** que `users/`.
 
 Cada estudiante debe agregar en su archivo:
 
+### ✔ 1. Captura del consumo de cada endpoint de Users:
+
+* GET /api/users
+* GET /api/users/:id
+* POST /api/users
+* PUT /api/users/:id
+* PATCH /api/users/:id
+* DELETE /api/users/:id
+
+![iamgen status](assets/status.png)
+![imagen user](\assets\03.png)
+![imagen users](\assets\03PASO2.png)
+![imagen agregar](\assets\03PASO3.png)
+![imagen patch](\assets\03PASO4.png)
+
+### ✔ 2. Captura del archivo `users.controller.ts`
+
+Debe visualizarse la estructura completa en el IDE.
+![iamgen controller](\assets\controller.png)
 ### ✔ 1. Captura del consumo de cada endpoint de Products:
 
 * GET /api/products
@@ -301,16 +320,17 @@ Cada estudiante debe agregar en su archivo:
 * PUT /api/products/:id
 * PATCH /api/products/:id
 * DELETE /api/products/:id
-![iamgen status](assets/status.png)
-![imagen user](\assets\03.png)
-![imagen users](\assets\03PASO2.png)
-![imagen agregar](\assets\03PASO3.png)
-![imagen patch](\assets\03PASO4.png)
 
+![iamgen CREAR](assets/products01.jpeg)
+![imagen LISTAR](\assets/products02.jpeg)
+![imagen OBTENER](\assets\products03.jpeg)
+![imagen REEMPLAZAR](\assets\products04.jpg)
+![imagen ACTUALIZAR](\assets\products05.jpeg)
+![imagen ELIMINAR](\assets\products06.jpeg)
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
 Debe visualizarse la estructura completa en el IDE.
-![iamgen controller](\assets\controller.png)
+![iamgen controller](\assets\products07.png)
 ### ✔ 3. Explicación breve
 
 * ¿Por qué usar DTOs de entrada y salida?
