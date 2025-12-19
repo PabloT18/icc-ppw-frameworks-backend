@@ -304,29 +304,53 @@ Cada estudiante debe agregar en su archivo:
 
 ### ✔ 1. Captura del consumo de cada endpoint de Products:
 
-- GET /api/products
+- GET /api/users
 
 ![GetAll](assets/03/get-all.png)
 
-- GET /api/products/:id
+- GET /api/users/:id
 
 ![Get](assets/03/get.png)
 
-- POST /api/products
+- POST /api/users
 
 ![Create](assets/03/create.png)
 
-- PUT /api/products/:id
+- PUT /api/users/:id
 
 ![Update](assets/03/update.png)
 
-- PATCH /api/products/:id
+- PATCH /api/users/:id
 
 ![PartialUpdate](assets/03/partial-update.png)
 
-- DELETE /api/products/:id
+- DELETE /api/users/:id
 
 ![Delete](assets/03/delete.png)
+
+- GET /api/products
+
+![GetAll](assets/03/get-products.png)
+
+- GET /api/products/:id
+
+![GetProduct](assets/03/get-product.png)
+
+- POST /api/products
+
+![CreateProduct](assets/03/create-product.png)
+
+- PUT /api/products/:id
+
+![UpdateProduct](assets/03/update-product.png)
+
+- PATCH /api/products/:id
+
+![PartialUpdateProduct](assets/03/partial-update-product.png)
+
+- DELETE /api/products/:id
+
+![DeleteProduct](assets/03/delete-product.png)
 
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
