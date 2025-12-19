@@ -12,9 +12,12 @@
 
 ### Autores
 
-**Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: PabloT18
+*Miguel Ángel Vanegas*   
+📧 mvanegasp@est.ups.edu.ec  
+💻 GitHub: [MiguelV145](https://github.com/MiguelV145)  
+*Jose Vanegas*  
+📧 jvanegasp1@est.ups.edu.ec   
+💻 GitHub: [josevac1](https://github.com/josevac1)
 
 ---
 
@@ -296,18 +299,58 @@ Cada estudiante debe agregar en su archivo:
 ### ✔ 1. Captura del consumo de cada endpoint de Products:
 
 * GET /api/products
-![get](./assets/user.jpeg)
+
+user
+![gets](./assets/user.jpeg)
+
+products
+![gets](./assets/getsproduct.png)
 
 * GET /api/products/:id
 
+users
 ![get](./assets/users.jpeg)
+
+products
+![get](./assets/getporduct.png)
+
+
 * POST /api/products
+
+users
 ![post](./assets/post.jpeg)
+
+product
+![post](./assets/postprod.png)
+
+
 * PUT /api/products/:id
-![]()
+
+users
+![put](./assets/putuseres.png)
+
+products
+![put](./assets/putpordu.png)
+
+
 * PATCH /api/products/:id
+
+user
 ![patch](./assets/pach.jpeg)
+
+product
+![patch](./assets/pathactua.png)
+
+
 * DELETE /api/products/:id
+
+users
+![delete](./assets/delete.jpeg)
+
+products
+![deletepor](./assets/deleproduc.png)
+
+
 
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
