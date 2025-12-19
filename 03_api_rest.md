@@ -298,33 +298,129 @@ Cada estudiante debe agregar en su archivo:
 
 ![alt text](nest/p67/alvarez_villa/assets/Imagen15.png)
 
+* PRODUCTO
+
+![alt text](<nest/p67/alvarez_villa/assets/get listar bruno productos.png>)
+
 * GET /api/products/:id
 
 ![alt text](nest/p67/alvarez_villa/assets/Imagen17.png)
+
+* PRODUCTO
+
+![alt text](<nest/p67/alvarez_villa/assets/get bruno por id .png>)
 
 
 * POST /api/products
 
 ![alt text](nest/p67/alvarez_villa/assets/Imagen18.png)
 
+* PRODUCTO
+
+![alt text](<nest/p67/alvarez_villa/assets/Bruno agregar productos.png>)
+
 
 * PUT /api/products/:id
 
 ![alt text](nest/p67/alvarez_villa/assets/Imagen22.png)
 
+* PRODUCTO
+
+![alt text](<nest/p67/alvarez_villa/assets/Put actualizar bruno producto.png>)
+
+
 * PATCH /api/products/:id
 
 ![alt text](nest/p67/alvarez_villa/assets/Imagen19.png)
 
+* PRODUCTO
+
+![alt text](<nest/p67/alvarez_villa/assets/patch bruno productos.png>)
+
 * DELETE /api/products/:id
 
 ![alt text](nest/p67/alvarez_villa/assets/Imagen21.png)
+
+* PRODUCTO
+
+![alt text](<nest/p67/alvarez_villa/assets/eliminar productos bruno.png>)
 
 
 
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
 ![alt text](nest/p67/alvarez_villa/assets/Imagen20.jpeg)
+
+*PRODUCTO
+
+---
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
+import { Product } from '../entities/product.entity';
+import { ProductMapper } from '../mappers/product.mapper';
+import { CreateProductDto } from '../dtos/create-product.dto';
+import { PartialUpdateProductDto } from '../dtos/partial-update-product.dto';
+
+@Controller('products')
+export class ProductsController {
+  private products: Product[] = [];
+  private currentId = 1;
+
+  @Get()
+  findAll() {
+    return this.products.map(product =>
+      ProductMapper.toResponseDto(product),
+    );
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    const product = this.products.find(p => p.id === Number(id));
+    if (!product) return { error: 'Product not found' };
+    return ProductMapper.toResponseDto(product);
+  }
+
+  @Post()
+  create(@Body() dto: CreateProductDto) {
+    const entity: Product = ProductMapper.toEntity(this.currentId++, dto);
+    this.products.push(entity);
+    return ProductMapper.toResponseDto(entity);
+  }
+
+  @Patch(':id')
+  partialUpdate(
+    @Param('id') id: string,
+    @Body() dto: PartialUpdateProductDto,
+  ) {
+    const product = this.products.find(p => p.id === Number(id));
+    if (!product) return { error: 'Product not found' };
+
+    if (dto.name !== undefined) product.name = dto.name;
+    if (dto.price !== undefined) product.price = dto.price;
+
+    return ProductMapper.toResponseDto(product);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    const exists = this.products.some(p => p.id === Number(id));
+    if (!exists) return { error: 'Product not found' };
+
+    this.products = this.products.filter(p => p.id !== Number(id));
+    return { message: 'Deleted successfully' };
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: CreateProductDto) {
+    const product = this.products.find(p => p.id === Number(id));
+    if (!product) return { error: 'Product not found' };
+
+    product.name = dto.name;
+    product.price = dto.price;
+
+    return ProductMapper.toResponseDto(product);
+  }
+}
+```
 
 ### ✔ 3. Explicación breve
 
