@@ -473,7 +473,7 @@ Mostrando toda la estructura.
 Mostrando toda la estructura.
 
 
-### 3. Explicación brevepr
+### 3. Explicación breve
 
 **1) ¿Por qué existen DTOs distintos para entrada y salida?**  
 Porque los DTOs de **entrada** controlan qué datos acepta la API (create/update), y el DTO de **salida** muestra solo lo necesario al cliente (datos “seguros”). Así se evita exponer campos internos.
