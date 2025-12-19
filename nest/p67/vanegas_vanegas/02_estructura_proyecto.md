@@ -1,3 +1,4 @@
+
 # Programación y Plataformas Web
 
 # Frameworks Backend: NestJS – Estructura del Proyecto
@@ -544,9 +545,8 @@ products/
 auth/
 ```
 
+![estructura](./assets/estructuranest.jpeg)
 ---
-
-![alt text](assets/ide_modular.png)
 
 ### 2. Captura del archivo `users.module.ts`
 
@@ -556,9 +556,10 @@ Verificando que:
 * contiene controller y service
 * está bien configurado
 
----
 
-![alt text](assets/user_modulets.png)
+![Users.module.ts](./assets/productos.jpeg)
+
+---
 
 ### 3. Captura del árbol desde terminal
 
@@ -568,28 +569,18 @@ Ejemplo:
 tree src/users
 ```
 
----
+![terminal](./assets/termilarnest.jpeg)
 
-![alt text](assets/terminal.png)
+---
 
 ### 4. Explicación breve escrita por el estudiante
 
 Debe describir:
 
 * cómo entiende la arquitectura modular
-
-La arquitectura modular es una estrategia de diseño de software que consiste en dividir un sistema en partes independientes (módulos), donde cada una es responsable de una funcionalidad específica del negocio.
-
 * qué relación hay entre controller, service y módulo
-
-El Módulo organiza el código, el Controller atiende al usuario y el Service resuelve el problema.
-
 * por qué separar dominios mejora la mantenibilidad
 
+---
 
-Aislamiento de cambios: Si modificas la lógica de "Pagos", no corres el riesgo de romper accidentalmente el "Carrito de compras". Cada parte es independiente.
-
-Reducción de la carga cognitiva: Un desarrollador solo necesita entender una pequeña pieza del sistema (el dominio específico) para hacer un cambio, en lugar de intentar comprender todo el proyecto a la vez.
-
-Facilidad de pruebas: Permite crear tests específicos y rápidos para cada funcionalidad, garantizando que el sistema siga funcionando tras cada actualización sin efectos secundarios inesperados.
 
