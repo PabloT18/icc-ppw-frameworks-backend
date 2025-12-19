@@ -312,10 +312,24 @@ Cada estudiante debe agregar en su archivo:
 
 ![alt text](assets/imageF03-5.png)
 
+![alt text](assets/imageF03-6.png)
+
+![alt text](assets/imageF03-7.png)
+
+![alt text](assets/GETProd.png)
+
+![alt text](assets/POSTProd.png)
+
+![alt text](assets/PATCHProd.png)
+
+![alt text](assets/DELETEProd.png)
+
 
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
 ![alt text](assets/imageF03-6.png)
+
+![alt text](assets/imageProductsController.png)
 
 ### ✔ 3. Explicación breve
 
