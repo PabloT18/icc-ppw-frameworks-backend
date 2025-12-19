@@ -344,7 +344,7 @@ Nest application successfully started
 
 ### 3. Captura del endpoint `/api/status` funcionando
 
-En navegador, Postman, Bruno o VS Code REST client.
+En navegador  Postman, Bruno o VS Code REST client.
 ![alt text](assets/api-status.png)
 ### 4. Captura del siguiente comando en terminal 
 
