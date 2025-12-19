@@ -297,68 +297,24 @@ Cada estudiante debe agregar en su archivo:
 
 ### ✔ 1. Captura del consumo de cada endpoint de Products:
 
-* Status
+GET /api/products
+![Despejar la web con el puerto 3000](./assets/product.png)
 
-Alexander Chuquipoma
-  ![Despejar la web con el puerto 3000](./assets/status.png)
+GET /api/products/:id
+![Despejar la web con el puerto 3000](./assets/products1.png)
 
-Juan Fernandez
+POST /api/products
+![Despejar la web con el puerto 3000](./assets/products.png)
 
-  ![Despejar la web con el puerto 3000](./assets/status2.png)
----
+PUT /api/products/:id
+![Despejar la web con el puerto 3000](./assets/put.png)
 
-
-* GET users
-
-Alexander Chuquipoma
-  ![Despejar la web con el puerto 3000](./assets/users.png)
-
-Juan Fernandez
-
-  ![Despejar la web con el puerto 3000](./assets/users2.png)
----
+PATCH /api/products/:id
+![Despejar la web con el puerto 3000](./assets/pathh.png)
 
 
-* GET user
-
-Alexander Chuquipoma
-  ![Despejar la web con el puerto 3000](./assets/user.png)
-
-Juan Fernandez
-
-  ![Despejar la web con el puerto 3000](./assets/user2.png)
----
-* POST post
-
-Alexander Chuquipoma
-  ![Despejar la web con el puerto 3000](./assets/post.png)
-
-Juan Fernandez
-
-  ![Despejar la web con el puerto 3000](./assets/post2.png)
----
-
-* PATCH 
-
-Alexander Chuquipoma
-  ![Despejar la web con el puerto 3000](./assets/patch.png)
-
-Juan Fernandez
-
-  ![Despejar la web con el puerto 3000](./assets/patch2.png)
----
-
-
-### ✔ 2. Captura del archivo `products.controller.ts`
-
-Debe visualizarse la estructura completa en el IDE.
-
-Alexander Chuquipoma
-  ![Despejar la web con el puerto 3000](./assets/usercontroller.png)
-
-Juan Fernandez
-
-  ![Despejar la web con el puerto 3000](./assets/usercontroller2.png)
+DELETE /api/products/:id
+![Despejar la web con el puerto 3000](./assets/delete.png)
 ---
 
 ### ✔ 3. Explicación breve
