@@ -8,7 +8,6 @@
 
 ## Práctica 2 (Spring Boot): Estructura del Proyecto, Arquitectura Interna y Organización Modular
 
-### Autores
 
 ### Autor
 *Miguel Ángel Vanegas*   
