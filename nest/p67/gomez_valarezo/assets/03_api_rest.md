@@ -294,32 +294,40 @@ Cada estudiante debe agregar en su archivo:
 
 * GET /api/products
 
-![imagen](nest1.png)
+![imagen](pn2.jpeg)
 
 * GET /api/products/:id
 
-![imagen](users.png)
+![imagen](pn3.jpeg)
 
-![imagen](user.png)
 
 * POST /api/products
 
-![imagen](agregar.png)
+![imagen](pn1.jpeg)
 
 * PUT /api/products/:id
 
+![imagen](pn4.jpeg)
+
 * PATCH /api/products/:id
 
-![imagen](actualizar.png)
+![imagen](pn5.jpeg)
 
 * DELETE /api/products/:id
+
+![imagen](pn6.jpeg)
 
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
 Debe visualizarse la estructura completa en el IDE.
 
-![imagen](user.controllers.png)
+![imagen](pn8.jpeg)
 
+![imagen](pn9.jpeg)
+
+![imagen](pn10.jpeg)
+
+![imagen](pn11.jpeg)
 ### ✔ 3. Explicación breve
 
 Debe incluir:
