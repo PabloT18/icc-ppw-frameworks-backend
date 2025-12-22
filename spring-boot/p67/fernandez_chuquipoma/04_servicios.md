@@ -288,8 +288,6 @@ Cada estudiante debe entregar:
 
 `products.controller.java`
 
-Juan Fernandez
-
 Usuario
 ![Usuario Controller](./assets/UserController1.png)
 

@@ -428,7 +428,6 @@ Cada estudiante debe entregar:
 
 ### 1. Captura del `constructor` de `ProductsController`
 
-Juan Fernandez
   Users Service
   ![Usuario Servicio](./assets/nestUsuariService1.png)
   
