@@ -299,3 +299,6 @@ MVCS (Model-View-Controller-Service) proporciona:
 **¿Por qué el controlador ahora está más limpio?**
 
 El controlador solo enruta solicitudes, valida DTOs y delega la lógica al servicio. Antes contenía toda la lógica de CRUD y gestión de datos en memoria. Ahora tiene responsabilidad única: ser el punto de entrada HTTP.
+
+![Product Service](assets/04/product-service.png)
+
