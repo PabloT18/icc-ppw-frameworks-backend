@@ -1,26 +1,9 @@
 
 # Guías de Commits – PRW-P67 Frameworks Backend
 
-# COMMIT Lunes 15
-## MENSAJE DEL COMMIT DEL PUSH A SU RAMA 
-
-### feat(spring-boot): 02_estructura_proyecto (nest): 02_estructura_proyecto - Lunes 15/12
 
 
 
-
-
-
-
-
-
-___
-___
-___
-___
-___
-
-**Repositorio académico basado en documentación, prácticas y material teórico.**
 
 Este archivo define convenciones para escribir mensajes de commit **claros, consistentes y adecuados al tipo de repositorio**, cuyo objetivo principal es:
 
