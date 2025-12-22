@@ -297,7 +297,14 @@ Cada estudiante debe entregar:
 
 ### 4. Explicación breve
 
-* por qué se usa un servicio
-* qué ventajas aporta MVCS
-* por qué el controlador ahora está más limpio
+* ¿Por qué se usa un servicio?
 
+Se usa un servicio para separar la lógica de negocio del controlador. El servicio contiene las reglas y el procesamiento de los datos, mientras que el controlador solo recibe las peticiones y delega el trabajo.
+
+* ¿Qué ventajas aporta MVCS?
+
+MVCS separa responsabilidades entre controlador, servicio y modelos/DTOs. Esto hace el código más ordenado, fácil de mantener, reutilizable y preparado para crecer.
+
+* ¿Por qué el controlador ahora está más limpio?
+
+Porque ya no incluye lógica de negocio ni manejo de datos. El controlador únicamente enruta las solicitudes HTTP y llama al servicio, reduciendo complejidad y mejorando la claridad del código.
