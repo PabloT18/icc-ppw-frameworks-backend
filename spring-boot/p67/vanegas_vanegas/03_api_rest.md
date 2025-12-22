@@ -614,7 +614,7 @@ Incluyendo:
 * por qué la entidad nunca se devuelve al cliente
 * cómo funciona el mapper
 
-### ✅ Explicación (DTOs, Entidad y Mapper)
+###  Explicación (DTOs, Entidad y Mapper)
 
 Existen **DTOs diferentes** porque una API **no siempre recibe y devuelve los mismos campos**.  
 En la parte de **entrada** se usan `CreateProductDto`, `UpdateProductDto` y `PartialUpdateProductDto`, que definen **qué datos acepta el backend** en cada operación (crear, actualizar completo o actualizar parcial). Esto evita que el cliente envíe campos que **no corresponden**, como un `id` o datos internos.  
