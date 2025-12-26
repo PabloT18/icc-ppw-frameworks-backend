@@ -302,16 +302,56 @@ Cada estudiante debe agregar en su archivo:
 * PATCH /api/products/:id
 * DELETE /api/products/:id
 
+
+Bruno:
+
+<img src="b1.jpeg" alt="router"> 
+
+
+<img src="b2.jpeg" alt="router"> 
+
+
+<img src="b3.jpeg" alt="router"> 
+
+
+<img src="b4.jpeg" alt="router"> 
+
+
+<img src="b5.jpeg" alt="router"> 
+
+
 ### ✔ 2. Captura del archivo `products.controller.ts`
 
 Debe visualizarse la estructura completa en el IDE.
+
+<img src="u1.jpeg" alt="router"> 
+
+<img src="u2.jpeg" alt="router"> 
+
 
 ### ✔ 3. Explicación breve
 
 Debe incluir:
 
 * por qué se usa DTO de entrada y DTO de salida
+
+Se implementan dos tipos de DTOs para aplicar el principio de Separación de Responsabilidades:
+
+DTO de Entrada (CreateUserDto): Actúa como un contrato estricto de validación. Asegura que los datos que envía el cliente (como email o password) cumplan con las reglas de negocio antes de tocar la lógica interna.
+
+DTO de Salida (Response): Define exclusivamente qué datos se muestran al cliente, permitiendo ocultar información sensible o irrelevante sin afectar la estructura interna del sistema.
+
+
 * por qué la entidad no debe devolverse a la API
+
+La Entidad (Entity) representa la estructura fiel de la base de datos. Devolverla directamente es una mala práctica de seguridad y diseño porque:
+
+Exposición de datos sensibles: Se podrían filtrar campos como password, salt o deletedAt.
+
+Acoplamiento fuerte: Si se cambia el nombre de una columna en la base de datos, se rompería automáticamente la aplicación del frontend. La API debe ser independiente de cómo se guardan los datos.
+
 * cómo funciona el mapper
+
+El Mapper actúa como un traductor o adaptador entre la capa de persistencia (Entidad) y la capa de presentación (DTO).
 
 
