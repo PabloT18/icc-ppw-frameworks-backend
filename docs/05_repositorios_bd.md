@@ -318,5 +318,5 @@ Estos conceptos se aplicarán directamente en:
 
 * [`spring-boot/05_repositorios_bd.md`](../spring-boot/p67/a_dodente/05_repositorios_bd.md)
 * [`nest/05_repositorios_bd.md`](../nest/p67/a_dodente/05_repositorios_bd.md)
-* `05_b_instalacion_postgres_docker.md`
+* [`Docker-Postgres`](../docs/05_b_instalacion_postgres_docker.md)
 
