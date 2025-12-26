@@ -67,6 +67,7 @@ El objetivo es:
    ├── 02_arquitectura_backend.md
    ├── 03_api_rest_conceptos.md
    ├── 04_controladores_servicios.md
+   ├── 05_repositorios_bd.md
    ├── 05_modelos_dtos_validacion.md
    ├── 06_conexion_bd.md
    ├── 07_manejo_errores.md
@@ -85,6 +86,7 @@ El objetivo es:
            ├── 02_estructura_proyecto.md
            ├── 03_api_rest.md
            ├── 04_servicios.md
+           ├── 05_repositorios_persistencia.md
            ├── 05_dtos_validacion.md
            ├── 06_bd_jpa.md
            ├── 07_excepciones.md
