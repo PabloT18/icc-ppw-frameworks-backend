@@ -397,6 +397,7 @@ import { UserEntity } from './entities/user.entity';
   providers: [UsersService],
 })
 export class UsersModule {}
+
 ```
 
 ### **¿Qué hace TypeOrmModule.forFeature()?**
