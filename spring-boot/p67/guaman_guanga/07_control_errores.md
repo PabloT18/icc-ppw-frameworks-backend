@@ -821,3 +821,6 @@ El estudiante debe:
 5. Capturar evidencias desde Bruno para cada caso de prueba.
 
 **3 Capturas en total:**
+![alt text](assets/manejodeerrores1.png)
+![alt text](assets/manejo2.png)
+![alt text](assets/manejo3.png)

@@ -437,7 +437,15 @@ Debe generar errores automáticos al enviar:
 El estudiante entrega:
 
 1. Captura de DTOs con validaciones
+![alt text](assets/Create-Producto.png)
+![alt text](assets/PartialUpdateProductDto.png)
+![alt text](assets/UpdateProductDto.png)
 2. Captura del modelo de dominio completo
+![alt text](assets/dominio1.png)
+![alt text](assets/dominio2.png)
 3. Captura de la respuesta de error al enviar un POST inválido
+![alt text](assets/post-invalido.png)
 4. Captura del CRUD de productos validado correctamente
+![alt text](assets/CRUD-CORRECTO.png)
+![alt text](assets/get-200ok.png)
 

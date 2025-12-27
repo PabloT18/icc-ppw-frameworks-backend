@@ -887,6 +887,9 @@ Para usar el servicio con persistencia real.
 
 # **10. Resultados y evidencias**
 
-## 1. Caputra de `ProductosEntity.java`
-## 2. Caputra de `ProductosRepository.java`
+## 1. Captura de `ProductosEntity.java`
+![alt text](assets/Producto-Entity.png)
+## 2. Captura de `ProductosRepository.java`
+![alt text](assets/REPOSITORI.png)
 ## 3. Capturas de los 5 productos creados en PostgreSQL (DBeaver, VSCode, etc) Sentencia SQL
+![alt text](assets/datos-sql.png)
