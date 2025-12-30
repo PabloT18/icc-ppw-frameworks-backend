@@ -1,4 +1,4 @@
-
+                  
 # **Frameworks Backend**
 
 ## Manual de Trabajo en GitHub 
@@ -66,18 +66,14 @@ El objetivo es:
    ├── 01_conceptos_backend.md
    ├── 02_arquitectura_backend.md
    ├── 03_api_rest_conceptos.md
-   ├── 04_estructura_servidor.md
-   ├── 05_controladores_servicios.md
+   ├── 04_controladores_servicios.md
+   ├── 05_repositorios_bd.md
    ├── 06_modelos_dtos_validacion.md
-   ├── 07_conexion_bd.md
-   ├── 08_manejo_errores.md
-   ├── 09_autenticacion_autorizacion.md
-   ├── 10_documentacion_openapi.md
-   ├── 11_testing_backend.md
-   ├── 12_despliegue_backend.md
-   ├── 13_websockets.md
-   ├── 14_grpc.md
-   └── 15_graphql.md
+   ├── 07_manejo_errores.md
+   ├── 08_autenticacion_autorizacion.md
+   ├── 09_documentacion_openapi.md
+   ├── 10_testing_backend.md
+   ├── 11_despliegue_backend.md
 
 /spring-boot
    └── p67
@@ -85,15 +81,14 @@ El objetivo es:
            ├── 01_configuracion.md
            ├── 02_estructura_proyecto.md
            ├── 03_api_rest.md
-           ├── 04_rutas_controladores.md
-           ├── 05_servicios.md
-           ├── 06_dtos_validacion.md
-           ├── 07_bd_jpa.md
-           ├── 08_excepciones.md
-           ├── 09_seguridad.md
-           ├── 10_swagger.md
-           ├── 11_testing.md
-           └── 12_despliegue.md
+           ├── 04_servicios.md
+           ├── 05_repositorios_persistencia.md
+           ├── 06_modelos_dtos_validacion.md
+           ├── 07_excepciones.md
+           ├── 08_seguridad.md
+           ├── 09_swagger.md
+           ├── 10_testing.md
+           └── 11_despliegue.md
 /nest
    └── p67
        └── estudiante1_estudiante2
