@@ -431,11 +431,35 @@ Cada estudiante debe entregar:
 Incluyendo:
 
 * GET /api/products
+
+<img src="rest2.jpeg" alt="router"> 
+
+
 * GET /api/products/:id
+
+<img src="rest3.jpeg" alt="router"> 
+
+
 * POST /api/products
+
+<img src="rest1.jpeg" alt="router"> 
+
+
 * PUT /api/products/:id
+
+<img src="rest4.jpeg" alt="router"> 
+
+
 * PATCH /api/products/:id
+
+<img src="rest5.jpeg" alt="router"> 
+
+
 * DELETE /api/products/:id
+
+<img src="rest6.jpeg" alt="router"> 
+
+
 
 ### 2. Captura del archivo
 
@@ -443,10 +467,26 @@ Incluyendo:
 
 Mostrando toda la estructura.
 
+
+<img src="rest7.jpeg" alt="router"> 
+
+<img src="rest8.jpeg" alt="router"> 
+
+<img src="rest9.jpeg" alt="router"> 
+
+
 ### 3. Explicación breve
 
 Incluyendo:
 
 * por qué existen DTOs distintos para entrada y salida
+
+Se utilizan DTOs (Data Transfer Objects) separados para aplicar el Principio de Responsabilidad Única. Los DTOs de entrada (CreateDto, UpdateDto) definen estrictamente qué datos permitimos que el usuario nos envíe (por ejemplo, al crear no pedimos ID porque se genera solo), mientras que los DTOs de salida (ResponseDto) estructuran lo que queremos mostrar. Esto evita que el cliente intente modificar campos protegidos o envíe datos basura.
+
 * por qué la entidad nunca se devuelve al cliente
+
+La entidad (Entity) representa la estructura interna de la base de datos y a menudo contiene información sensible o técnica (como contraseñas, fechas de auditoría o relaciones complejas) que no debe exponerse por seguridad. Al usar un DTO de respuesta, filtramos y entregamos solo los datos necesarios, desacoplando la base de datos de la vista pública de la API.
+
 * cómo funciona el mapper
+
+El Mapper actúa como un traductor. Su función es convertir los datos de un formato a otro manualmente o automáticamente.
