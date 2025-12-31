@@ -287,8 +287,6 @@ Cada estudiante debe entregar:
 
 <img src="ser1.jpeg" alt="router"> 
 
-
-
 ### 3. Captura completa del archivo
 
 `ProductServiceImpl.java`
@@ -315,4 +313,3 @@ La arquitectura MVCS (Model-View-Controller-Service) aporta principalmente Separ
 * por qué el controlador ahora está más limpio
 
 El controlador está más limpio porque ahora actúa únicamente como un enrutador o intermediario. Su única función es recibir la petición HTTP, delegar la tarea al servicio y devolver la respuesta al cliente. Ya no contiene bucles, listas en memoria, ni lógica de validación, lo que reduce drásticamente su tamaño y complejidad.
-

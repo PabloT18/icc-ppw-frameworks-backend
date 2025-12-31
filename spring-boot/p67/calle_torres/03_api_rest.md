@@ -459,21 +459,17 @@ Incluyendo:
 
 <img src="rest6.jpeg" alt="router"> 
 
-
-
 ### 2. Captura del archivo
 
 `products.controller.java`
 
 Mostrando toda la estructura.
 
-
 <img src="rest7.jpeg" alt="router"> 
 
 <img src="rest8.jpeg" alt="router"> 
 
 <img src="rest9.jpeg" alt="router"> 
-
 
 ### 3. Explicación breve
 
