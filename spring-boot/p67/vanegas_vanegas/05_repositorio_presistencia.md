@@ -16,7 +16,7 @@
 *Miguel Ángel Vanegas*   
 📧 mvanegasp@est.ups.edu.ec  
 💻 GitHub: [MiguelV145](https://github.com/MiguelV145)  
-*Jose Vanegas*  
+*Jose negas*  
 📧 jvanegasp1@est.ups.edu.ec   
 💻 GitHub: [josevac1](https://github.com/josevac1)
 
