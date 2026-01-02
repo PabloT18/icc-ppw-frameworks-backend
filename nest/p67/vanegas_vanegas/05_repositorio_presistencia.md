@@ -964,6 +964,7 @@ Screenshot del archivo `product.entity.ts` completo
 
 postrevision
 
+![products_enti](./assets/product%20enti%20}.jpeg)
 
 ## **11.2. Captura de ProductsService**
 Screenshot del método `create()` con programación funcional
