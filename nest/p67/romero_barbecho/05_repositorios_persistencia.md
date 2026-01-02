@@ -998,4 +998,4 @@ ORDER BY id;
 | **Configuración** | `TypeOrmModule.forRoot()` | `application.yml` |
 | **Sincronización** | `synchronize: true` | `ddl-auto: update` |
 
-Ambos frameworks siguen principios similares de arquitectura en capas y separación de responsabilidades.
+Ambos frameworks siguen principios similares de arquitectura en capas y separación de responsabilidades
