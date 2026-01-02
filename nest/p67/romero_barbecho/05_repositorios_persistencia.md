@@ -957,11 +957,11 @@ SELECT * FROM products;
 
 ## **11.1. Captura de ProductEntity**
 Screenshot del archivo `product.entity.ts` completo
-![Imagen product.entity](assets/06productentity.png)
+![Imagen product.entity](assets/05productentity.png)
 
 ## **11.2. Captura de ProductsService**
 Screenshot del método `create()` con programación funcional
-![Imagen create()](assets/06create.png)
+![Imagen create()](assets/05create.png)
 ## **11.3. Captura de PostgreSQL**
 Screenshot de consulta SQL mostrando los 5 productos creados:
 ```sql
@@ -969,18 +969,18 @@ SELECT id, name, description, price, stock, "createdAt"
 FROM products 
 ORDER BY id;
 ```
-![Imagen consulta SQL](assets/06consulta.png)
+![Imagen consulta SQL](assets/05consulta.png)
 
 ## **11.4. Capturas de Postman/Thunder Client**
 * POST creando un producto
-![Imagen crear](assets/06crear.png)
+![Imagen crear](assets/05crear.png)
 * GET listando productos
-![Imagen listar](assets/06listar.png)
+![Imagen listar](assets/05listar.png)
 * PUT/PATCH actualizando
-![Imagen put](assets/06put.png)
-![Imagen patch](assets/06patch.png)
+![Imagen put](assets/05put.png)
+![Imagen patch](assets/05patch.png)
 * DELETE eliminando
-![Imagen eliminar](assets/06delete.png)
+![Imagen eliminar](assets/05delete.png)
 ---
 
 ---
