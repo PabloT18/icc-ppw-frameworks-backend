@@ -459,7 +459,20 @@ Debe fallar.
 El estudiante entrega:
 
 1. Captura de DTOs con validaciones
+
+<img src="model1.jpeg" alt="router"> 
+
+
 2. Captura del modelo de dominio Product
+
+<img src="model2.jpeg" alt="router"> 
+
+
 3. Captura de error JSON al enviar producto inválido
+
+<img src="model3.jpeg" alt="router"> 
+
+
 4. Captura de CRUD funcionando con datos válidos
 
+<img src="model4.jpeg" alt="router"> 
