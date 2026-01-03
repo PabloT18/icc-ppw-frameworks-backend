@@ -13,11 +13,13 @@
 
 ### **Autores**
 
-**Pablo Torres**
+**Valeria Mantilla**
+📧 [amantillac3@est.ups.edu.ec](mailto:amantillac3@est.ups.edu.ec)
+💻 GitHub: [Alanissette16](https://github.com/Alanissette16)
 
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-
-💻 GitHub: PabloT18
+**Claudia Quevedo**
+📧 [cquevedor@ups.edu.ec](mailto:cquevedor@ups.edu.ec)
+💻 GitHub: [clcmono](https://github.com/clcmono)
 
 ---
 
@@ -887,6 +889,13 @@ Para usar el servicio con persistencia real.
 
 # **10. Resultados y evidencias**
 
+## conexión a PostgreSQL:
+![conexion a PostgreSQL](./assets/Conexion.png)
 ## 1. Caputra de `ProductosEntity.java`
+![ProductEntity](./assets/ProductEntity.java.png)
 ## 2. Caputra de `ProductosRepository.java`
+![ProductRepository](./assets/ProductRepository.png)
 ## 3. Capturas de los 5 productos creados en PostgreSQL (DBeaver, VSCode, etc) Sentencia SQL
+![POST 5 productos](./assets/Postman.png)
+![PostgreSQL](./assets/VS.png)
+![BD PostgreSQL](./assets/BD.png)
