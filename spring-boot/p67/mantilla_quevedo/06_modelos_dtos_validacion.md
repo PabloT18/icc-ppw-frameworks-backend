@@ -12,11 +12,13 @@
 
 ### **Autor**
 
-**Pablo Torres**
+**Valeria Mantilla**
+📧 [amantillac3@est.ups.edu.ec](mailto:amantillac3@est.ups.edu.ec)
+💻 GitHub: [Alanissette16](https://github.com/Alanissette16)
 
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-
-💻 GitHub: PabloT18
+**Claudia Quevedo**
+📧 [cquevedor@ups.edu.ec](mailto:cquevedor@ups.edu.ec)
+💻 GitHub: [clcmono](https://github.com/clcmono)
 
 ---
 
@@ -437,7 +439,20 @@ Debe generar errores automáticos al enviar:
 El estudiante entrega:
 
 1. Captura de DTOs con validaciones
+![alt text](./assets/CreateDTO.png)
+![alt text](./assets/PartialDTO.png)
+![alt text](./assets/UpdateDTO.png)
 2. Captura del modelo de dominio completo
+![parte 1](<./assets/model part1.png>)
+![parte 2](<./assets/model part2.png>)
 3. Captura de la respuesta de error al enviar un POST inválido
+![En Postman](./assets/ValidacionPostman.png)
+![En VS](./assets/PWS.png)
 4. Captura del CRUD de productos validado correctamente
-
+![POST](./assets/post1.png)
+![GET TODOS](<./assets/GET ps.png>)
+![GET del 6](<./assets/GET 6.png>)
+![PUT del 6](<./assets/PUT 6.png>)
+![PATCH del 6](<./assets/Patch 6.png>)
+![DELETE 6](<./assets/Delete 6.png>)
+![Evidencia](<./assets/Get todo.png>)
