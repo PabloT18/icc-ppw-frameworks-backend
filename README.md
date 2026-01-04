@@ -67,16 +67,13 @@ El objetivo es:
    ├── 02_arquitectura_backend.md
    ├── 03_api_rest_conceptos.md
    ├── 04_controladores_servicios.md
-   ├── 05_modelos_dtos_validacion.md
-   ├── 06_conexion_bd.md
+   ├── 05_repositorios_bd.md
+   ├── 06_modelos_dtos_validacion.md
    ├── 07_manejo_errores.md
    ├── 08_autenticacion_autorizacion.md
    ├── 09_documentacion_openapi.md
    ├── 10_testing_backend.md
    ├── 11_despliegue_backend.md
-   ├── 12_websockets.md
-   ├── 13_grpc.md
-   └── 14_graphql.md
 
 /spring-boot
    └── p67
@@ -85,8 +82,8 @@ El objetivo es:
            ├── 02_estructura_proyecto.md
            ├── 03_api_rest.md
            ├── 04_servicios.md
-           ├── 05_dtos_validacion.md
-           ├── 06_bd_jpa.md
+           ├── 05_repositorios_persistencia.md
+           ├── 06_modelos_dtos_validacion.md
            ├── 07_excepciones.md
            ├── 08_seguridad.md
            ├── 09_swagger.md
