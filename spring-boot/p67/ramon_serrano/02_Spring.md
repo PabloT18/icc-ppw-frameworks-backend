@@ -359,7 +359,7 @@ utils/
 
 ---
 
-![alt text](assets\IDE.png)
+![alt text](assets/IDE.png)
 
 ### 2. Captura del archivo `Fundamentos01Application.java`
 
@@ -369,7 +369,7 @@ Se debe verificar:
 * la ubicación correcta que permite ComponentScan
 
 ---
-![alt text](assets\JAVA.png)
+![alt text](assets/JAVA.png)
 
 ### 3. Captura del árbol generado desde terminal:
 
@@ -381,7 +381,7 @@ tree src/main/java/ec/edu/ups/icc/fundamentos01
 
 ---
 
-![alt text](assets\consolaRama.png)
+![alt text](assets/consolaRama.png)
 
 ### 4. Explicación breve
 

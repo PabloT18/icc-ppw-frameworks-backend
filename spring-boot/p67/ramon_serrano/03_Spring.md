@@ -431,29 +431,29 @@ Cada estudiante debe entregar:
 Incluyendo:
 
 * GET /api/products
-![alt text](assets\GET_PRUDUCTS.png)
+![alt text](assets/GET_PRUDUCTS.png)
 
 
 * GET /api/products/:id
-![alt text](assets\GET_PRUDUST_ID.png)
+![alt text](assets/GET_PRUDUST_ID.png)
 
 * POST /api/products
-![alt text](assets\POST_PRODUCTS.png)
+![alt text](assets/POST_PRODUCTS.png)
 
 * PUT /api/products/:id
-![alt text](assets\PUT_PRODUCTS.png)
+![alt text](assets/PUT_PRODUCTS.png)
 
 * PATCH /api/products/:id
-![alt text](assets\PACTH.png)
+![alt text](assets/PACTH.png)
 
 * DELETE /api/products/:id
-![alt text](assets\DELETED.png)
+![alt text](assets/DELETED.png)
 
 ### 2. Captura del archivo
 
 `products.controller.java`
 
-![alt text](assets\CONTROLLER.png)
+![alt text](assets/CONTROLLER.png)
 Mostrando toda la estructura.
 
 ### 3. Explicación breve

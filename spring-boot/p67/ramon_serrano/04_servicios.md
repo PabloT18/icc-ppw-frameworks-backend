@@ -285,17 +285,17 @@ Cada estudiante debe entregar:
 
 `products.controller.java`
 
-![alt text](assets\constructor1.png)
-![alt text](assets\constructor2.png)
+![alt text](assets/constructor1.png)
+![alt text](assets/constructor2.png)
 
 
 ### 3. Captura completa del archivo
 
 `ProductServiceImpl.java`
 
-![alt text](assets\iml1.png)
+![alt text](assets/iml1.png)
 
-![alt text](assets\impl2.png)
+![alt text](assets/impl2.png)
 
 
 ### 4. Explicación breve

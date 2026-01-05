@@ -531,7 +531,7 @@ Cada estudiante o grupo debe completar su archivo agregando:
 
 Salida del comando `java -version`.
 
-![alt text](assets\java_version.png)
+![alt text](assets/java_version.png)
 
 
 ### 2. Captura del servidor Spring Boot ejecutándose
@@ -542,11 +542,11 @@ Debe mostrarse:
 :: Spring Boot :: (v4.0.0)
 Tomcat started on port 8080
 ```
-![alt text](assets\spring.png)
+![alt text](assets/spring.png)
 ### 3. Captura del endpoint `/api/status` funcionando en el navegador o Postman o Bruno
 
 Debe incluir la respuesta JSON.
-![alt text](assets\salida_spring.png)
+![alt text](assets/salida_spring.png)
 ### 4. Captura del siguiente comando en terminal 
 
 ```bash
@@ -556,7 +556,7 @@ ls ./src/main/java/ec/edu/ups/icc/fundamentos01/controllers/
 Mostrando:
 
 * el archivo `StatusController.java`
-![alt text](assets\ls.png)
+![alt text](assets/ls.png)
 
 ### 5. Explicación breve escrita por el estudiante
 

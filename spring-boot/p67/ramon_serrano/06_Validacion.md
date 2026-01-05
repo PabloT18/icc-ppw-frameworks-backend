@@ -438,24 +438,24 @@ El estudiante entrega:
 
 1. Captura de DTOs con validaciones
 * creat
-![alt text](assets\creat.png)
+![alt text](assets/creat.png)
 * update
-![alt text](assets\update.png)
+![alt text](assets/update.png)
 
 
 2. Captura del modelo de dominio completo
-![alt text](assets\product.png)
+![alt text](assets/product.png)
 
-![alt text](assets\product2.png)
+![alt text](assets/product2.png)
 
 3. Captura de la respuesta de error al enviar un POST inválido
-![alt text](assets\postinvalido.png)
+![alt text](assets/postinvalido.png)
 
 4. Captura del CRUD de productos validado correctamente
-![alt text](assets\creat.png)
-![alt text](assets\getF.png)
-![alt text](assets\pachtF.png)
-![alt text](assets\partial.png)
-![alt text](assets\postF.png)
-![alt text](assets\putF.png)
-![alt text](assets\update.png)
+![alt text](assets/creat.png)
+![alt text](assets/getF.png)
+![alt text](assets/pachtF.png)
+![alt text](assets/partial.png)
+![alt text](assets/postF.png)
+![alt text](assets/putF.png)
+![alt text](assets/update.png)

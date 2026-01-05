@@ -888,11 +888,11 @@ Para usar el servicio con persistencia real.
 # **10. Resultados y evidencias**
 
 ## 1. Caputra de `ProductosEntity.java`
-![alt text](assets\Entities.png)
+![alt text](assets/Entities.png)
 
 ## 2. Caputra de `ProductosRepository.java`
-![alt text](assets\repositories.png)
+![alt text](assets/repositories.png)
 
 ## 3. Capturas de los 5 productos creados en PostgreSQL (DBeaver, VSCode, etc) Sentencia SQL
-![alt text](assets\Productos.png)
+![alt text](assets/Productos.png)
 
