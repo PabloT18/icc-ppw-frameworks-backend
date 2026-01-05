@@ -441,36 +441,28 @@ El estudiante entrega:
 
 1. Captura de DTOs con validaciones
 
-
-Juan Fernandez  
  ![Listado de productos generados con bruno](./assets/springDtos%20validaciones.png)
 
 2. Captura del modelo de dominio completo
 
 
-Juan Fernandez  
  ![Listado de productos generados con bruno](./assets/springModelo.png)
 
 3. Captura de la respuesta de error al enviar un POST inválido
 
-Juan Fernandez  
  ![Post invalido realizado en bruno](./assets/springPostInvalido.png)
 
 4. Captura del CRUD de productos validado correctamente
 
 **Post**
 
-Juan Fernandez  
  ![Post valido realizado en bruno](./assets/springPostProduct.png)
 
 **Put**
 
-Juan Fernandez  
  ![Post valido realizado en bruno](./assets/springPut.png)
 
 **Delete**
-
-Juan Fernandez  
  ![Post valido realizado en bruno](./assets/springdelete.png)
  
 
