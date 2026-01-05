@@ -9,10 +9,13 @@
 ## Práctica 7 (Spring Boot): Manejo Global de Errores y Excepciones
 
 ### Autores
+**Valeria Mantilla**
+📧 [amantillac3@est.ups.edu.ec](mailto:amantillac3@est.ups.edu.ec)
+💻 GitHub: [Alanissette16](https://github.com/Alanissette16)
 
-**Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: PabloT18
+**Claudia Quevedo**
+📧 [cquevedor@ups.edu.ec](mailto:cquevedor@ups.edu.ec)
+💻 GitHub: [clcmono](https://github.com/clcmono)
 
 
 # Introducción
@@ -821,3 +824,6 @@ El estudiante debe:
 5. Capturar evidencias desde Bruno para cada caso de prueba.
 
 **3 Capturas en total:**
+![producto inexistente](<./assets/no encontrado.png>)
+![conflicto lógico](./assets/Repetido.png)
+![error de validación](./assets/validacion.png)
