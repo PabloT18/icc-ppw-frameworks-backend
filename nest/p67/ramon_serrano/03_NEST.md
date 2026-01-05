@@ -1,3 +1,6 @@
+![Portada](assets\PortadaRS.png)
+
+
 # Programación y Plataformas Web
 
 ## Frameworks Backend: NestJS – API REST y CRUD Inicial

@@ -1,0 +1,404 @@
+[1mdiff --git a/nest/p67/a_dodente/05_repositorios_persistencia.md b/nest/p67/a_dodente/05_repositorios_persistencia.md[m
+[1mindex 93cf5e8..c1e0f06 100644[m
+[1m--- a/nest/p67/a_dodente/05_repositorios_persistencia.md[m
+[1m+++ b/nest/p67/a_dodente/05_repositorios_persistencia.md[m
+[36m@@ -1,4 +1,4 @@[m
+[31m-# Programación y Plataformas Web[m
+[32m+[m[32m_# Programación y Plataformas Web[m
+ [m
+ # **NestJS – Persistencia con TypeORM, Entidades, Repositorios y Conexión a Base de Datos**[m
+ [m
+[36m@@ -996,3 +996,4 @@[m [mORDER BY id;[m
+ | **Sincronización** | `synchronize: true` | `ddl-auto: update` |[m
+ [m
+ Ambos frameworks siguen principios similares de arquitectura en capas y separación de responsabilidades.[m
+[32m+[m[32m_[m
+\ No newline at end of file[m
+[1mdiff --git a/nest/p67/ramon_serrano/02_estructura_proyecto.md b/nest/p67/ramon_serrano/02_estructura_proyecto.md[m
+[1mnew file mode 100644[m
+[1mindex 0000000..b8258dd[m
+[1m--- /dev/null[m
+[1m+++ b/nest/p67/ramon_serrano/02_estructura_proyecto.md[m
+[36m@@ -0,0 +1,577 @@[m
+[32m+[m
+[32m+[m[32m# Programación y Plataformas Web[m
+[32m+[m
+[32m+[m[32m# Frameworks Backend: NestJS – Estructura del Proyecto[m
+[32m+[m
+[32m+[m[32m<div align="center">[m
+[32m+[m[32m  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nestjs/nestjs-original.svg" width="100" alt="Nest Logo">[m
+[32m+[m[32m</div>[m
+[32m+[m
+[32m+[m[32m## Práctica 2 (NestJS): Arquitectura Interna, Organización del Proyecto y Estructura Modular[m
+[32m+[m
+[32m+[m[32m### Autores[m
+[32m+[m
+[32m+[m[32m**Pablo Torres**[m
+[32m+[m[32m📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)[m
+[32m+[m[32m💻 GitHub: [PabloT18](https://github.com/PabloT18)[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# 1. Introducción[m
+[32m+[m
+[32m+[m[32mEn la práctica anterior se revisó cómo crear un proyecto NestJS y cómo definir un endpoint básico.[m
+[32m+[m[32mEn esta práctica se estudiará cómo NestJS organiza internamente sus componentes, cómo funciona su arquitectura modular, qué elementos conforman un backend profesional y cómo estructurar el proyecto siguiendo buenas prácticas empresariales.[m
+[32m+[m
+[32m+[m[32mEl objetivo es comprender:[m
+[32m+[m
+[32m+[m[32m* cómo se organiza un proyecto NestJS a nivel de carpetas[m
+[32m+[m[32m* cómo se relacionan módulos, controladores y servicios[m
+[32m+[m[32m* cómo funciona la inyección de dependencias[m
+[32m+[m[32m* cómo dividir la aplicación por dominios[m
+[32m+[m[32m* cómo estandarizar una arquitectura que permita escalar el sistema[m
+[32m+[m
+[32m+[m[32mNestJS está diseñado desde su núcleo para trabajar con:[m
+[32m+[m
+[32m+[m[32m* módulos[m
+[32m+[m[32m* controladores[m
+[32m+[m[32m* servicios[m
+[32m+[m[32m* proveedores[m
+[32m+[m[32m* pipes, filters, interceptors[m
+[32m+[m[32m* componentes reutilizables[m
+[32m+[m
+[32m+[m[32mEsto hace que la estructura del proyecto sea clara, mantenible y adecuada para proyectos grandes.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# 2. ¿Cómo organiza NestJS un proyecto?[m
+[32m+[m
+[32m+[m[32mNestJS sigue tres pilares fundamentales:[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## **1. Arquitectura modular**[m
+[32m+[m
+[32m+[m[32mTodo en NestJS gira alrededor de módulos.[m
+[32m+[m
+[32m+[m[32mUn módulo:[m
+[32m+[m
+[32m+[m[32m* agrupa controladores, servicios y proveedores[m
+[32m+[m[32m* encapsula lógica por dominio[m
+[32m+[m[32m* puede ser importado por otros módulos[m
+[32m+[m[32m* permite mantener el proyecto ordenado[m
+[32m+[m
+[32m+[m[32mEjemplo de módulo inicial:[m
+[32m+[m
+[32m+[m[32m```[m
+[32m+[m[32mAppModule → módulo raíz[m
+[32m+[m[32mStatusModule → módulo creado por el estudiante[m
+[32m+[m[32mUsersModule → módulo del dominio usuarios[m
+[32m+[m[32mProductsModule → módulo del dominio productos[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## **2. Decoradores**[m
+[32m+[m
+[32m+[m[32mNestJS utiliza decoradores para definir comportamientos:[m
+[32m+[m
+[32m+[m[32m| Decorador             | Función                         |[m
+[32m+[m[32m| --------------------- | ------------------------------- |[m
+[32m+[m[32m| `@Module()`           | Declara un módulo               |[m
+[32m+[m[32m| `@Controller()`       | Declara un controlador          |[m
+[32m+[m[32m| `@Get()`, `@Post()`   | Manejan rutas HTTP              |[m
+[32m+[m[32m| `@Injectable()`       | Declara un servicio o proveedor |[m
+[32m+[m[32m| `@Param()`, `@Body()` | Obtienen valores del request    |[m
+[32m+[m
+[32m+[m[32mEsta sintaxis permite un código limpio y expresivo.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## **3. Inyección de dependencias (DI)**[m
+[32m+[m
+[32m+[m[32mNestJS utiliza un contenedor de inyección de dependencias que:[m
+[32m+[m
+[32m+[m[32m* crea instancias de servicios[m
+[32m+[m[32m* administra el ciclo de vida de objetos[m
+[32m+[m[32m* permite reutilizar lógica en otros módulos[m
+[32m+[m[32m* ordena las responsabilidades de manera clara[m
+[32m+[m
+[32m+[m[32mPor ejemplo, un controlador solicita un servicio:[m
+[32m+[m
+[32m+[m[32m```ts[m
+[32m+[m[32mconstructor(private readonly usersService: UsersService) {}[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mNestJS suministra automáticamente la instancia correcta.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# 3. Archivos esenciales de un proyecto NestJS[m
+[32m+[m
+[32m+[m[32m| Archivo             | Función                                                |[m
+[32m+[m[32m| ------------------- | ------------------------------------------------------ |[m
+[32m+[m[32m| `main.ts`           | Punto de entrada del servidor                          |[m
+[32m+[m[32m| `app.module.ts`     | Módulo raíz donde se registran los módulos principales |[m
+[32m+[m[32m| `app.controller.ts` | Controlador raíz                                       |[m
+[32m+[m[32m| `app.service.ts`    | Servicio raíz                                          |[m
+[32m+[m[32m| `nest-cli.json`     | Configuración del CLI                                  |[m
+[32m+[m[32m| `tsconfig.json`     | Configuración de TypeScript                            |[m
+[32m+[m[32m| `package.json`      | Dependencias del proyecto                              |[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# 4. Estructura inicial generada por NestJS[m
+[32m+[m
+[32m+[m[32m```[m
+[32m+[m[32msrc/[m
+[32m+[m[32m ├── app.controller.ts[m
+[32m+[m[32m ├── app.service.ts[m
+[32m+[m[32m ├── app.module.ts[m
+[32m+[m[32m ├── main.ts[m
+[32m+[m[32mtest/[m
+[32m+[m[32mpackage.json[m
+[32m+[m[32mtsconfig.json[m
+[32m+[m[32mnest-cli.json[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mEsta estructura es funcional, pero insuficiente para un proyecto real.[m
+[32m+[m[32mEn adelante se organizará el backend siguiendo una arquitectura modular por dominio.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# 5. Arquitectura MVCS aplicada en NestJS[m
+[32m+[m
+[32m+[m[32mNestJS implementa MVCS de forma natural:[m
+[32m+[m
+[32m+[m[32m| Capa          | Carpeta sugerida             |[m
+[32m+[m[32m| ------------- | ---------------------------- |[m
+[32m+[m[32m| Presentación  | `controllers/`               |[m
+[32m+[m[32m| Negocio       | `services/`                  |[m
+[32m+[m[32m| Dominio       | `entities/`                  |[m
+[32m+[m[32m| Persistencia  | (posterior) ORM/Repositorios |[m
+[32m+[m[32m| Comunicación  | `dtos/`                      |[m
+[32m+[m[32m| Configuración | `config/`                    |[m
+[32m+[m[32m| Utilidades    | `utils/`                     |[m
+[32m+[m
+[32m+[m[32mA diferencia de otros frameworks, NestJS NO distribuye estas carpetas de manera automática, sino que permite organizarlas dentro de **módulos por dominio**.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# 6. Estructura modular recomendada (proyecto grande)[m
+[32m+[m
+[32m+[m[32mSe recomienda organizar el proyecto por **dominios**, replicando la estructura de una aplicación real.[m
+[32m+[m
+[32m+[m[32mEstructura principal:[m
+[32m+[m
+[32m+[m[32m```[m
+[32m+[m[32msrc/[m
+[32m+[m[32m ├── config/[m
+[32m+[m[32m ├── utils/[m
+[32m+[m[32m ├── users/[m
+[32m+[m[32m ├── products/[m
+[32m+[m[32m ├── auth/[m
+[32m+[m[32m └── app.module.ts[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mCada dominio contiene:[m
+[32m+[m
+[32m+[m[32m```[m
+[32m+[m[32musers/[m
+[32m+[m[32m  ├── controllers/[m
+[32m+[m[32m  ├── services/[m
+[32m+[m[32m  ├── dtos/[m
+[32m+[m[32m  ├── entities/[m
+[32m+[m[32m  ├── mappers/[m
+[32m+[m[32m  ├── utils/[m
+[32m+[m[32m  └── users.module.ts[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mEsta arquitectura:[m
+[32m+[m
+[32m+[m[32m* facilita asignar módulos por grupos de estudiantes[m
+[32m+[m[32m* escala sin desorden[m
+[32m+[m[32m* permite que cada dominio crezca sin afectar otros[m
+[32m+[m[32m* imita la estructura de microservicios pero dentro de un monolito modular[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# 7. Flujo interno de NestJS dentro de esta estructura[m
+[32m+[m
+[32m+[m[32m```[m
+[32m+[m[32mHTTP Request → Nest Runtime[m
+[32m+[m[32m        ↓[m
+[32m+[m[32mModule Resolver[m
+[32m+[m[32m        ↓[m
+[32m+[m[32mController (users/controllers)[m
+[32m+[m[32m        ↓[m
+[32m+[m[32mService (users/services)[m
+[32m+[m[32m        ↓[m
+[32m+[m[32mBase de Datos (posterior)[m
+[32m+[m[32m        ↓[m
+[32m+[m[32mDTO o respuesta JSON[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mNestJS utiliza su motor interno para:[m
+[32m+[m
+[32m+[m[32m* encontrar el módulo correcto[m
+[32m+[m[32m* inyectar el servicio solicitado[m
+[32m+[m[32m* procesar decoradores[m
+[32m+[m[32m* manejar tuberías, filtros, interceptores[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# 8. Actividad práctica del tema 02[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m[32m## 1. Crear carpetas base para configuración y utilidades[m
+[32m+[m
+[32m+[m[32m**Estas carpetas NO tienen comandos CLI específicos, crear manualmente:**[m
+[32m+[m
+[32m+[m[32m```bash[m
+[32m+[m[32m# Desde la raíz del proyecto[m
+[32m+[m[32mmkdir src/config[m
+[32m+[m[32mmkdir src/utils[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mEstructura:[m
+[32m+[m[32m```[m
+[32m+[m[32msrc/[m
+[32m+[m[32m  ├── config/     # Configuraciones globales (BD, env, etc.)[m
+[32m+[m[32m  ├── utils/      # Funciones auxiliares reutilizables[m
+[32m+[m[32m  └── app.module.ts[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## 2. Generar módulos de dominio usando NestJS CLI[m
+[32m+[m
+[32m+[m[32m**Usar comandos oficiales de NestJS para generar módulos completos:**[m
+[32m+[m
+[32m+[m[32m**EN LA PRACTICA SE DEBEN CREAR 3 MÓDULOS: `users`, `products` y `auth`.**[m
+[32m+[m[32m**PARA  `users`, `products` VER COMANDOS DE  (3. Crear subcarpetas adicionales dentro de cada módulo)**[m[41m [m
+[32m+[m[32m**PARA `auth` SE MUESTRA COMPLETO A CONTINUACIÓN (VERISON ESTANDAR):**[m
+[32m+[m
+[32m+[m[32m### Generar módulo de Auth[m
+[32m+[m
+[32m+[m[32m```bash[m
+[32m+[m[32m# Generar el módulo[m
+[32m+[m[32mnest generate module auth[m
+[32m+[m
+[32m+[m[32m# Generar el controlador[m
+[32m+[m[32mnest generate controller auth[m
+[32m+[m
+[32m+[m[32m# Generar el servicio[m
+[32m+[m[32mnest generate service auth[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m**Forma abreviada:**[m
+[32m+[m[32m```bash[m
+[32m+[m[32mnest g mo auth     # module[m
+[32m+[m[32mnest g co auth     # controller[m
+[32m+[m[32mnest g s auth      # service[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m**Resultado automático:**[m
+[32m+[m[32m```[m
+[32m+[m[32msrc/auth/[m
+[32m+[m[32m  ├── auth.controller.ts[m
+[32m+[m[32m  ├── auth.controller.spec.ts[m
+[32m+[m[32m  ├── auth.service.ts[m
+[32m+[m[32m  ├── auth.service.spec.ts[m
+[32m+[m[32m  └── auth.module.ts[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m```bash[m
+[32m+[m[32m# Desde src/users/[m
+[32m+[m[32mmkdir dtos[m
+[32m+[m[32mmkdir entities[m
+[32m+[m[32mmkdir mappers[m
+[32m+[m[32mmkdir utils[m
+[32m+[m[32m```[m
+[32m+[m[32mEstructura final de `auth/` versión estandar:[m
+[32m+[m[32m```auth/[m
+[32m+[m[32m  ├── controllers/[m
+[32m+[m[32m  ├── services/[m
+[32m+[m[32m  ├── dtos/           # ← Manual[m
+[32m+[m[32m  ├── entities/       # ← Manual[m
+[32m+[m[32m  ├── mappers/        # ← Manual[m
+[32m+[m[32m  ├── utils/          # ← Manual[m
+[32m+[m[32m  ├── auth.controller.ts[m
+[32m+[m[32m  ├── auth.controller.spec.ts[m
+[32m+[m[32m  ├── auth.service.ts[m
+[32m+[m[32m  ├── auth.service.spec.ts[m
+[32m+[m[32m  └── auth.module.ts[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m **El CLI automáticamente**:[m
+[32m+[m[32m- Crea el módulo con la estructura correcta[m
+[32m+[m[32m- Registra el controller y service en `auth.module.ts`[m
+[32m+[m[32m- Importa el módulo en `app.module.ts`[m
+[32m+[m[32m- Añade decoradores necesarios[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## 3. Crear subcarpetas adicionales dentro de cada módulo[m
+[32m+[m
+[32m+[m[32m**Las subcarpetas para DTOs, entities, mappers y utils NO tienen comandos CLI, crear manualmente:**[m
+[32m+[m
+[32m+[m[32mCrear perviamente los modulos `users` y `products` con los comandos CLI indicados anteriormente.[m
+[32m+[m
+[32m+[m[32m### Dentro del módulo `users/`, `products/`:[m
+[32m+[m
+[32m+[m
+[32m+[m[32m**Nota**: Se deria organizar en subcarpetas `controllers/` y `services/` si se generan múltiples controladores o servicios en el futuro.[m
+[32m+[m
+[32m+[m[32m```bash[m
+[32m+[m[32m# Opción con estructura más organizada[m
+[32m+[m[32mnest g mo users[m
+[32m+[m[32mmkdir src/users/controllers[m
+[32m+[m[32mmkdir src/users/services[m
+[32m+[m[32mmkdir src/users/dtos[m
+[32m+[m[32mmkdir src/users/entities[m
+[32m+[m[32mmkdir src/users/mappers[m
+[32m+[m[32mmkdir src/users/utils[m
+[32m+[m
+[32m+[m[32m# Luego generar componentes en sus carpetas[m
+[32m+[m[32mnest g co users/controllers/users --flat[m
+[32m+[m[32mnest g s users/services/users --flat[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m## 4. Verificar archivos generados automáticamente[m
+[32m+[m
+[32m+[m[32m### `users/users.controller.ts` (generado por CLI):[m
+[32m+[m
+[32m+[m[32m```ts[m
+[32m+[m[32mimport { Controller } from '@nestjs/common';[m
+[32m+[m
+[32m+[m[32m@Controller('users')[m
+[32m+[m[32mexport class UsersController {}[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m### `users/users.service.ts` (generado por CLI):[m
+[32m+[m
+[32m+[m[32m```ts[m
+[32m+[m[32mimport { Injectable } from '@nestjs/common';[m
+[32m+[m
+[32m+[m[32m@Injectable()[m
+[32m+[m[32mexport class UsersService {}[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m### `users/users.module.ts` (generado por CLI):[m
+[32m+[m
+[32m+[m[32m```ts[m
+[32m+[m[32mimport { Module } from '@nestjs/common';[m
+[32m+[m[32mimport { UsersController } from './users.controller';[m
+[32m+[m[32mimport { UsersService } from './users.service';[m
+[32m+[m
+[32m+[m[32m@Module({[m
+[32m+[m[32m  controllers: [UsersController],[m
+[32m+[m[32m  providers: [UsersService],[m
+[32m+[m[32m})[m
+[32m+[m[32mexport class UsersModule {}[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m### `app.module.ts` (actualizado automáticamente por CLI):[m
+[32m+[m
+[32m+[m[32m```

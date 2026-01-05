@@ -1,3 +1,4 @@
+![Portada](assets\PortadaRS.png)
 
 # Programación y Plataformas Web
 
@@ -9,11 +10,15 @@
 
 ## Práctica 2 (NestJS): Arquitectura Interna, Organización del Proyecto y Estructura Modular
 
-### Autores
+## **Autores**
 
-**Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: [PabloT18](https://github.com/PabloT18)
+**Cinthya Ramón**  
+📧 [cramonm1@est.ups.edu.ec](mailto:cramonm1@est.ups.edu.ec)  
+💻 GitHub: [CinthyLu](https://github.com/CinthyLu)
+
+**John Serrano**  
+📧 [jserranom2@est.ups.edu.ec](mailto:jserranom2@est.ups.edu.ec)  
+💻 GitHub: [Johnserrano09](https://github.com/Johnserrano09)
 
 ---
 
