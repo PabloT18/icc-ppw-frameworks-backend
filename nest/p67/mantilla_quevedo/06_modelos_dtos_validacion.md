@@ -10,13 +10,15 @@
 
 ## **Práctica 6 (NestJS): Diseño de Modelos, DTOs y Validación Profesional**
 
-### **Autor**
+### **Autores**
 
-**Pablo Torres**
+**Valeria Mantilla**
+📧 [amantillac3@est.ups.edu.ec](mailto:amantillac3@est.ups.edu.ec)
+💻 GitHub: [Alanissette16](https://github.com/Alanissette16)
 
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-
-💻 GitHub: PabloT18
+**Claudia Quevedo**
+📧 [cquevedor@ups.edu.ec](mailto:cquevedor@ups.edu.ec)
+💻 GitHub: [clcmono](https://github.com/clcmono)
 
 
 # **1. Introducción**
@@ -459,7 +461,11 @@ Debe fallar.
 El estudiante entrega:
 
 1. Captura de DTOs con validaciones
+![alt text](./assets/6validators1.png)
+![alt text](./assets/6validators2.png)
 2. Captura del modelo de dominio Product
+![alt text](./assets/6dominio.png)
 3. Captura de error JSON al enviar producto inválido
+![alt text](./assets/6error400.png)
 4. Captura de CRUD funcionando con datos válidos
-
+![alt text](./assets/6crud1.png)

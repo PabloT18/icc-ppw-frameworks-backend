@@ -10,9 +10,13 @@
 
 ### Autores
 
-**Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: PabloT18
+**Valeria Mantilla**
+📧 [amantillac3@est.ups.edu.ec](mailto:amantillac3@est.ups.edu.ec)
+💻 GitHub: [Alanissette16](https://github.com/Alanissette16)
+
+**Claudia Quevedo**
+📧 [cquevedor@ups.edu.ec](mailto:cquevedor@ups.edu.ec)
+💻 GitHub: [clcmono](https://github.com/clcmono)
 
 
 # Introducción
@@ -907,6 +911,8 @@ El estudiante debe:
 
 **3 Capturas en total:**
 - Captura 1: Error 404 (producto no encontrado)
+![alt text](./assets/7notfound404.png)
 - Captura 2: Error 409 (conflicto de negocio)
+![alt text](./assets/7conflict409.png)
 - Captura 3: Error 400 (validación con details)
-
+![alt text](./assets/7badrequest400.png)

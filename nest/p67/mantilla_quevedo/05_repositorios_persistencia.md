@@ -11,11 +11,13 @@
 
 ### **Autores**
 
-**Pablo Torres**
+**Valeria Mantilla**
+📧 [amantillac3@est.ups.edu.ec](mailto:amantillac3@est.ups.edu.ec)
+💻 GitHub: [Alanissette16](https://github.com/Alanissette16)
 
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-
-💻 GitHub: PabloT18
+**Claudia Quevedo**
+📧 [cquevedor@ups.edu.ec](mailto:cquevedor@ups.edu.ec)
+💻 GitHub: [clcmono](https://github.com/clcmono)
 
 ---
 
@@ -960,10 +962,11 @@ SELECT * FROM products;
 
 ## **11.1. Captura de ProductEntity**
 Screenshot del archivo `product.entity.ts` completo
+![alt text](./assets/5product.entity.png)
 
 ## **11.2. Captura de ProductsService**
 Screenshot del método `create()` con programación funcional
-
+![alt text](./assets/5create.png)
 ## **11.3. Captura de PostgreSQL**
 Screenshot de consulta SQL mostrando los 5 productos creados:
 ```sql
@@ -971,9 +974,10 @@ SELECT id, name, description, price, stock, "createdAt"
 FROM products 
 ORDER BY id;
 ```
-
+![alt text](./assets/5selectproducts-1.png)
 ## **11.4. Capturas de Postman/Thunder Client**
 * POST creando un producto
+![alt text](./assets/5crearproducto.png)
 * GET listando productos
 * PUT/PATCH actualizando
 * DELETE eliminando
