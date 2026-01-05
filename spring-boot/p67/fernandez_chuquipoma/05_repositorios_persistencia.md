@@ -892,15 +892,12 @@ Para usar el servicio con persistencia real.
 
 ## 1. Caputra de `ProductosEntity.java`
 
-Juan Fernandez  
  ![Codigo de Producto Entity](./assets/springProductoEntity.png)
  
 ## 2. Caputra de `ProductosRepository.java`
 
-Juan Fernandez  
  ![Codigo de Producto Repository](./assets/springRepository.png)
 
 ## 3. Capturas de los 5 productos creados en PostgreSQL (DBeaver, VSCode, etc) Sentencia SQL
-
-Juan Fernandez  
+ 
  ![Listado de productos generados con bruno](./assets/springListado1.png)
