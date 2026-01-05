@@ -816,11 +816,11 @@ El estudiante debe:
 3. Probar:
    * producto inexistente
 
-   ![alt text](assets\noencotrado.png)
+   ![alt text](assets/noencotrado.png)
    * conflicto lógico (Crear una regla de negocio como: "No se puede crear un producto con nombre duplicado" Crear otra no nombre duplicado)
-   ![alt text](assets\registrado.png)
+   ![alt text](assets/registrado.png)
    * error de validación (enviar datos mal formados)
-   ![alt text](assets\invalido.png)
+   ![alt text](assets/invalido.png)
 4. Verificar que **todas** las respuestas cumplen el mismo formato
 5. Capturar evidencias desde Bruno para cada caso de prueba.
 
