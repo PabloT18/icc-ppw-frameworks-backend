@@ -829,15 +829,12 @@ El estudiante debe:
 **3 Capturas en total:**
 - Captura 1: Error 404 (producto no encontrado)
 
-Juan Fernandez
 ![Bruno error 404](./assets/Springerror404.png)
 
 - Captura 2: Error 409 (conflicto de negocio)
 
-Juan Fernandez
 ![Bruno error 409](./assets/Springerror409.png)
 
 - Captura 3: Error 400 (validación con details)
 
-Juan Fernandez
 ![Bruno error 400](./assets/springPostInvalido.png)
