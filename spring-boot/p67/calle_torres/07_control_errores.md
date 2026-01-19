@@ -821,3 +821,17 @@ El estudiante debe:
 5. Capturar evidencias desde Bruno para cada caso de prueba.
 
 **3 Capturas en total:**
+
+Prueba de ERROR 404
+
+<img src="err1.jpeg" alt="router"> 
+
+
+Prueba de ERROR 409
+
+<img src="err2.jpeg" alt="router"> 
+
+
+Prueba de ERROR 400
+
+<img src="err3.jpeg" alt="router"> 

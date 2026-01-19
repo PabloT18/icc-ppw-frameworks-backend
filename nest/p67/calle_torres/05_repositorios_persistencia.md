@@ -961,8 +961,15 @@ SELECT * FROM products;
 ## **11.1. Captura de ProductEntity**
 Screenshot del archivo `product.entity.ts` completo
 
+
+<img src="repor1.jpeg" alt="router"> 
+
+
 ## **11.2. Captura de ProductsService**
 Screenshot del método `create()` con programación funcional
+
+<img src="repor2.jpeg" alt="router"> 
+
 
 ## **11.3. Captura de PostgreSQL**
 Screenshot de consulta SQL mostrando los 5 productos creados:
@@ -971,12 +978,26 @@ SELECT id, name, description, price, stock, "createdAt"
 FROM products 
 ORDER BY id;
 ```
+<img src="repor3.jpeg" alt="router"> 
+
+
 
 ## **11.4. Capturas de Postman/Thunder Client**
 * POST creando un producto
+
+<img src="repor4Uno.jpeg" alt="router"> 
+
 * GET listando productos
+
+<img src="repor4Dos.jpeg" alt="router"> 
+
 * PUT/PATCH actualizando
+
+<img src="repor4Tres.jpeg" alt="router"> 
+
 * DELETE eliminando
+
+<img src="repor4Cuatro.jpeg" alt="router"> 
 
 ---
 

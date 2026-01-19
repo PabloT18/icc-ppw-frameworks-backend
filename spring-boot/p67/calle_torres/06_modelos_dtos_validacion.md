@@ -437,7 +437,23 @@ Debe generar errores automáticos al enviar:
 El estudiante entrega:
 
 1. Captura de DTOs con validaciones
+
+<img src="va1.jpeg" alt="router"> 
+
+
 2. Captura del modelo de dominio completo
+
+<img src="va2.jpeg" alt="router"> 
+
+<img src="vados.jpeg" alt="router"> 
+
+
+
 3. Captura de la respuesta de error al enviar un POST inválido
+
+<img src="va3.jpeg" alt="router"> 
+
+
 4. Captura del CRUD de productos validado correctamente
 
+<img src="va4.jpeg" alt="router"> 

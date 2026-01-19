@@ -888,5 +888,17 @@ Para usar el servicio con persistencia real.
 # **10. Resultados y evidencias**
 
 ## 1. Caputra de `ProductosEntity.java`
+
+
+<img src="per1.jpeg" alt="router"> 
+
+
 ## 2. Caputra de `ProductosRepository.java`
+
+<img src="per2.jpeg" alt="router"> 
+
+
 ## 3. Capturas de los 5 productos creados en PostgreSQL (DBeaver, VSCode, etc) Sentencia SQL
+
+
+<img src="per3.jpeg" alt="router"> 

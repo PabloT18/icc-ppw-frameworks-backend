@@ -544,6 +544,12 @@ auth/
 
 ---
 
+<img src="m1.jpeg" alt="router"> 
+
+<img src="m2.jpeg" alt="router"> 
+
+
+
 ### 2. Captura del archivo `users.module.ts`
 
 Verificando que:
@@ -554,6 +560,9 @@ Verificando que:
 
 ---
 
+<img src="m3.jpeg" alt="router"> 
+
+
 ### 3. Captura del árbol desde terminal
 
 Ejemplo:
@@ -563,6 +572,9 @@ tree src/users
 ```
 
 ---
+
+<img src="m4.jpeg" alt="router"> 
+
 
 ### 4. Explicación breve escrita por el estudiante
 
@@ -575,3 +587,4 @@ Debe describir:
 ---
 
 
+La arquitectura modular de NestJS nos permite organizar el código por dominios (como Users, Products, Auth), lo que facilita el mantenimiento y la escalabilidad. Al separar los Controladores (que manejan las rutas HTTP) de los Servicios (que manejan la lógica de negocio) en subcarpetas, mantenemos el principio de responsabilidad única. Esto hace que el proyecto sea más ordenado y fácil de entender, similar a como funcionan los microservicios, pero dentro de una sola aplicación.

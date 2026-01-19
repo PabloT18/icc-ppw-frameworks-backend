@@ -907,6 +907,15 @@ El estudiante debe:
 
 **3 Capturas en total:**
 - Captura 1: Error 404 (producto no encontrado)
+
+<img src="erre1.jpeg" alt="router"> 
+
+
 - Captura 2: Error 409 (conflicto de negocio)
+
+<img src="erre2.jpeg" alt="router"> 
+
+
 - Captura 3: Error 400 (validación con details)
 
+<img src="erre3.jpeg" alt="router"> 

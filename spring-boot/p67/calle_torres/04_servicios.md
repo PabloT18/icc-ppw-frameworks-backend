@@ -285,13 +285,31 @@ Cada estudiante debe entregar:
 
 `products.controller.java`
 
+<img src="ser1.jpeg" alt="router"> 
+
 ### 3. Captura completa del archivo
 
 `ProductServiceImpl.java`
 
+<img src="ser2.jpeg" alt="router"> 
+
+<img src="ser3.jpeg" alt="router"> 
+
+<img src="ser4.jpeg" alt="router"> 
+
+
+
+
 ### 4. Explicación breve
 
 * por qué se usa un servicio
+
+Se utiliza un Servicio (@Service) para encapsular toda la lógica de negocio (reglas, validaciones, gestión de datos) en un solo lugar, separándola de la capa web. Esto permite que el controlador no tenga que saber "cómo" se procesan los datos, sino solo "a quién" pedírselos.
+
 * qué ventajas aporta MVCS
+
+La arquitectura MVCS (Model-View-Controller-Service) aporta principalmente Separación de Responsabilidades. Esto hace que el código sea más escalable (fácil de crecer), reutilizable (si otro controlador necesita productos, solo llama al servicio) y facilita las pruebas unitarias, ya que se puede probar la lógica del servicio sin necesidad de levantar el servidor web completo.
+
 * por qué el controlador ahora está más limpio
 
+El controlador está más limpio porque ahora actúa únicamente como un enrutador o intermediario. Su única función es recibir la petición HTTP, delegar la tarea al servicio y devolver la respuesta al cliente. Ya no contiene bucles, listas en memoria, ni lógica de validación, lo que reduce drásticamente su tamaño y complejidad.
