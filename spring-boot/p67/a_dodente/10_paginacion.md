@@ -955,32 +955,25 @@ GET /api/products?sort=invalidField,asc  # Campo no permitido
 
 # **9. Resultados y Evidencias Requeridas**
 
-## **9.1. Evidencias de implementación**
-1. **Captura de ProductController.java** con endpoints paginados implementados
-2. **Captura de ProductService.java** con métodos de paginación
-3. **Captura de ProductRepository.java** con consultas @Query + Pageable
-4. **Captura de SQL generado** mostrando LIMIT y OFFSET
+## **9.1. Datos para revisión**
 
-## **9.2. Evidencias de funcionamiento**
+**Usar un dataset de al menos 1000 productos**:
+Crear un script de carga masiva para poblar la base de datos con datos variados:
+- 20+ productos por usuario
+- 10+ productos por categoría  
+- Precios variados ($10 - $5000)
+- Nombres con texto buscable
+
+## **9.2. Evidencias de funcionamiento** Caputuras de Postman Bruno o similar mostrando respuestas correctas
 1. **Page response**: `GET /api/products?page=0&size=5` mostrando metadatos completos
 2. **Slice response**: `GET /api/products/slice?page=0&size=5` sin totalElements
 3. **Filtros + paginación**: `GET /api/products/search?name=laptop&page=0&size=3`
 4. **Ordenamiento**: `GET /api/products?sort=price,desc&page=1&size=5`
 
 ## **9.3. Evidencias de performance**
-1. **Índices**: Captura de `EXPLAIN` mostrando uso de índices
-2. **Comparación**: Tiempos de respuesta Page vs Slice
-3. **Consultas SQL**: Logs mostrando consultas COUNT automáticas
+1. **Comparación**: Tiempos de respuesta Page vs Slice
 
-## **9.4. Datos para revisión**
-
-**Usar un dataset de al menos 100 productos**:
-- 20+ productos por usuario
-- 10+ productos por categoría  
-- Precios variados ($10 - $5000)
-- Nombres con texto buscable
-
-**Consultas de prueba con volumen**:
+**Consultas de prueba con volumen**: para cada uno Page y Slice
 1. Primera página de productos (page=0, size=10)
 2. Página intermedia (page=5, size=10) 
 3. Últimas páginas para verificar performance
