@@ -959,8 +959,8 @@ GET /api/products?sort=invalidField,asc  # Campo no permitido
 
 **Usar un dataset de al menos 1000 productos**:
 Crear un script de carga masiva para poblar la base de datos con datos variados:
-- 20+ productos por usuario
-- 10+ productos por categoría  
+- al menos 5 usuarios
+- alemnos 2 categorias por producto  
 - Precios variados ($10 - $5000)
 - Nombres con texto buscable
 
