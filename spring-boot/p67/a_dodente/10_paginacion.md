@@ -532,11 +532,16 @@ public class ProductServiceImpl implements ProductService {
         dto.user.name = product.getOwner().getName();
         dto.user.email = product.getOwner().getEmail();
         
-        // Información de la categoría
-        dto.category = new ProductResponseDto.CategoryResponseDto();
-        dto.category.id = product.getCategory().getId();
-        dto.category.name = product.getCategory().getName();
-        dto.category.description = product.getCategory().getDescription();
+        // Información de las categorías (relación Many-to-Many)
+        List<ProductResponseDto.CategoryResponseDto> categoryDtos = new ArrayList<>();
+        for (CategoryEntity categoryEntity : product.getCategories()) {
+            ProductResponseDto.CategoryResponseDto categoryDto = new ProductResponseDto.CategoryResponseDto();
+            categoryDto.id = categoryEntity.getId();
+            categoryDto.name = categoryEntity.getName();
+            categoryDto.description = categoryEntity.getDescription();
+            categoryDtos.add(categoryDto);
+        }
+        dto.categories = categoryDtos;
         
         return dto;
     }
@@ -576,8 +581,12 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
     /**
      * Busca productos por categoría con paginación
+     * Usa LEFT JOIN porque la relación es Many-to-Many
      */
-    Page<ProductEntity> findByCategoryId(Long categoryId, Pageable pageable);
+    @Query("SELECT DISTINCT p FROM ProductEntity p " +
+           "LEFT JOIN p.categories c " +
+           "WHERE c.id = :categoryId")
+    Page<ProductEntity> findByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
 
     /**
      * Busca productos en rango de precio con paginación
@@ -589,11 +598,11 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     /**
      * Busca productos con filtros opcionales y paginación
      * Todos los parámetros son opcionales excepto el Pageable
+     * NOTA: Usa LEFT JOIN p.categories para relación Many-to-Many
      */
-    @Query("SELECT p FROM ProductEntity p " +
-           "JOIN p.owner o " +
-           "JOIN p.category c " +
-           "WHERE (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+    @Query("SELECT DISTINCT p FROM ProductEntity p " +
+           "LEFT JOIN p.categories c " +
+           "WHERE (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
            "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
            "AND (:categoryId IS NULL OR c.id = :categoryId)")
@@ -607,12 +616,12 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
     /**
      * Busca productos de un usuario con filtros opcionales y paginación
+     * NOTA: Usa LEFT JOIN p.categories para relación Many-to-Many
      */
-    @Query("SELECT p FROM ProductEntity p " +
-           "JOIN p.owner o " +
-           "JOIN p.category c " +
-           "WHERE o.id = :userId " +
-           "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+    @Query("SELECT DISTINCT p FROM ProductEntity p " +
+           "LEFT JOIN p.categories c " +
+           "WHERE p.owner.id = :userId " +
+           "AND (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
            "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
            "AND (:categoryId IS NULL OR c.id = :categoryId)")
@@ -629,8 +638,13 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
     /**
      * Productos de una categoría usando Slice
+     * Usa LEFT JOIN para relación Many-to-Many
      */
-    Slice<ProductEntity> findByCategoryIdOrderByCreatedAtDesc(Long categoryId, Pageable pageable);
+    @Query("SELECT DISTINCT p FROM ProductEntity p " +
+           "LEFT JOIN p.categories c " +
+           "WHERE c.id = :categoryId " +
+           "ORDER BY p.createdAt DESC")
+    Slice<ProductEntity> findByCategoryIdOrderByCreatedAtDesc(@Param("categoryId") Long categoryId, Pageable pageable);
 
     /**
      * Productos creados después de una fecha usando Slice
@@ -642,11 +656,11 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
     /**
      * Cuenta productos con filtros (útil para estadísticas)
+     * NOTA: Usa COUNT(DISTINCT p.id) por la relación Many-to-Many
      */
-    @Query("SELECT COUNT(p) FROM ProductEntity p " +
-           "JOIN p.owner o " +
-           "JOIN p.category c " +
-           "WHERE (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+    @Query("SELECT COUNT(DISTINCT p.id) FROM ProductEntity p " +
+           "LEFT JOIN p.categories c " +
+           "WHERE (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
            "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
            "AND (:categoryId IS NULL OR c.id = :categoryId)")
@@ -670,11 +684,13 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 ### **SQL generado por Spring Data JPA**
 
 ```sql
--- Para Page (consulta principal + count)
-SELECT p.*, o.*, c.* FROM products p 
+-- Para Page con filtros (consulta principal + count)
+-- NOTA: Usa DISTINCT porque la relación Many-to-Many puede generar duplicados
+SELECT DISTINCT p.*, o.* FROM products p 
 JOIN users o ON p.user_id = o.id 
-JOIN categories c ON p.category_id = c.id 
-WHERE (:name IS NULL OR LOWER(p.name) LIKE LOWER('%' || :name || '%'))
+LEFT JOIN product_categories pc ON p.id = pc.product_id
+LEFT JOIN categories c ON pc.category_id = c.id
+WHERE (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER('%' || :name || '%'))
   AND (:minPrice IS NULL OR p.price >= :minPrice)
   AND (:maxPrice IS NULL OR p.price <= :maxPrice)
   AND (:categoryId IS NULL OR c.id = :categoryId)
@@ -682,13 +698,14 @@ ORDER BY p.created_at DESC
 LIMIT 10 OFFSET 0;
 
 -- COUNT query automática para Page
-SELECT COUNT(p.id) FROM products p 
-JOIN users o ON p.user_id = o.id 
-JOIN categories c ON p.category_id = c.id 
+-- NOTA: Usa COUNT(DISTINCT p.id) para evitar contar duplicados
+SELECT COUNT(DISTINCT p.id) FROM products p 
+LEFT JOIN product_categories pc ON p.id = pc.product_id
+LEFT JOIN categories c ON pc.category_id = c.id
 WHERE [...same conditions...];
 
 -- Para Slice (solo consulta principal, trae uno extra)
-SELECT p.*, o.*, c.* FROM products p 
+SELECT DISTINCT p.*, o.* FROM products p 
 [...same query...] 
 LIMIT 11 OFFSET 0;  -- Trae 11 para saber si hasNext
 ```
@@ -710,10 +727,18 @@ LIMIT 11 OFFSET 0;  -- Trae 11 para saber si hasNext
         "name": "Juan Pérez",
         "email": "juan@email.com"
       },
-      "category": {
-        "id": 2,
-        "name": "Electrónicos",
-        "description": "Dispositivos electrónicos"
+      "categories": [
+        {
+          "id": 2,
+          "name": "Electrónicos",
+          "description": "Dispositivos electrónicos"
+        },
+        {
+          "id": 3,
+          "name": "Gaming",
+          "description": "Productos para videojuegos"
+        }
+      ],
       },
       "createdAt": "2024-01-15T10:30:00",
       "updatedAt": "2024-01-15T10:30:00"
