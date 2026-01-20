@@ -1563,6 +1563,12 @@ El estudiante debe implementar **ambos enfoques** para entender las diferencias.
 ## **14.1. Evidencias de implementación**
 1. **Captura de ProductEntity.java** (con ambas versiones: 1:N y N:N)
 
+DE 1:N
+
+<img src="rela0.jpeg" alt="router"> 
+
+DE N:N
+
 <img src="rela1.jpeg" alt="router"> 
 
 <img src="rela2.jpeg" alt="router">  
@@ -1571,16 +1577,39 @@ El estudiante debe implementar **ambos enfoques** para entender las diferencias.
 2. **Captura de ProductServiceImpl.java** (métodos create y update)
 
 
+<img src="rela3.jpeg" alt="router"> 
+
+<img src="rela4.jpeg" alt="router">  
 
 
 ## **14.2. Evidencias de funcionamiento**
 1. **Producto creado con una categoría** (versión 1:N)
+
+<img src="rela5.jpeg" alt="router">  
+
+
 2. **Producto creado con múltiples categorías** (versión N:N)
+
+<img src="rela6.jpeg" alt="router">  
+
+
 3. **Consulta SQL en consola** mostrando tabla intermedia `product_categories`
+
+
+<img src="rela7.jpeg" alt="router">  
+
+
 4. **Respuesta JSON** de un producto con múltiples categorías
+
+<img src="rela8.jpeg" alt="router">  
+
+
 
 ## **14.3. Evidencias de base de datos**
 1. **CAputra  del consumo de** /api/categories/{id}/products/count
+
+
+<img src="rela9.jpeg" alt="router">   
 
 ## **14.4. Datos para revisión**
 
@@ -1591,3 +1620,6 @@ El estudiante debe implementar **ambos enfoques** para entender las diferencias.
 3. **Monitor 4K** → Categorías: ["Electrónicos", "Gaming", "Diseño"]
 4. **Teclado Mecánico** → Categorías: ["Gaming", "Oficina"]
 5. **Libro Java** → Categorías: ["Libros", "Programación", "Educación"]
+
+
+<img src="rela10.jpeg" alt="router">   
