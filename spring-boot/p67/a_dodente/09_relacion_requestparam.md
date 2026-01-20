@@ -525,11 +525,14 @@ public class UserServiceImpl implements UserService {
         dto.user.name = product.getOwner().getName();
         dto.user.email = product.getOwner().getEmail();
         
-        // Información de la categoría
-        dto.category = new ProductResponseDto.CategoryResponseDto();
-        dto.category.id = product.getCategory().getId();
-        dto.category.name = product.getCategory().getName();
-        dto.category.description = product.getCategory().getDescription();
+        List<CategoryResponseDto> categoryDtos = new ArrayList<>();
+        for (CategoryEntity categoryEntity : entity.getCategories()) {
+            CategoryResponseDto categoryDto = new CategoryResponseDto();
+            categoryDto.id = categoryEntity.getId();
+            categoryDto.name = categoryEntity.getName();
+            categoryDtos.add(categoryDto);
+        }
+        dto.categories = categoryDtos;
         
         return dto;
     }
@@ -567,14 +570,15 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     /**
      * Encuentra productos de un usuario con filtros opcionales
      * Usa @Query personalizada para manejar filtros dinámicos
+     * NOTA: categoryId filtra por la relación Many-to-Many con categories
      */
-    @Query("SELECT p FROM ProductEntity p " +
+    @Query("SELECT DISTINCT p FROM ProductEntity p " +
+           "LEFT JOIN p.categories c " +
            "WHERE p.owner.id = :userId " +
-           "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+           "AND (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
            "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
-           "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
-           "ORDER BY p.createdAt DESC")
+           "AND (:categoryId IS NULL OR c.id = :categoryId)")
     List<ProductEntity> findByOwnerIdWithFilters(
         @Param("userId") Long userId,
         @Param("name") String name,
@@ -597,23 +601,25 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
 ```sql
 -- SQL generado aproximadamente:
-SELECT p.* FROM products p 
+SELECT DISTINCT p.* FROM products p 
 JOIN users u ON p.user_id = u.id 
-JOIN categories c ON p.category_id = c.id
+LEFT JOIN product_categories pc ON p.id = pc.product_id
+LEFT JOIN categories c ON pc.category_id = c.id
 WHERE p.user_id = ? 
-  AND (? IS NULL OR LOWER(p.name) LIKE LOWER('%' || ? || '%'))
+  AND (COALESCE(?, '') = '' OR LOWER(p.name) LIKE LOWER('%' || ? || '%'))
   AND (? IS NULL OR p.price >= ?)
   AND (? IS NULL OR p.price <= ?)
-  AND (? IS NULL OR p.category_id = ?)
-ORDER BY p.created_at DESC
+  AND (? IS NULL OR c.id = ?)
 ```
 
 **Ventajas de este enfoque**:
-* **Filtros opcionales**: Si un parámetro es `null`, no se aplica el filtro
+* **Filtros opcionales**: Si un parámetro es `null` o vacío, no se aplica el filtro
+* **COALESCE para strings**: Maneja tanto valores `NULL` como strings vacíos correctamente
 * **Performance**: Filtros aplicados en base de datos, no en memoria
 * **Flexibilidad**: Se pueden combinar filtros de forma dinámica
 * **Búsqueda parcial**: `LIKE` permite buscar por nombre parcial
 * **Case-insensitive**: `LOWER()` hace la búsqueda insensible a mayúsculas
+* **DISTINCT necesario**: Evita duplicados cuando un producto tiene múltiples categorías
 
 ## **7.2. Alternativa avanzada con Specification**
 
@@ -671,7 +677,9 @@ public class ProductSpecifications {
             if (categoryId == null) {
                 return null;
             }
-            return criteriaBuilder.equal(root.get("category").get("id"), categoryId);
+            // JOIN con la colección categories (relación Many-to-Many)
+            Join<ProductEntity, CategoryEntity> categoryJoin = root.join("categories");
+            return criteriaBuilder.equal(categoryJoin.get("id"), categoryId);
         };
     }
 }

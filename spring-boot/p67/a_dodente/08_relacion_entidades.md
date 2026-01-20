@@ -95,7 +95,7 @@ public class UserEntity extends BaseModel {
 
 **Alternativa bidireccional** (no recomendada para este caso):
 ```java
-// NO implementar - solo ejemplo 
+// NO implementar aun - solo ejemplo 
 @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
 private List<ProductEntity> products = new ArrayList<>();
 ```
@@ -959,6 +959,8 @@ Tipo mapper, para convertir entidad a DTO con relaciones cargadas
 # **9. Controlador ProductController**
 
 Archivo: `products/controllers/ProductController.java`
+
+Actualizado para manejar las relaciones en las operaciones CRUD. Quitamos otros endpoints que no son necesarios para este tema, o que se vieron en temas anteriores.
 
 ```java
 @RestController
