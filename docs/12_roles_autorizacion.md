@@ -527,61 +527,8 @@ Log ejemplo:
 
 ---
 
-# **7. Testing de Autorización**
 
-## **7.1. Tests Unitarios**
-
-```javascript
-describe('Authorization Tests', () => {
-  test('ADMIN puede eliminar usuarios', () => {
-    const admin = { id: 1, roles: ['ADMIN'] };
-    expect(canDeleteUser(admin, 5)).toBe(true);
-  });
-  
-  test('USER no puede eliminar usuarios', () => {
-    const user = { id: 2, roles: ['USER'] };
-    expect(canDeleteUser(user, 5)).toBe(false);
-  });
-  
-  test('Usuario puede modificar su propio perfil', () => {
-    const user = { id: 3, roles: ['USER'] };
-    expect(canUpdateProfile(user, 3)).toBe(true);
-  });
-  
-  test('Usuario no puede modificar perfil ajeno', () => {
-    const user = { id: 3, roles: ['USER'] };
-    expect(canUpdateProfile(user, 5)).toBe(false);
-  });
-});
-```
-
-## **7.2. Tests de Integración**
-
-```http
-# Test 1: Usuario sin rol ADMIN intenta eliminar
-DELETE /api/users/5
-Authorization: Bearer <token-user>
-→ Esperado: 403 Forbidden
-
-# Test 2: ADMIN elimina correctamente
-DELETE /api/users/5
-Authorization: Bearer <token-admin>
-→ Esperado: 204 No Content
-
-# Test 3: Usuario actualiza su propio recurso
-PUT /api/products/10 (owner_id=2)
-Authorization: Bearer <token-user-2>
-→ Esperado: 200 OK
-
-# Test 4: Usuario intenta actualizar recurso ajeno
-PUT /api/products/10 (owner_id=2)
-Authorization: Bearer <token-user-3>
-→ Esperado: 403 Forbidden
-```
-
----
-
-# **8. Próximos Pasos**
+# **7. Próximos Pasos**
 
 En la **Práctica 13: Ownership y Validación de Propiedad** aprenderemos:
 - Validar que recursos pertenezcan al usuario
@@ -626,3 +573,4 @@ Estos conceptos se implementan en los módulos específicos:
 - RolesGuard implementation
 - Custom decorators para permisos
 - Reflector para metadata
+  

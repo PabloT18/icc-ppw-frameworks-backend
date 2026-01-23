@@ -63,20 +63,124 @@ Usuario Pablo crea Producto ID=10
 **Combinación de ambos**:
 ```
 Usuario con rol USER:
-- ✅ Puede crear productos (RBAC)
-- ✅ Puede modificar SUS productos (Ownership)
-- ❌ NO puede modificar productos de otros (Ownership)
+- Puede crear productos (RBAC)
+- Puede modificar SUS productos (Ownership)
+-  NO puede modificar productos de otros (Ownership)
 
 Usuario con rol ADMIN:
-- ✅ Puede crear productos (RBAC)
-- ✅ Puede modificar CUALQUIER producto (ADMIN bypass)
+- Puede crear productos (RBAC)
+- Puede modificar CUALQUIER producto (ADMIN bypass)
 ```
 
 ---
 
-# **2. Patrones de Validación de Ownership**
+# **2. Extracción del Usuario Autenticado**
 
-## **2.1. Validación en Controlador (Menos Recomendado)**
+## **2.1. ¿De Dónde Viene el Usuario?**
+
+Para validar ownership, necesitamos saber **quién es el usuario autenticado**. Este usuario viene del **token JWT** validado en el proceso de autenticación.
+
+**Flujo de extracción**:
+```
+Request con JWT → Middleware de Autenticación
+                 ↓
+          Valida token y extrae payload
+                 ↓
+          Usuario autenticado en contexto
+                 ↓
+          Disponible para controlador/servicio
+```
+
+## **2.2. Patrón: Inyección en Controlador**
+
+**Concepto**: El framework inyecta automáticamente el usuario autenticado en el método del controlador.
+
+**Ejemplo conceptual**:
+```javascript
+// Pseudo-código
+async function updateProduct(request, response) {
+  const productId = request.params.id;
+  const currentUser = request.user;  // ← Usuario del JWT
+  
+  // Pasar usuario al servicio para validación
+  const updated = await ProductService.update(productId, request.body, currentUser);
+  return response.json(updated);
+}
+```
+
+**Ventajas**:
+- **Explícito**: Se ve claramente qué métodos necesitan el usuario
+- **Testeable**: Fácil pasar usuario mock en tests
+- **Desacoplado**: No depende de estado global
+
+## **2.3. Patrón Alternativo: Contexto Global**
+
+**Concepto**: El usuario autenticado se guarda en un contexto global accesible desde cualquier parte.
+
+**Ejemplo conceptual**:
+```javascript
+// Servicio
+class ProductService {
+  async update(productId, data) {
+    const product = await ProductRepo.findById(productId);
+    
+    // Obtener usuario del contexto global
+    const currentUser = SecurityContext.getCurrentUser();
+    
+    this.validateOwnership(product, currentUser);
+    // ... actualizar
+  }
+}
+```
+
+**Desventajas**:
+- Depende de estado global (menos testeable)
+- No es obvio qué métodos usan el contexto
+- Más acoplado al framework de seguridad
+
+## **2.4. Recomendación: Pasar Usuario Como Parámetro**
+
+**Mejor práctica**: Extraer usuario en el controlador y pasarlo al servicio.
+
+```javascript
+// CONTROLADOR
+async function updateProduct(request, response) {
+  const productId = request.params.id;
+  const currentUser = request.user;  // ← Extraer del contexto del request
+  
+  // Pasar explícitamente al servicio
+  const updated = await ProductService.update(productId, request.body, currentUser);
+  return response.json(updated);
+}
+
+// SERVICIO
+class ProductService {
+  async update(productId, data, currentUser) {  // ← Recibir como parámetro
+    const product = await ProductRepo.findById(productId);
+    this.validateOwnership(product, currentUser);
+    // ... actualizar
+  }
+  
+  validateOwnership(product, user) {
+    if (user.roles.includes('ADMIN')) return;
+    if (product.ownerId !== user.id) {
+      throw new ForbiddenException();
+    }
+  }
+}
+```
+
+**Ventajas de este enfoque**:
+- **Claridad**: La firma del método muestra qué necesita
+- **Testing**: Fácil pasar diferentes usuarios en tests
+- **Reutilización**: El servicio no asume de dónde viene el usuario
+- **Principio de dependencia**: El servicio recibe lo que necesita
+
+---
+
+# **3. Patrones de Validación de Ownership**
+
+## **3.1. Validación en Controlador (Menos Recomendado)**
 
 ```javascript
 // Pseudo-código
@@ -87,7 +191,7 @@ async function updateProduct(request, response) {
   // Cargar producto
   const product = await ProductRepository.findById(productId);
   
-  // ❌ Validación en controlador
+  //  Validación en controlador
   if (product.ownerId !== userId && !request.user.roles.includes('ADMIN')) {
     return response.status(403).json({ error: "No eres propietario" });
   }
@@ -104,7 +208,7 @@ async function updateProduct(request, response) {
 - Difícil de testear unitariamente
 - Query duplicada a BD (una para validar, otra para actualizar)
 
-## **2.2. Validación en Servicio (Recomendado)**
+## **3.2. Validación en Servicio (Recomendado)**
 
 ```javascript
 // Pseudo-código
@@ -154,7 +258,7 @@ class ProductService {
 - **Testeable** unitariamente
 - **Mensajes personalizados**
 
-## **2.3. Validación con Interceptores (Alternativa)**
+## **3.3. Validación con Interceptores (Alternativa)**
 
 ```javascript
 // Pseudo-código de interceptor
@@ -197,9 +301,119 @@ app.put('/products/:id', authenticate, checkProductOwnership, updateProduct);
 
 ---
 
-# **3. Flujo Completo de Ownership**
+# **4. Niveles de Validación de Seguridad**
 
-## **3.1. Usuario Intenta Actualizar Producto Ajeno**
+## **4.1. Tabla Comparativa de Validaciones**
+
+Una API moderna tiene **tres niveles de validación de seguridad** que se ejecutan en secuencia:
+
+| Nivel | ¿Qué valida? | ¿Dónde se valida? | Excepción si falla | Código HTTP | Cuándo se ejecuta |
+|-------|--------------|-------------------|-------------------|-------------|-------------------|
+| **1. Autenticación** | ¿Tiene token válido? | Middleware de autenticación | AuthenticationException | 401 Unauthorized | Primera barrera |
+| **2. Autorización por Rol** | ¿Tiene el rol necesario? | Guards/Anotaciones | AuthorizationException | 403 Forbidden | Segunda barrera |
+| **3. Ownership** | ¿Es dueño del recurso? | Servicio (validateOwnership) | AccessDeniedException | 403 Forbidden | Tercera barrera |
+
+## **4.2. Flujo Completo de Validación**
+
+```
+Request: PUT /api/products/10
+Authorization: Bearer <token-user-B>
+        ↓
+┌─────────────────────────────────────────┐
+│ NIVEL 1: AUTENTICACIÓN                  │
+│ - Extraer token del header              │
+│ - Validar firma y expiración            │
+│ - Cargar usuario del payload            │
+│ Token válido → Continuar              │
+│  Token inválido → 401 Unauthorized     │
+└─────────────────────────────────────────┘
+        ↓
+┌─────────────────────────────────────────┐
+│ NIVEL 2: AUTORIZACIÓN POR ROL           │
+│ - Verificar roles requeridos            │
+│ - Evaluar expresiones de seguridad      │
+│ Tiene rol necesario → Continuar       │
+│  Sin rol → 403 Forbidden               │
+└─────────────────────────────────────────┘
+        ↓
+┌─────────────────────────────────────────┐
+│ NIVEL 3: OWNERSHIP                      │
+│ - Cargar recurso de BD                  │
+│ - Verificar ownerId vs userId           │
+│ - Verificar si es ADMIN (bypass)        │
+│ Es propietario o ADMIN → Continuar    │
+│  No es propietario → 403 Forbidden     │
+└─────────────────────────────────────────┘
+        ↓
+   200 OK - Recurso actualizado
+```
+
+## **4.3. Ejemplos por Nivel**
+
+### **Nivel 1: Autenticación - 401 Unauthorized**
+
+```http
+# Sin token
+PUT /api/products/10
+→ 401 Unauthorized
+{ "message": "Token de autenticación requerido" }
+
+# Token inválido
+PUT /api/products/10
+Authorization: Bearer invalid-token
+→ 401 Unauthorized
+{ "message": "Token inválido o expirado" }
+```
+
+### **Nivel 2: Autorización por Rol - 403 Forbidden**
+
+```http
+# Usuario USER intenta acceder a endpoint solo para ADMIN
+GET /api/admin/reports
+Authorization: Bearer <token-user>
+→ 403 Forbidden
+{ "message": "Se requiere rol ADMIN" }
+```
+
+### **Nivel 3: Ownership - 403 Forbidden**
+
+```http
+# Usuario B intenta modificar producto de Usuario A
+PUT /api/products/10 (owner_id=A)
+Authorization: Bearer <token-user-B>
+→ 403 Forbidden
+{ "message": "No puedes modificar recursos ajenos" }
+
+# Usuario A modifica su propio producto
+PUT /api/products/10 (owner_id=A)
+Authorization: Bearer <token-user-A>
+→ 200 OK (permitido)
+
+# ADMIN modifica producto de cualquiera
+PUT /api/products/10 (owner_id=A)
+Authorization: Bearer <token-admin>
+→ 200 OK (bypass por rol)
+```
+
+## **4.4. Diferencia Entre 401 y 403**
+
+**401 Unauthorized**:
+- **Significado**: "No sé quién eres"
+- **Causa**: Token ausente, inválido o expirado
+- **Acción del cliente**: Debe hacer login
+- **Usuario**: No autenticado
+
+**403 Forbidden**:
+- **Significado**: "Sé quién eres, pero no puedes hacer esto"
+- **Causa**: Sin rol necesario o no es propietario
+- **Acción del cliente**: Mostrar mensaje de permiso denegado
+- **Usuario**: Autenticado pero sin permisos
+
+---
+
+# **5. Flujo Completo de Ownership**
+
+## **5.1. Usuario Intenta Actualizar Producto Ajeno**
 
 ```
 Cliente:
@@ -234,7 +448,7 @@ Cliente recibe:
 }
 ```
 
-## **3.2. ADMIN Actualiza Producto de Otro Usuario**
+## **5.2. ADMIN Actualiza Producto de Otro Usuario**
 
 ```
 Cliente:
@@ -263,7 +477,7 @@ Cliente recibe:
 }
 ```
 
-## **3.3. Usuario Actualiza Su Propio Producto**
+## **5.3. Usuario Actualiza Su Propio Producto**
 
 ```
 Cliente:
@@ -294,9 +508,9 @@ Cliente recibe:
 
 ---
 
-# **4. Casos de Uso Avanzados**
+# **6. Casos de Uso Avanzados**
 
-## **4.1. Ownership con Equipos/Departamentos**
+## **6.1. Ownership con Equipos/Departamentos**
 
 **Escenario**: Un documento pertenece a un equipo, cualquier miembro puede modificarlo.
 
@@ -313,7 +527,7 @@ validateOwnership(document, user) {
 }
 ```
 
-## **4.2. Ownership con Jerarquía**
+## **6.2. Ownership con Jerarquía**
 
 **Escenario**: Un manager puede ver/modificar recursos de su departamento.
 
@@ -335,7 +549,7 @@ validateOwnership(resource, user) {
 }
 ```
 
-## **4.3. Ownership con Permisos Delegados**
+## **6.3. Ownership con Permisos Delegados**
 
 **Escenario**: Un usuario puede compartir su recurso con otros usuarios.
 
@@ -359,25 +573,25 @@ validateOwnership(resource, user) {
 
 ---
 
-# **5. Mejores Prácticas**
+# **7. Mejores Prácticas**
 
-## **5.1. Query Única**
+## **7.1. Query Única**
 
 **Regla**: Cargar y validar en una sola operación.
 
 ```javascript
-❌ MAL (2 queries):
+ MAL (2 queries):
 const product = await ProductRepo.findById(id);
 validateOwnership(product, user);
 const fullProduct = await ProductRepo.findByIdWithRelations(id);
 
-✅ BIEN (1 query):
+BIEN (1 query):
 const product = await ProductRepo.findByIdWithRelations(id);
 validateOwnership(product, user);
 // Usar el mismo objeto para actualizar
 ```
 
-## **5.2. ADMIN Bypass Explícito**
+## **7.2. ADMIN Bypass Explícito**
 
 **Regla**: Verificar ADMIN primero para evitar lógica innecesaria.
 
@@ -395,21 +609,21 @@ validateOwnership(resource, user) {
 }
 ```
 
-## **5.3. Mensajes de Error Claros**
+## **7.3. Mensajes de Error Claros**
 
 **Regla**: Indicar exactamente por qué se denegó el acceso.
 
 ```javascript
-❌ MAL:
+ MAL:
 throw new ForbiddenException("Forbidden");
 
-✅ BIEN:
+BIEN:
 throw new ForbiddenException(
   "No puedes modificar este producto. Solo el propietario o un administrador tienen permiso."
 );
 ```
 
-## **5.4. Métodos con y sin Validación**
+## **7.4. Métodos con y sin Validación**
 
 **Regla**: Ofrecer métodos específicos para diferentes casos.
 
@@ -432,9 +646,9 @@ class ProductService {
 
 ---
 
-# **6. Testing de Ownership**
+# **8. Testing de Ownership**
 
-## **6.1. Tests Unitarios de Validación**
+## **8.1. Tests Unitarios de Validación**
 
 ```javascript
 describe('validateOwnership', () => {
@@ -464,7 +678,7 @@ describe('validateOwnership', () => {
 });
 ```
 
-## **6.2. Tests de Integración**
+## **8.2. Tests de Integración**
 
 ```http
 # Test 1: Usuario actualiza su propio recurso
@@ -495,45 +709,45 @@ Authorization: Bearer <token-admin>
 
 ---
 
-# **7. Errores Comunes**
+# **9. Errores Comunes**
 
-## **7.1. No Validar Ownership en Backend**
+## **9.1. No Validar Ownership en Backend**
 
 ```javascript
-❌ MAL:
+ MAL:
 // Confiar en frontend
 // Frontend oculta botón "Editar" si no es propietario
 // Pero request HTTP puede hacerse igual
 
-✅ BIEN:
+BIEN:
 // Siempre validar en backend
 validateOwnership(resource, user);
 ```
 
-## **7.2. Exponer Información en Errores**
+## **9.2. Exponer Información en Errores**
 
 ```javascript
-❌ MAL:
+ MAL:
 throw new ForbiddenException(
   `Este producto pertenece al usuario ${product.owner.email}`
 );
 
-✅ BIEN:
+BIEN:
 throw new ForbiddenException(
   "No tienes permisos para modificar este recurso"
 );
 ```
 
-## **7.3. Olvidar ADMIN Bypass**
+## **9.3. Olvidar ADMIN Bypass**
 
 ```javascript
-❌ MAL:
+ MAL:
 if (resource.ownerId !== user.id) {
   throw new ForbiddenException();
 }
 // ADMIN también será bloqueado
 
-✅ BIEN:
+BIEN:
 if (user.roles.includes('ADMIN')) return;
 if (resource.ownerId !== user.id) {
   throw new ForbiddenException();
@@ -542,9 +756,9 @@ if (resource.ownerId !== user.id) {
 
 ---
 
-# **8. Monitoreo y Auditoría**
+# **10. Monitoreo y Auditoría**
 
-## **8.1. Logs de Ownership Violations**
+## **10.1. Logs de Ownership Violations**
 
 ```javascript
 validateOwnership(resource, user) {
@@ -566,7 +780,7 @@ validateOwnership(resource, user) {
 }
 ```
 
-## **8.2. Métricas de Seguridad**
+## **10.2. Métricas de Seguridad**
 
 ```
 Métricas a monitorear:
@@ -578,15 +792,15 @@ Métricas a monitorear:
 
 ---
 
-# **9. Conclusión**
+# **11. Conclusión**
 
 Has aprendido conceptos avanzados de ownership:
 
-✅ **Validación de propiedad** de recursos  
-✅ **Patrones de implementación**: Servicio, interceptores  
-✅ **ADMIN bypass** para acceso administrativo  
-✅ **Casos avanzados**: Equipos, jerarquías, permisos delegados  
-✅ **Mejores prácticas**: Query única, mensajes claros, testing  
+**Validación de propiedad** de recursos  
+**Patrones de implementación**: Servicio, interceptores  
+**ADMIN bypass** para acceso administrativo  
+**Casos avanzados**: Equipos, jerarquías, permisos delegados  
+**Mejores prácticas**: Query única, mensajes claros, testing  
 
 **Combinación con roles**:
 ```
