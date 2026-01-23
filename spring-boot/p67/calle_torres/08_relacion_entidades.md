@@ -95,7 +95,7 @@ public class UserEntity extends BaseModel {
 
 **Alternativa bidireccional** (no recomendada para este caso):
 ```java
-// NO implementar - solo ejemplo 
+// NO implementar aun - solo ejemplo 
 @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
 private List<ProductEntity> products = new ArrayList<>();
 ```
@@ -960,6 +960,8 @@ Tipo mapper, para convertir entidad a DTO con relaciones cargadas
 
 Archivo: `products/controllers/ProductController.java`
 
+Actualizado para manejar las relaciones en las operaciones CRUD. Quitamos otros endpoints que no son necesarios para este tema, o que se vieron en temas anteriores.
+
 ```java
 @RestController
 @RequestMapping("/api/products")
@@ -1221,21 +1223,10 @@ public class CategoryEntity extends BaseModel {
 ```java
 public class CreateProductDto {
 
-    @NotBlank(message = "El nombre es obligatorio")
-    @Size(min = 3, max = 150)
-    public String name;
-
-    @NotNull(message = "El precio es obligatorio")
-    @DecimalMin(value = "0.0", inclusive = false)
-    public Double price;
-
-    @Size(max = 500)
-    public String description;
-
+    // Campos básicos
     // ============== RELACIONES ==============
 
-    @NotNull(message = "El ID del usuario es obligatorio")
-    public Long userId;
+    /// campo relacion USER se mantiene igual
 
     @NotNull(message = "Debe especificar al menos una categoría")
     @Size(min = 1, message = "El producto debe tener al menos una categoría")
@@ -1245,31 +1236,19 @@ public class CreateProductDto {
 
 ### **ProductResponseDto con lista de categorías (N:N)**
 
+Actualizamos el DTO de respuesta para incluir una lista de categorías.
+
 ```java
 public class ProductResponseDto {
 
-    public Long id;
-    public String name;
-    public Double price;
-    public String description;
-
-    // ============== INFORMACIÓN DEL OWNER ==============
-    public UserSummaryDto user;
+    // Campos básicos
+    // ============== OBJETOS ANIDADOS ==============
+    // campo relacion USER se mantiene igual
 
     // ============== CATEGORÍAS (N:N) - Lista de objetos ==============
     public List<CategoryResponseDto> categories;
 
-    public LocalDateTime createdAt;
-    public LocalDateTime updatedAt;
-
-    // ============== DTOs INTERNOS REUTILIZABLES ==============
-    
-    public static class UserSummaryDto {
-        public Long id;
-        public String name;
-        public String email;
-    }
-
+ 
 }
 ```
 
@@ -1310,11 +1289,16 @@ public class ProductResponseDto {
 
 ## **10.5. ProductRepository actualizado para N:N**
 
+Modficamos el repositorio para consultas basadas en categorías múltiples.
+
+Elimanar los métodos antiguos que asumen relación 1:N.
+
+
 ```java
 @Repository
 public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
-    List<ProductEntity> findByOwnerId(Long userId);
+    // otros métodos... 
 
     /**
      * Encuentra productos que tienen UNA categoría específica
@@ -1340,6 +1324,9 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 ```
 
 ## **10.6. Servicio actualizado para manejar N:N**
+
+> **NOTA:** Deberan actualizar los demás métodos del servicio y controlador para manejar la relación N:N según sea necesario.
+
 
 ```java
 @Service
@@ -1460,6 +1447,10 @@ private Set<CategoryEntity> validateAndGetCategories(Set<Long> categoryIds) {
 }
 
 ```
+
+> **NOTA:** Deberan actualizar los demás métodos del servicio y controlador para manejar la relación N:N según sea necesario.
+>
+> **NOTA** : Recuerden actualizar los DTOs, repositorios y controladores para reflejar la nueva relación N:N. El metodo `toResponseDto` deberia ser acutalizado para mapear la colección de categorías.
 
 
 # **11. Flujo de Consultas SQL Generadas**
