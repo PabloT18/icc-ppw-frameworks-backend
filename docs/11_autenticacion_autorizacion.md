@@ -252,73 +252,9 @@ HMACSHA256(
 | **nbf** | Not before (válido desde) | 1516239022 |
 | **jti** | JWT ID (identificador único) | "abc123" |
 
-## 5. Sistemas de autorización
+## 5. Patrones de Implementación de Autenticación
 
-### 5.1 Control basado en roles (RBAC)
-
-**Concepto**: Los usuarios tienen **roles**, los roles tienen **permisos**.
-
-```
-Usuario Pablo → Rol "ADMIN"
-Rol "ADMIN" → Permisos: ["CREATE_USER", "DELETE_USER", "VIEW_REPORTS"]
-
-Usuario Ana → Rol "USER" 
-Rol "USER" → Permisos: ["VIEW_PRODUCTS", "CREATE_ORDER"]
-```
-
-**Ventajas**:
-* Simple de entender e implementar
-* Fácil gestión de permisos por grupos
-* Escalable para organizaciones
-
-**Desventajas**:
-* Roles rígidos, no contextuales
-* Explosión de roles en sistemas complejos
-
-### 5.2 Control basado en atributos (ABAC)
-
-**Concepto**: Los permisos se evalúan basándose en **atributos** del usuario, recurso y contexto.
-
-```
-Regla: Un usuario puede ver un documento SI:
-- Es el propietario del documento, O
-- Es manager del departamento del propietario, Y
-- El documento no está marcado como confidencial, Y
-- La hora actual está entre 8 AM y 6 PM
-```
-
-**Ventajas**:
-* Muy flexible y granular
-* Contexto dinámico
-* Reglas complejas
-
-**Desventajas**:
-* Complejo de implementar
-* Difícil de debuggear
-* Performance overhead
-
-### 5.3 Listas de control de acceso (ACL)
-
-**Concepto**: Cada recurso tiene una **lista explícita** de quién puede hacer qué.
-
-```
-Documento ID=123:
-- Pablo Torres: READ, WRITE, DELETE
-- Ana García: READ
-- Managers: READ
-```
-
-**Ventajas**:
-* Control granular por recurso
-* Claro y explícito
-
-**Desventajas**:
-* Difícil de mantener
-* No escalable con muchos recursos/usuarios
-
-## 6. Patrones de implementación
-
-### 6.1 Middleware de autenticación
+### 5.1 Middleware de autenticación
 
 **Concepto**: Componente que intercepta requests y verifica autenticación antes de llegar al controlador.
 
@@ -329,38 +265,29 @@ Request → Middleware Auth → Controlador → Response
                   → NO: 401 Unauthorized
 ```
 
-### 6.2 Guards/Decoradores de autorización
-
-**Concepto**: Protegen endpoints específicos con requerimientos de permisos.
-
+**Flujo detallado**:
 ```
-@RequiresRole("ADMIN")
-async deleteUser(id: string) {
-  // Solo usuarios con rol ADMIN pueden ejecutar esto
-}
-
-@RequiresPermission("PRODUCTS:DELETE")
-async deleteProduct(id: string) {
-  // Solo usuarios con este permiso específico
-}
+1. Cliente envía request con header Authorization
+2. Middleware extrae token del header
+3. Valida token (firma, expiración)
+4. Si válido: establece usuario en contexto
+5. Si inválido: retorna 401 Unauthorized
+6. Controlador recibe usuario autenticado
 ```
 
-### 6.3 Interceptores de autorización
+### 5.2 Filtros de autenticación
 
-**Concepto**: Verifican permisos basándose en el contexto del request (parámetros, datos).
+**Concepto**: Interceptan todas las peticiones HTTP para validar tokens antes de que lleguen a los controladores.
 
 ```
-PUT /users/123/profile
-
-Interceptor verifica:
-- ¿El usuario autenticado es el ID 123? → Permitir
-- ¿El usuario tiene rol ADMIN? → Permitir  
-- Sino → 403 Forbidden
+Todas las requests → Filtro JWT → Valida token → Establece SecurityContext
+                                      ↓
+                              Token inválido → 401
 ```
 
-## 7. Tokens de seguridad
+## 6. Tokens de seguridad
 
-### 7.1 Access tokens
+### 6.1 Access tokens
 
 **Propósito**: Autenticar requests a APIs.
 
@@ -369,7 +296,7 @@ Interceptor verifica:
 * Contienen información del usuario/permisos
 * Se incluyen en header Authorization
 
-### 7.2 Refresh tokens
+### 6.2 Refresh tokens
 
 **Propósito**: Obtener nuevos access tokens sin re-login.
 
@@ -386,7 +313,7 @@ Interceptor verifica:
 4. Refresh → nuevo access_token + nuevo refresh_token
 ```
 
-### 7.3 API keys
+### 6.3 API keys
 
 **Propósito**: Autenticar aplicaciones/servicios (no usuarios específicos).
 
@@ -395,51 +322,45 @@ Interceptor verifica:
 * Identifican la aplicación cliente
 * Menos granularidad que tokens de usuario
 
-## 8. Mejores prácticas de seguridad
+## 7. Mejores prácticas de seguridad
 
-### 8.1 Manejo de contraseñas
+### 7.1 Manejo de contraseñas
 
 * **Hash con salt**: Nunca almacenar contraseñas en texto plano
 * **Algoritmos seguros**: bcrypt, Argon2, PBKDF2
 * **Políticas de contraseñas**: Longitud mínima, complejidad
 * **Protección contra brute force**: Límites de intentos, CAPTCHA
 
-### 8.2 Gestión de tokens
+### 7.2 Gestión de tokens
 
 * **Expiración corta**: Access tokens de 15-60 minutos
 * **Almacenamiento seguro**: HttpOnly cookies, secure storage
 * **Invalidación**: Blacklist, token versioning
 * **Rotación**: Refresh tokens deben rotar
 
-### 8.3 Comunicación segura
+### 7.3 Comunicación segura
 
 * **HTTPS obligatorio**: Todas las comunicaciones cifradas
 * **Headers de seguridad**: CORS, CSP, X-Frame-Options
 * **Validación de entrada**: Sanitizar datos de usuario
 * **Logs de seguridad**: Auditar intentos de acceso
 
-## 9. Errores comunes de seguridad
+## 8. Errores comunes de seguridad
 
-### 9.1 Problemas de autenticación
+### 8.1 Problemas de autenticación
 
 * **Credenciales por defecto**: admin/admin, root/root
 * **Contraseñas débiles**: Permitir "123456", "password"
 * **Transmisión insegura**: Credenciales por HTTP
 * **Sesiones sin expirar**: Tokens que nunca caducan
 
-### 9.2 Problemas de autorización
-
-* **Falta de verificación**: Confiar solo en frontend
-* **Escalación de privilegios**: Usuario normal accede a funciones admin
-* **Referencias directas**: /users/123 sin verificar ownership
-* **Mass assignment**: Permitir modificar campos no autorizados
-
-### 9.3 Problemas con tokens
+### 8.2 Problemas con tokens
 
 * **Secrets débiles**: Claves fáciles de adivinar
 * **Información sensible**: Passwords en payload
 * **Sin validación**: Aceptar cualquier token sin verificar
 * **Exposición**: Tokens en URLs, logs
+* **Token replay**: Reutilizar tokens interceptados
 
 ## 10. Consideraciones de performance
 
@@ -447,148 +368,89 @@ Interceptor verifica:
 
 * **Cache de tokens**: Evitar validar en BD cada request
 * **Cache de permisos**: Almacenar roles/permisos temporalmente
-* **Session storage**: Redis, Memcached para sesiones
+* *9ession storage**: Redis, Memcached para sesiones
 
-### 10.2 Optimizaciones
+### 9.2 Optimizaciones
 
 * **JWT stateless**: Evitar lookups de base de datos
 * **Lazy loading**: Cargar permisos solo cuando se necesiten
 * **Batch operations**: Verificar múltiples permisos juntos
 
-## 11. Casos de uso reales
+## 19 Casos de uso reales
 
 ### 11.1 E-commerce
 
 ```
 Roles:
-- CUSTOMER: Ver productos, hacer pedidos
-- SELLER: Gestionar sus productos
-- ADMIN: Gestionar todo el sistema
+- CU0. Testing de Autenticación
 
-Flujo:
-- Login → JWT con roles
-- Ver producto → Público (sin auth)
-- Comprar → Requiere CUSTOMER
-- Subir producto → Requiere SELLER
-- Ver reportes → Requiere ADMIN
-```
+### 10.1 Tests de login
 
-### 11.2 Sistema educativo
+* **Credenciales válidas**: Login exitoso con token
+* **Credenciales inválidas**: Login fallido con 401
+* **Tokens expirados**: Acceso denegado con 401
+* **Tokens malformados**: Error apropiado con 401
 
-```
-Roles:
-- STUDENT: Ver sus cursos, enviar tareas
-- TEACHER: Gestionar sus cursos, calificar
-- ADMIN: Gestionar usuarios y cursos
+### 10.2 Tests de seguridad
 
-Autorización contextual:
-- Estudiante solo ve SUS cursos
-- Profesor solo gestiona SUS cursos
-- Admin ve todo
-```
-
-### 11.3 API pública
-
-```
-Niveles de acceso:
-- PUBLIC: Endpoints básicos, límite bajo
-- BASIC: Más endpoints, límite medio  
-- PREMIUM: Todos los endpoints, límite alto
-
-Implementación:
-- API Key identifica el plan
-- Rate limiting basado en plan
-- Features gating por nivel
-```
-
-## 12. Testing de seguridad
-
-### 12.1 Tests de autenticación
-
-* **Credenciales válidas**: Login exitoso
-* **Credenciales inválidas**: Login fallido
-* **Tokens expirados**: Acceso denegado
-* **Tokens malformados**: Error apropiado
-
-### 12.2 Tests de autorización
-
-* **Acceso permitido**: Usuario con permisos correctos
-* **Acceso denegado**: Usuario sin permisos
-* **Escalación**: Intentar acceder a recursos superiores
-* **Ownership**: Solo propietario puede modificar
-
-### 12.3 Tests de seguridad
-
-* **Injection attacks**: SQL, NoSQL injection
-* **XSS attacks**: Cross-site scripting
-* **CSRF attacks**: Cross-site request forgery
+* **Injection attacks**: Intentos de inyección en credenciales
 * **Brute force**: Múltiples intentos de login
+* **Token replay**: Reutilización de tokens interceptados
+* **HTTPS enforcement**: Verificar comunicación segura
 
-## 13. Monitoreo y auditoría
+---
 
-### 13.1 Logs de seguridad
+# **Próximos Pasos**
 
-* **Intentos de login**: Exitosos y fallidos
-* **Accesos denegados**: 401, 403 responses
-* **Escalación de privilegios**: Intentos sospechosos
-* **Operaciones críticas**: Cambios de permisos, eliminaciones
+Has completado la Práctica 11 sobre **Autenticación con JWT**. Has aprendido:
 
-### 13.2 Métricas importantes
+- Conceptos de autenticación y autorización
+- Métodos de autenticación (Basic, Session, Token)
+- Estructura y funcionamiento de JWT
+- Mejores prácticas de seguridad
+- Testing de autenticación
 
-* **Tasa de login exitoso/fallido**
-* **Tokens activos/expirados**
-* **Endpoints más atacados**
-* **Usuarios con más errores de autorización**
+**Continúa con las siguientes prácticas**:
 
-### 13.3 Alertas de seguridad
+## **Práctica 12: Roles y Autorización**
 
-* **Múltiples logins fallidos**
-* **Acceso desde IPs sospechosas**
-* **Patrones de ataque conocidos**
-* **Tokens con comportamiento anómalo**
+Aprenderás sobre:
+- Control basado en roles (RBAC)
+- Control basado en atributos (ABAC)
+- Patrones de autorización
+- Protección de endpoints por roles
+- Expresiones de seguridad
 
-## 14. Evolución y tendencias
+📄 Ver [12_roles_autorizacion.md](12_roles_autorizacion.md)
 
-### 14.1 OAuth 2.0 y OpenID Connect
+## **Práctica 13: Ownership y Validación de Propiedad**
 
-* **Delegación de autenticación**: Login con Google, Facebook
-* **Single Sign-On (SSO)**: Una autenticación para múltiples aplicaciones
-* **Federación de identidades**: Conectar sistemas organizacionales
+Aprenderás sobre:
+- Validación de ownership (propiedad)
+- Autorización contextual
+- ADMIN bypass
+- Validación en capa de servicio
+- Casos de uso avanzados
 
-### 14.2 Zero Trust Architecture
+📄 Ver [13_ownership_validacion.md](13_ownership_validacion.md)
 
-* **"Never trust, always verify"**
-* **Verificación continua**: No solo al login
-* **Contexto dinámico**: Ubicación, dispositivo, comportamiento
-* **Micro-segmentación**: Permisos muy granulares
+---
 
-### 14.3 Biometría y MFA
-
-* **Multi-factor authentication**: Algo que sabes + algo que tienes
-* **Biometría**: Huella, reconocimiento facial
-* **Hardware tokens**: YubiKey, RSA SecurID
-* **TOTP**: Time-based One-Time Passwords (Google Authenticator)
-
-## 15. Resultados esperados
+## 11. Resultados esperados
 
 Al finalizar este tema, el estudiante comprende:
 
 * **Diferencia entre autenticación y autorización**
 * **Métodos de autenticación**: Basic, session, token-based
 * **Estructura y uso de JWT**: Header, payload, signature
-* **Sistemas de autorización**: RBAC, ABAC, ACL
-* **Patrones de implementación**: Middleware, guards, interceptores
+* **Flujos de login y registro**
 * **Mejores prácticas de seguridad**
 * **Errores comunes y cómo evitarlos**
-* **Testing y monitoreo de seguridad**
+* **Testing de autenticación**
 
-## 16. Aplicación directa en los siguientes módulos
+---
 
-Estos conceptos se aplicarán directamente en los módulos específicos de cada framework.
-
-### Spring Boot
-
-[`spring-boot/11_autenticacion_autorizacion.md`](../spring-boot/p67/a_dodente/11_autenticacion_autorizacion.md)
+## 12. Aplicación directa en framework./spring-boot/p67/a_dodente/11_autenticacion_autorizacion.md)
 
 * Spring Security configuración
 * JWT con Spring Boot
@@ -606,4 +468,52 @@ Estos conceptos se aplicarán directamente en los módulos específicos de cada 
 * Role-based access control
 * Custom decorators para permisos
 * Bcrypt para hashing passwords
+* JWT module configurationimplementan en las prácticas específicas de cada framework:
+
+### Spring Boot
+
+📄 **Práctica 11**: [`spring-boot/p67/a_dodente/11_autenticacion_autorizacion.md`](../spring-boot/p67/a_dodente/11_autenticacion_autorizacion.md)
+
+* Spring Security configuración
+* JWT con jjwt library
+* UserDetailsService implementation
+* Password encoding con BCrypt
+* JwtAuthenticationFilter
+* SecurityConfig completo
+
+📄 **Práctica 12**: [`spring-boot/p67/a_dodente/12_roles_preauthorize.md`](../spring-boot/p67/a_dodente/12_roles_preauthorize.md)
+
+* @PreAuthorize annotations
+* Role-based endpoint protection
+* @AuthenticationPrincipal
+* Method security expressions
+
+📄 **Práctica 13**: [`spring-boot/p67/a_dodente/13_ownership_validacion.md`](../spring-boot/p67/a_dodente/13_ownership_validacion.md)
+
+* validateOwnership() method
+* AccessDeniedException handling
+* Service layer authorization
+* ADMIN bypass patterns
+
+### NestJS
+
+📄 **Práctica 11**: [`nest/p67/a_dodente/11_autenticacion_jwt.md`](../nest/p67/a_dodente/11_autenticacion_jwt.md)
+
+* JWT strategy con Passport
+* JwtAuthGuard implementation
+* Bcrypt para hashing passwords
 * JWT module configuration
+
+📄 **Práctica 12**: [`nest/p67/a_dodente/12_roles_authorization.md`](../nest/p67/a_dodente/12_roles_authorization.md)
+
+* @Roles decorator
+* RolesGuard implementation
+* Custom decorators
+* Reflector metadata
+
+📄 **Práctica 13**: [`nest/p67/a_dodente/13_ownership_validation.md`](../nest/p67/a_dodente/13_ownership_validation.md)
+
+* Custom ownership guards
+* @UserFromToken decorator
+* Resource ownership patterns
+* Exception handling
