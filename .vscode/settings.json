@@ -1,8 +1,13 @@
 {
     "github.copilot.enable": {
         "*": true,
-        "git-commit": true,
-        "plaintext": true
+        "plaintext": true,
+        "markdown": false,
+        "scminput": false,
+        "py": true,
+        "python": false,
+        "java": true,
+        "git-commit": true
     },
     "github.copilot.gitHubAuthentication": true,
     "github.copilot.generateCommitMessages.enabled": true,

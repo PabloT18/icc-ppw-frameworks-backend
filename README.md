@@ -63,17 +63,23 @@ El objetivo es:
 
 ```
 /docs
-   ├── 01_conceptos_backend.md
-   ├── 02_arquitectura_backend.md
-   ├── 03_api_rest_conceptos.md
-   ├── 04_controladores_servicios.md
-   ├── 05_repositorios_bd.md
-   ├── 06_modelos_dtos_validacion.md
-   ├── 07_manejo_errores.md
-   ├── 08_autenticacion_autorizacion.md
-   ├── 09_documentacion_openapi.md
-   ├── 10_testing_backend.md
-   ├── 11_despliegue_backend.md
+├── 01_conceptos_backend.md
+├── 02_arquitectura_backend-consumo-rest.md
+├── 02_arquitectura_backend.md
+├── 03_api_rest_conceptos.md
+├── 04_controladores_servicios.md
+├── 05_b_instalacion_postgres_docker.md
+├── 05_repositorios_bd.md
+├── 06_modelos_dtos_validacion.md
+├── 07_control_errores.md
+├── 08_relacion_entidades.md
+├── 09_relacion_requestparam.md
+├── 10_paginacion.md
+├── 11_autenticacion_autorizacion.md
+├── 12_roles_autorizacion.md
+├── 13_ownership_validacion.md
+├── 14_ownership_validacion.md
+
 
 /spring-boot
    └── p67
