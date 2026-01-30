@@ -45,7 +45,7 @@ En esta práctica aprenderás:
 
 ## **1.1. ¿Qué es Tomcat Embebido?**
 
-Cuando ejecutas una aplicación Spring Boot con `mvn spring-boot:run` o `java -jar app.jar`, **Spring Boot inicia automáticamente un servidor Tomcat embebido**.
+Cuando ejecutas una aplicación Spring Boot con `./gradlew bootRun` o `java -jar app.jar`, **Spring Boot inicia automáticamente un servidor Tomcat embebido**.
 
 ### **¿Qué es Tomcat?**
 
@@ -84,13 +84,13 @@ Nginx se instala **aparte**, no viene con Spring Boot.
 ### **En Desarrollo Local**
 
 ```bash
-mvn spring-boot:run
+./gradlew bootRun
 ```
 
 **¿Qué sucede internamente?**
 
 ```
-1. Maven compila el código (.java → .class)
+1. Gradle compila el código (.java → .class)
         ↓
 2. Spring Boot inicia Tomcat embebido
         ↓
@@ -117,14 +117,14 @@ Controlador → Servicio → Repositorio → BD
 ### **En Build (JAR)**
 
 ```bash
-mvn clean package
-java -jar target/mi-api.jar
+./gradlew build
+java -jar build/libs/mi-api.jar
 ```
 
 **¿Qué sucede?**
 
 ```
-1. Maven compila y empaqueta TODO en un JAR:
+1. Gradle compila y empaqueta TODO en un JAR:
    - Clases compiladas
    - Dependencias (Spring, Tomcat, PostgreSQL driver)
    - application.properties
@@ -165,11 +165,11 @@ Cliente → Internet → Nginx (80/443) → Tomcat embebido (8080) → Tu API
 ```
 
 **Ventajas de Nginx como proxy**:
-- ✅ Maneja SSL/HTTPS
-- ✅ Sirve archivos estáticos sin pasar por Java
-- ✅ Load balancing entre múltiples instancias de Spring Boot
-- ✅ Rate limiting y seguridad
-- ✅ Compresión gzip
+- Maneja SSL/HTTPS
+- Sirve archivos estáticos sin pasar por Java
+- Load balancing entre múltiples instancias de Spring Boot
+- Rate limiting y seguridad
+- Compresión gzip
 
 ## **1.3. JAR Ejecutable vs WAR**
 
@@ -182,10 +182,10 @@ Cliente → Internet → Nginx (80/443) → Tomcat embebido (8080) → Tu API
 - Ideal para microservicios y cloud
 
 **Cuándo usar**:
-- ✅ APIs REST modernas
-- ✅ Despliegue en Docker
-- ✅ PaaS (Heroku, Railway, Render)
-- ✅ Microservicios
+- APIs REST modernas
+- Despliegue en Docker
+- PaaS (Heroku, Railway, Render)
+- Microservicios
 
 ### **WAR (Web ARchive) - Legacy**
 
@@ -336,17 +336,17 @@ server:
 ```bash
 # Desarrollo
 export SPRING_PROFILES_ACTIVE=dev
-mvn spring-boot:run
+./gradlew bootRun
 
 # Producción
 export SPRING_PROFILES_ACTIVE=prod
-java -jar target/mi-api.jar
+java -jar build/libs/mi-api.jar
 ```
 
 ### **Opción 2: Argumento de línea de comandos**
 
 ```bash
-java -jar target/mi-api.jar --spring.profiles.active=prod
+java -jar build/libs/mi-api.jar --spring.profiles.active=prod
 ```
 
 ### **Opción 3: En application.yml**
@@ -384,10 +384,10 @@ SPRING_PROFILES_ACTIVE=prod
 ```bash
 # Opción 1: Source del archivo
 source .env.production
-java -jar target/mi-api.jar
+java -jar build/libs/mi-api.jar
 
 # Opción 2: Inline
-DATABASE_URL=jdbc:postgresql://... DB_USERNAME=... java -jar target/mi-api.jar
+DATABASE_URL=jdbc:postgresql://... DB_USERNAME=... java -jar build/libs/mi-api.jar
 ```
 
 ### **En systemd (Linux)**
@@ -402,42 +402,45 @@ ExecStart=/usr/bin/java -jar /opt/mi-api/mi-api.jar
 
 # **3. Build para Producción**
 
-## **3.1. Configurar pom.xml**
+## **3.1. Configurar build.gradle.kts**
 
 ### **Verificar configuración del plugin**
 
-```xml
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <configuration>
-                <!-- Excluir herramientas de desarrollo en JAR -->
-                <excludeDevtools>true</excludeDevtools>
-            </configuration>
-        </plugin>
-    </plugins>
-    
-    <!-- Nombre del JAR final -->
-    <finalName>mi-api</finalName>
-</build>
+```kotlin
+plugins {
+    id("org.springframework.boot") version "3.2.0"
+    id("io.spring.dependency-management") version "1.1.4"
+    kotlin("jvm") version "1.9.20"
+}
+
+group = "ec.edu.ups.pwp67"
+version = "1.0.0"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+}
+
+springBoot {
+    mainClass.set("ec.edu.ups.pwp67.Application")
+}
+
+tasks.bootJar {
+    archiveFileName.set("mi-api.jar")
+}
 ```
 
 ### **Dependencias opcionales para producción**
 
-```xml
-<!-- Actuator para health checks -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-actuator</artifactId>
-</dependency>
-
-<!-- Micrometer para métricas (opcional) -->
-<dependency>
-    <groupId>io.micrometer</groupId>
-    <artifactId>micrometer-registry-prometheus</artifactId>
-</dependency>
+```kotlin
+dependencies {
+    // Spring Boot Actuator para health checks
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    
+    // Micrometer para métricas (opcional)
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    
+    // Resto de dependencias...
+}
 ```
 
 ## **3.2. Compilar JAR Ejecutable**
@@ -445,36 +448,36 @@ ExecStart=/usr/bin/java -jar /opt/mi-api/mi-api.jar
 ### **Paso 1: Limpiar builds anteriores**
 
 ```bash
-mvn clean
+./gradlew clean
 ```
 
 ### **Paso 2: Compilar y empaquetar**
 
 ```bash
-mvn package -DskipTests
-# -DskipTests para omitir tests (ejecutar tests antes en otro paso)
+./gradlew build -x test
+# -x test para omitir tests (ejecutar tests antes en otro paso)
 ```
 
 **Salida**:
 ```
-[INFO] Building jar: target/mi-api.jar
-[INFO] BUILD SUCCESS
+BUILD SUCCESSFUL
+Generated JAR: build/libs/mi-api.jar
 ```
 
 ### **Paso 3: Verificar JAR**
 
 ```bash
-ls -lh target/
+ls -lh build/libs/
 # Deberías ver: mi-api.jar (aproximadamente 50-100 MB)
 
 # Ver contenido del JAR
-jar -tf target/mi-api.jar | head -20
+jar -tf build/libs/mi-api.jar | head -20
 ```
 
 ### **Paso 4: Probar JAR localmente**
 
 ```bash
-java -jar target/mi-api.jar --spring.profiles.active=dev
+java -jar build/libs/mi-api.jar --spring.profiles.active=dev
 
 # Ver logs de inicio
 # Deberías ver: "Started Application in X seconds"
@@ -494,20 +497,19 @@ curl http://localhost:8080/actuator/health
 
 ### **Excluir dependencias no usadas**
 
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-devtools</artifactId>
-    <scope>runtime</scope>
-    <optional>true</optional>  <!-- Solo en desarrollo -->
-</dependency>
+```kotlin
+dependencies {
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    
+    // Resto de dependencias...
+}
 ```
 
-### **Usar compresión**
+### **Usar build optimizado**
 
 ```bash
-# Crear JAR comprimido
-mvn clean package -Pproduction
+# Crear JAR optimizado
+./gradlew bootJar --stacktrace
 
 # Tamaño típico:
 # Sin optimización: 80-100 MB
@@ -549,12 +551,12 @@ sudo chown miapi:miapi /opt/mi-api
 
 ```bash
 # Desde tu máquina local
-scp target/mi-api.jar usuario@servidor:/opt/mi-api/
+scp build/libs/mi-api.jar usuario@servidor:/opt/mi-api/
 
 # O clonar repositorio y hacer build en servidor
 cd /opt/mi-api
 git clone https://github.com/tu-usuario/tu-api.git .
-mvn clean package -DskipTests
+./gradlew build -x test
 ```
 
 ## **4.2. Configurar Variables de Entorno**
@@ -809,27 +811,28 @@ sudo systemctl status certbot.timer
 # ============================================
 # ETAPA 1: BUILD
 # ============================================
-# Imagen base con Maven y JDK para compilar
-FROM maven:3.9-eclipse-temurin-17 AS builder
+# Imagen base con Gradle y JDK para compilar
+FROM gradle:8.5-eclipse-temurin-17 AS builder
 
 # Directorio de trabajo
 WORKDIR /build
 
-# Copiar POM primero (aprovechar caché de Docker)
-# Si pom.xml no cambia, Docker reutiliza esta capa
-COPY pom.xml .
+# Copiar archivos de Gradle primero (aprovechar caché de Docker)
+# Si build.gradle.kts no cambia, Docker reutiliza esta capa
+COPY build.gradle.kts gradle.properties settings.gradle.kts ./
+COPY gradle ./gradle
 
-# Descargar dependencias (se cachea si pom.xml no cambia)
-RUN mvn dependency:go-offline -B
+# Descargar dependencias (se cachea si build.gradle.kts no cambia)
+RUN gradle dependencies --no-daemon
 
 # Copiar código fuente
 COPY src ./src
 
 # Compilar aplicación (sin tests para producción)
-RUN mvn clean package -DskipTests -B
+RUN gradle build -x test --no-daemon
 
 # Verificar que JAR existe
-RUN ls -lh target/
+RUN ls -lh build/libs/
 
 # ============================================
 # ETAPA 2: RUNTIME
@@ -844,7 +847,7 @@ RUN addgroup -S spring && adduser -S spring -G spring
 WORKDIR /app
 
 # Copiar JAR desde la etapa de build
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder /build/build/libs/*.jar app.jar
 
 # Cambiar ownership
 RUN chown spring:spring app.jar
@@ -874,23 +877,24 @@ ENTRYPOINT ["java", \
 ### **Explicación línea por línea**
 
 ```dockerfile
-FROM maven:3.9-eclipse-temurin-17 AS builder
+FROM gradle:8.5-eclipse-temurin-17 AS builder
 ```
 - Imagen base para compilar
 - `AS builder`: Nombra esta etapa para referenciarla después
-- Incluye Maven y JDK 17
+- Incluye Gradle y JDK 17
 
 ```dockerfile
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+COPY build.gradle.kts gradle.properties settings.gradle.kts ./
+COPY gradle ./gradle
+RUN gradle dependencies --no-daemon
 ```
 - Descargar dependencias antes de copiar código
-- Si `pom.xml` no cambia, Docker reutiliza esta capa (build más rápido)
+- Si `build.gradle.kts` no cambia, Docker reutiliza esta capa (build más rápido)
 
 ```dockerfile
 FROM eclipse-temurin:17-jre-alpine
 ```
-- Imagen ligera con solo JRE (sin JDK ni Maven)
+- Imagen ligera con solo JRE (sin JDK ni Gradle)
 - `alpine`: Distribución Linux minimalista (5 MB base)
 
 ```dockerfile
@@ -901,7 +905,7 @@ USER spring:spring
 - Ejecutar aplicación con usuario limitado (seguridad)
 
 ```dockerfile
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder /build/build/libs/*.jar app.jar
 ```
 - Copiar JAR compilado desde la etapa `builder`
 - Solo el JAR, no todo el código fuente
@@ -1153,13 +1157,11 @@ docker-compose logs api | grep "Started"
 Crear archivo `.dockerignore` para no copiar archivos innecesarios:
 
 ```
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
+# Gradle
+build/
+.gradle/
+gradle-app.setting
+.gradletasknamecache
 
 # IDE
 .idea/
@@ -1200,11 +1202,11 @@ docs/
 ## **6.1. Render**
 
 ### **Ventajas**:
-- ✅ Free tier generoso (750 horas/mes)
-- ✅ PostgreSQL incluido
-- ✅ SSL automático
-- ✅ Deploy desde Git
-- ✅ Health checks automáticos
+- Free tier generoso (750 horas/mes)
+- PostgreSQL incluido
+- SSL automático
+- Deploy desde Git
+- Health checks automáticos
 
 ### **Pasos de despliegue**:
 
@@ -1226,8 +1228,8 @@ services:
     name: mi-api
     env: java
     plan: free
-    buildCommand: mvn clean package -DskipTests
-    startCommand: java -jar target/mi-api.jar
+    buildCommand: ./gradlew build -x test
+    startCommand: java -jar build/libs/mi-api.jar
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
@@ -1268,10 +1270,10 @@ Render Dashboard → Tu servicio → Logs
 ## **6.2. Railway**
 
 ### **Ventajas**:
-- ✅ $5 gratis/mes
-- ✅ Muy fácil configuración
-- ✅ PostgreSQL con un click
-- ✅ Deploy automático desde Git
+- $5 gratis/mes
+- Muy fácil configuración
+- PostgreSQL con un click
+- Deploy automático desde Git
 
 ### **Pasos**:
 
@@ -1305,7 +1307,7 @@ JWT_EXPIRATION=3600000
 Settings → Deploy → Start Command:
 
 ```bash
-java -Xms256m -Xmx512m -jar target/*.jar
+java -Xms256m -Xmx512m -jar build/libs/*.jar
 ```
 
 #### **5. Deploy automático**
@@ -1315,9 +1317,9 @@ Railway detecta push a GitHub y despliega automáticamente.
 ## **6.3. Heroku (Clásico)**
 
 ### **Ventajas**:
-- ✅ Plataforma madura
-- ✅ Muchos add-ons
-- ✅ Documentación extensa
+- Plataforma madura
+- Muchos add-ons
+- Documentación extensa
 
 ### **Nota**: Heroku eliminó free tier en 2022, ahora mínimo $7/mes.
 
@@ -1326,7 +1328,7 @@ Railway detecta push a GitHub y despliega automáticamente.
 #### **1. Crear `Procfile` en raíz**
 
 ```
-web: java -Xmx512m -jar target/mi-api.jar --server.port=$PORT
+web: java -Xmx512m -jar build/libs/mi-api.jar --server.port=$PORT
 ```
 
 #### **2. Crear `system.properties`**
@@ -1351,7 +1353,7 @@ heroku addons:create heroku-postgresql:mini
 heroku config:set SPRING_PROFILES_ACTIVE=prod
 heroku config:set JWT_SECRET=your-secret
 
-# Deploy
+# Deploy (Heroku detecta Gradle automáticamente)
 git push heroku main
 
 # Ver logs
@@ -1365,10 +1367,10 @@ heroku open
 
 | PaaS | Free Tier | PostgreSQL | SSL | Deploy desde Git | Mejor para |
 |------|-----------|------------|-----|------------------|------------|
-| **Render** | ✅ 750h/mes | ✅ Incluido | ✅ Auto | ✅ Sí | Portafolio, demos |
-| **Railway** | ✅ $5 crédito | ✅ 1 click | ✅ Auto | ✅ Sí | Proyectos personales |
-| **Heroku** | ❌ Desde $7/mes | ✅ Add-on | ✅ Auto | ✅ Sí | Producción seria |
-| **Fly.io** | ✅ Limitado | ✅ Sí | ✅ Auto | ✅ Sí | Apps globales |
+| **Render** | 750h/mes | Incluido | Auto | Sí | Portafolio, demos |
+| **Railway** | $5 crédito | 1 click | Auto | Sí | Proyectos personales |
+| **Heroku** | ❌ Desde $7/mes | Add-on | Auto | Sí | Producción seria |
+| **Fly.io** | Limitado | Sí | Auto | Sí | Apps globales |
 
 ---
 
@@ -1584,7 +1586,7 @@ public class CustomHealthIndicator implements HealthIndicator {
 
 ## **8.1. Preparar tu Proyecto Actual**
 
-### **Paso 1: Configurar Profiles**
+### **Paso 1: Configurar Profiles y build.gradle.kts**
 
 **Crear estructura**:
 ```
@@ -1592,6 +1594,40 @@ src/main/resources/
 ├── application.yml              ← Base
 ├── application-dev.yml          ← Desarrollo
 └── application-prod.yml         ← Producción
+```
+
+**Configurar build.gradle.kts**:
+```kotlin
+plugins {
+    id("org.springframework.boot") version "3.2.0"
+    id("io.spring.dependency-management") version "1.1.4"
+    kotlin("jvm") version "1.9.20"
+}
+
+group = "ec.edu.ups.pwp67"
+version = "1.0.0"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    
+    runtimeOnly("org.postgresql:postgresql")
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+}
+
+springBoot {
+    mainClass.set("ec.edu.ups.pwp67.Application")
+}
+
+tasks.bootJar {
+    archiveFileName.set("mi-api.jar")
+}
 ```
 
 **application.yml**:
@@ -1675,14 +1711,11 @@ jwt:
   expiration: ${JWT_EXPIRATION:3600000}
 ```
 
-### **Paso 2: Agregar Actuator**
+### **Paso 2: Actuator ya está incluido**
 
-**pom.xml**:
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-actuator</artifactId>
-</dependency>
+Ya está incluido en el `build.gradle.kts` anterior:
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-actuator")
 ```
 
 ### **Paso 3: Proteger Actuator**
@@ -1721,18 +1754,19 @@ public class SecurityConfig {
 
 ```dockerfile
 # ETAPA 1: BUILD
-FROM maven:3.9-eclipse-temurin-17 AS builder
+FROM gradle:8.5-eclipse-temurin-17 AS builder
 WORKDIR /build
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+COPY build.gradle.kts gradle.properties settings.gradle.kts ./
+COPY gradle ./gradle
+RUN gradle dependencies --no-daemon
 COPY src ./src
-RUN mvn clean package -DskipTests -B
+RUN gradle build -x test --no-daemon
 
 # ETAPA 2: RUNTIME
 FROM eclipse-temurin:17-jre-alpine
 RUN addgroup -S spring && adduser -S spring -G spring
 WORKDIR /app
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder /build/build/libs/*.jar app.jar
 RUN chown spring:spring app.jar
 USER spring:spring
 EXPOSE 8080
@@ -1793,15 +1827,34 @@ volumes:
 ### **Paso 6: Crear .dockerignore**
 
 ```
-target/
+build/
+.gradle/
 .git/
 .idea/
 *.iml
 README.md
 .env
+.gradle/
+gradle-app.setting
+.gradletasknamecache
 ```
 
-## **8.2. Probar Localmente con Docker**
+## **8.2. Probar Localmente**
+
+### **Con Gradle (desarrollo)**
+
+```bash
+# Compilar
+./gradlew build -x test
+
+# Ejecutar
+./gradlew bootRun --args='--spring.profiles.active=dev'
+
+# O directamente el JAR
+java -jar build/libs/mi-api.jar --spring.profiles.active=dev
+```
+
+### **Con Docker Compose**
 
 ```bash
 # Build y levantar
@@ -1832,9 +1885,9 @@ docker-compose down
 ### **Paso 1: Preparar repositorio**
 
 ```bash
-# Asegúrate de tener todos los archivos
+# Asegúrate de tener todos los archivos (incluido build.gradle.kts)
 git add .
-git commit -m "feat(spring-boot): configurar despliegue producción"
+git commit -m "feat(spring-boot): configurar despliegue producción con Gradle"
 git push origin main
 ```
 
@@ -1854,8 +1907,8 @@ services:
     name: pwp67-api
     env: java
     plan: free
-    buildCommand: mvn clean package -DskipTests
-    startCommand: java -Xms256m -Xmx512m -jar target/*.jar
+    buildCommand: ./gradlew build -x test
+    startCommand: java -Xms256m -Xmx512m -jar build/libs/pwp67-api.jar
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
@@ -1875,8 +1928,8 @@ services:
 1. Ir a [Render Dashboard](https://dashboard.render.com)
 2. New → Blueprint
 3. Conectar GitHub repo
-4. Render detecta `render.yaml`
-5. Deploy
+4. Render detecta `render.yaml` (basado en Gradle)
+5. Deploy automático con `./gradlew build -x test`
 
 ### **Paso 4: Probar en producción**
 
@@ -1907,23 +1960,26 @@ curl $API_URL/api/products \
 ### **Error: "Failed to execute goal on project"**
 
 ```bash
-# Limpiar cache de Maven
-mvn clean
-rm -rf ~/.m2/repository
+# Limpiar cache de Gradle
+./gradlew clean
+rm -rf ~/.gradle/caches
 
 # Volver a build
-mvn package -DskipTests
+./gradlew build -x test
 ```
 
 ### **Error: "No main manifest attribute"**
 
-**Solución**: Verificar plugin en `pom.xml`:
+**Solución**: Verificar configuración en `build.gradle.kts`:
 
-```xml
-<plugin>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-maven-plugin</artifactId>
-</plugin>
+```kotlin
+springBoot {
+    mainClass.set("ec.edu.ups.pwp67.Application")
+}
+
+tasks.bootJar {
+    archiveFileName.set("mi-api.jar")
+}
 ```
 
 ## **9.2. Problemas de Ejecución**
@@ -2010,35 +2066,35 @@ telnet postgres-host 5432
 
 ## **10.1. Configuración**
 
-✅ **Usar profiles** (`dev`, `prod`)  
-✅ **Variables de entorno** para secretos  
-✅ **No versionar** `.env` en Git  
-✅ **Validar configuración** antes de deploy  
-✅ **Logs estructurados** (JSON en producción)
+**Usar profiles** (`dev`, `prod`)  
+**Variables de entorno** para secretos  
+**No versionar** `.env` en Git  
+**Validar configuración** antes de deploy  
+**Logs estructurados** (JSON en producción)
 
 ## **10.2. Seguridad**
 
-✅ **No exponer** stack traces  
-✅ **Rate limiting** en Nginx  
-✅ **HTTPS obligatorio**  
-✅ **Actualizar dependencias** regularmente  
-✅ **Escanear vulnerabilidades** (`mvn dependency-check:check`)
+**No exponer** stack traces  
+**Rate limiting** en Nginx  
+**HTTPS obligatorio**  
+**Actualizar dependencias** regularmente  
+**Escanear vulnerabilidades** (usar herramientas como OWASP Dependency-Check)
 
 ## **10.3. Performance**
 
-✅ **Pool de conexiones** optimizado  
-✅ **Índices** en BD  
-✅ **Caché** para queries frecuentes  
-✅ **Compresión gzip**  
-✅ **Limitar memoria JVM** (`-Xmx`)
+**Pool de conexiones** optimizado  
+**Índices** en BD  
+**Caché** para queries frecuentes  
+**Compresión gzip**  
+**Limitar memoria JVM** (`-Xmx`)
 
 ## **10.4. Monitoreo**
 
-✅ **Health checks** con Actuator  
-✅ **Logs centralizados**  
-✅ **Alertas** para errores 5xx  
-✅ **Métricas** de rendimiento  
-✅ **Backups automáticos** de BD
+**Health checks** con Actuator  
+**Logs centralizados**  
+**Alertas** para errores 5xx  
+**Métricas** de rendimiento  
+**Backups automáticos** de BD
 
 ---
 
@@ -2046,15 +2102,15 @@ telnet postgres-host 5432
 
 Has aprendido a:
 
-✅ **Entender** arquitectura de Spring Boot (Tomcat embebido)  
-✅ **Configurar** profiles y variables de entorno  
-✅ **Compilar** JAR ejecutable optimizado  
-✅ **Desplegar nativamente** con systemd + Nginx  
-✅ **Dockerizar** con multi-stage build  
-✅ **Usar Docker Compose** para stack completo  
-✅ **Desplegar en PaaS** (Render, Railway, Heroku)  
-✅ **Monitorear** con Spring Boot Actuator  
-✅ **Aplicar best practices** de producción
+**Entender** arquitectura de Spring Boot (Tomcat embebido)  
+**Configurar** profiles y variables de entorno  
+**Compilar** JAR ejecutable optimizado  
+**Desplegar nativamente** con systemd + Nginx  
+**Dockerizar** con multi-stage build  
+**Usar Docker Compose** para stack completo  
+**Desplegar en PaaS** (Render, Railway, Heroku)  
+**Monitorear** con Spring Boot Actuator  
+**Aplicar best practices** de producción
 
 **Próximos pasos**:
 - Implementar CI/CD con GitHub Actions
@@ -2093,4 +2149,4 @@ Has aprendido a:
 | **PaaS (Render/Railway)** | Baja | Alta | Alta | Portafolio, MVP |
 | **Kubernetes** | Muy alta | Máxima | Máxima | Empresarial |
 
-**Para tu proyecto académico**: Recomendamos **Docker Compose local** + **Render/Railway para demo online**.
+**Para tu proyecto académico**: Recomendamos **Docker local** + **Render/Railway para demo online**.
