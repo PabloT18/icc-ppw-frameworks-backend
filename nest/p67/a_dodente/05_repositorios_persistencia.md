@@ -1,4 +1,4 @@
-# Programación y Plataformas Web
+_# Programación y Plataformas Web
 
 # **NestJS – Persistencia con TypeORM, Entidades, Repositorios y Conexión a Base de Datos**
 
@@ -996,3 +996,4 @@ ORDER BY id;
 | **Sincronización** | `synchronize: true` | `ddl-auto: update` |
 
 Ambos frameworks siguen principios similares de arquitectura en capas y separación de responsabilidades.
+_
