@@ -331,7 +331,7 @@ Cada estudiante o grupo debe agregar en su archivo:
 ```
 node -v
 ```
-![version](capturas/estilos/cuadro-verde.png)
+![alt text](assets/nodeversion.jpeg)
 
 ### 2. Captura del servidor NestJS iniciándose correctamente
 
@@ -340,16 +340,21 @@ Debe mostrar:
 ```
 Nest application successfully started
 ```
+![alt text](assets/localhost3000.jpeg)
 
 ### 3. Captura del endpoint `/api/status` funcionando
 
 En navegador, Postman, Bruno o VS Code REST client.
+
+![alt text](assets/api.jpeg)
 
 ### 4. Captura del siguiente comando en terminal 
 
 ```bash
 ls ./src/status/
 ```
+
+![alt text](assets/lsstatus.jpeg)
 
 ### 5. Explicación breve escrita por el estudiante
 
