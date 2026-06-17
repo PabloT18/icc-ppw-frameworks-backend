@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+<!-- question: 0  -->
+  <question type="category">
+    <category>
+      <text><![CDATA[$course$/top/Por defecto en 384597/Back/SpringBoot/08_relaciones]]></text>
+    </category>
+    <info format="html">
+      <text></text>
+    </info>
+    <idnumber>SPRING_RELACIONES_ENTIDADES</idnumber>
+  </question>
+
+<!-- PREGUNTAS VERDADERO/FALSO - RELACIONES JPA SPRING BOOT -->
+
+<!-- question: REL01  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@ManyToOne LAZY vs EAGER]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: En una relación @ManyToOne con FetchType.LAZY, la entidad relacionada se carga automáticamente al momento de consultar la entidad principal, generando un JOIN en la consulta SQL.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Con <code>FetchType.LAZY</code>, la entidad relacionada se carga SOLO cuando se accede a ella (ej: <code>product.getOwner().getName()</code>), generando una consulta SQL adicional en ese momento. El <code>FetchType.EAGER</code> es el que carga automáticamente con JOIN. LAZY es la estrategia recomendada para evitar el problema N+1.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>REL_TF01</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. LAZY carga bajo demanda, no automáticamente.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. LAZY carga solo cuando se accede a la propiedad relacionada.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: REL02  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@JoinColumn - Foreign Key]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: La anotación @JoinColumn(name = "user_id", nullable = false) define la columna Foreign Key en la tabla de la entidad propietaria de la relación.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> <code>@JoinColumn</code> define el nombre de la columna Foreign Key en la tabla donde se ubica la anotación. Si está en <code>ProductEntity</code>, crea <code>user_id</code> en la tabla <code>products</code>. El parámetro <code>nullable = false</code> hace que la FK sea obligatoria.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>REL_TF02</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @JoinColumn define la FK en la entidad propietaria.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @JoinColumn sí define la columna FK en la tabla propietaria.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: REL03  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@ManyToMany - Tabla Intermedia]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: En una relación @ManyToMany, ambas entidades requieren la anotación @JoinTable para crear la tabla intermedia correctamente.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Solo UNA entidad (la propietaria) define <code>@JoinTable</code>. La otra usa <code>mappedBy</code> para referenciar la relación. Si ambas tuvieran <code>@JoinTable</code>, se crearían dos tablas intermedias innecesariamente.</p><p><strong>Ejemplo:</strong><br>ProductEntity: <code>@JoinTable(name = "product_categories"...)</code><br>CategoryEntity: <code>@ManyToMany(mappedBy = "categories")</code></p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>REL_TF03</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Solo la entidad propietaria usa @JoinTable.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Solo una entidad define @JoinTable, la otra usa mappedBy.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS DE OPCIÓN MÚLTIPLE -->
+
+<!-- question: REL04  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Tipos de Relaciones JPA]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[En el contexto de un e-commerce, ¿cuál es la mejor anotación JPA para modelar la relación "Un Usuario puede crear muchos Productos"?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: @ManyToOne en ProductEntity</strong></p><p><strong>Explicación:</strong> Desde la perspectiva del Producto, "muchos productos pertenecen a un usuario", por lo que se usa <code>@ManyToOne</code> en ProductEntity:</p><code>@ManyToOne(optional = false)<br>@JoinColumn(name = "user_id")<br>private UserEntity owner;</code><p>La entidad Product es la propietaria de la relación y contiene la Foreign Key.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>REL_MC04</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[@ManyToOne en ProductEntity]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Muchos productos pertenecen a un usuario.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@OneToMany en UserEntity]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto, pero conceptualmente válido. Es mejor usar @ManyToOne desde Product para evitar cargar colecciones innecesariamente.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@ManyToMany entre User y Product]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Un producto tiene un solo creador, no es relación N:N.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@OneToOne en ambas entidades]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Un usuario puede crear múltiples productos.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: REL05  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[FetchType Performance]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la principal ventaja de usar FetchType.LAZY en relaciones JPA?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Evita cargar datos innecesarios y mejora el rendimiento inicial</strong></p><p><strong>Explicación:</strong> <code>FetchType.LAZY</code> carga las entidades relacionadas solo cuando se accede a ellas. Esto:</p><ul><li>Reduce el tiempo de consulta inicial</li><li>Consume menos memoria</li><li>Evita el problema N+1 cuando se usa correctamente</li><li>Permite consultas más eficientes</li></ul><p>Es la estrategia recomendada por defecto.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>REL_MC05</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Evita cargar datos innecesarios y mejora el rendimiento inicial]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. LAZY carga bajo demanda, optimizando memoria y performance.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Siempre genera una sola consulta SQL con JOIN]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. LAZY puede generar consultas adicionales cuando se accede a las relaciones.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Garantiza que los datos relacionados estén siempre disponibles]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Esa es la característica de EAGER, no de LAZY.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Elimina completamente el problema N+1]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. LAZY puede contribuir al problema N+1 si no se maneja correctamente.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: REL06  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Set vs List en @ManyToMany]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Por qué se recomienda usar Set<CategoryEntity> en lugar de List<CategoryEntity> para relaciones @ManyToMany?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Set no permite duplicados, evitando inconsistencias</strong></p><p><strong>Explicación:</strong> En relaciones N:N:</p><ul><li><code>Set</code>: No permite duplicados, ideal para relaciones únicas</li><li><code>List</code>: Permite duplicados, puede causar registros repetidos en tabla intermedia</li><li><code>HashSet</code>: Implementación eficiente para búsquedas</li><li>Mantiene integridad referencial automáticamente</li></ul>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>REL_MC06</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Set no permite duplicados, evitando inconsistencias en la relación]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Set garantiza unicidad en relaciones N:N.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[List tiene mejor rendimiento para consultas SQL]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Set es más eficiente para operaciones de conjunto.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Set mantiene automáticamente el orden de inserción]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. HashSet no mantiene orden. Necesitarías LinkedHashSet para eso.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[List requiere menos memoria que Set]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. El uso de memoria es similar, pero Set evita duplicados.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS DE CÓDIGO -->
+
+<!-- question: REL07  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Código @ManyToMany Correcto]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la implementación correcta de @ManyToMany en ProductEntity para la relación con categorías?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: La opción A</strong></p><p><strong>Explicación:</strong></p><code>@ManyToMany(fetch = FetchType.LAZY)<br>@JoinTable(name = "product_categories",<br>&nbsp;&nbsp;joinColumns = @JoinColumn(name = "product_id"),<br>&nbsp;&nbsp;inverseJoinColumns = @JoinColumn(name = "category_id"))<br>private Set&lt;CategoryEntity&gt; categories = new HashSet&lt;&gt;();</code><p>Elementos clave: LAZY loading, Set para evitar duplicados, JoinTable con nombres claros.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>REL_MC07</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[<pre>@ManyToMany(fetch = FetchType.LAZY)
+@JoinTable(name = "product_categories",
+    joinColumns = @JoinColumn(name = "product_id"),
+    inverseJoinColumns = @JoinColumn(name = "category_id"))
+private Set&lt;CategoryEntity&gt; categories = new HashSet&lt;&gt;();</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Configuración óptima con LAZY, Set y JoinTable bien definida.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@ManyToMany(fetch = FetchType.EAGER)
+@JoinColumn(name = "category_id")
+private List&lt;CategoryEntity&gt; categories = new ArrayList&lt;&gt;();</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Usa EAGER (problemático), List (permite duplicados) y JoinColumn (incorrecto para N:N).]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@OneToMany(mappedBy = "product")
+private Set&lt;CategoryEntity&gt; categories;</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Usa OneToMany en lugar de ManyToMany.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@ManyToMany
+@JoinTable(name = "product_categories")
+private Set&lt;CategoryEntity&gt; categories;</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Falta especificar joinColumns e inverseJoinColumns.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: REL08  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[DTO Structure for Relationships]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Para un ProductResponseDto con relaciones, ¿cuál es la estructura más recomendada?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Estructura anidada con DTOs internos</strong></p><p><strong>Ventajas:</strong></p><ul><li>Semánticamente clara: <code>product.user.name</code></li><li>Reutilizable y extensible</li><li>Fuertemente tipada</li><li>Facilita trabajo del frontend</li><li>Mejor práctica en APIs REST modernas</li></ul><p>La estructura plana se vuelve confusa con múltiples relaciones.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>REL_MC08</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Estructura anidada con DTOs internos (user: {id, name, email})]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Estructura anidada es más clara y semánticamente expresiva.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Estructura plana con campos separados (userId, userName, userEmail)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Funciona, pero es menos expresivo y se vuelve confuso con múltiples relaciones.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo incluir los IDs de las entidades relacionadas]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Obliga al frontend a hacer consultas adicionales.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Retornar las entidades JPA completas]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Expone información interna y causa problemas de serialización.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS DE ANÁLISIS SQL -->
+
+<!-- question: REL09  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Consulta SQL Generada - Many-to-Many]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Al consultar un producto con múltiples categorías usando LAZY loading, ¿qué consultas SQL genera Hibernate?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Una consulta para el producto + una consulta con JOIN para las categorías</strong></p><p><strong>Flujo LAZY:</strong></p><ol><li><code>SELECT * FROM products WHERE id = ?</code> (consulta principal)</li><li><code>SELECT c.*, pc.product_id FROM categories c INNER JOIN product_categories pc ON c.id = pc.category_id WHERE pc.product_id = ?</code> (cuando se accede a getCategories())</li></ol><p>LAZY carga bajo demanda, no automáticamente.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>REL_MC09</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Una consulta para el producto + una consulta con JOIN para las categorías (cuando se accede a ellas)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. LAZY loading ejecuta consultas separadas bajo demanda.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Una sola consulta con LEFT JOIN que trae todo junto]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Eso sería con EAGER loading.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Una consulta por cada categoría individualmente (N+1)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Hibernate optimiza y hace un JOIN con la tabla intermedia.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo la consulta del producto, las categorías no se cargan]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Las categorías se cargan cuando se accede a ellas.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: REL10  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Repository Query Methods]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es el método Spring Data JPA correcto para encontrar productos por nombre de categoría?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: findByCategoriesName(String categoryName)</strong></p><p><strong>Explicación:</strong> En relaciones N:N, Spring Data JPA:</p><ul><li>Usa el nombre de la colección: <code>categories</code></li><li>Accede a propiedades: <code>Name</code></li><li>Genera automáticamente: <code>JOIN product_categories pc ON p.id = pc.product_id JOIN categories c ON pc.category_id = c.id WHERE c.name = ?</code></li></ul>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>REL_MC10</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[findByCategoriesName(String categoryName)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Usa el nombre de la colección y la propiedad de la entidad relacionada.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[findByCategoryName(String categoryName)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Este sería para relación 1:N, no para N:N con colección "categories".]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[findByCategory_Name(String categoryName)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. El underscore se usa para relaciones 1:1 o 1:N, no para colecciones.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[findProductsByCategoryName(String categoryName)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Spring Data JPA no reconoce esta sintaxis.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS DE DISEÑO Y MEJORES PRÁCTICAS -->
+
+<!-- question: REL11  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Evolución 1:N a N:N]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la principal diferencia estructural al evolucionar de relación 1:N (Product-Category) a N:N?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Se elimina la FK en products y se crea tabla intermedia</strong></p><p><strong>Evolución:</strong></p><p><strong>1:N:</strong> Columna <code>category_id</code> en tabla <code>products</code></p><p><strong>N:N:</strong> Tabla intermedia <code>product_categories</code> con:</p><ul><li><code>product_id</code> referenciando products.id</li><li><code>category_id</code> referenciando categories.id</li><li>Clave primaria compuesta (product_id, category_id)</li></ul>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>REL_MC11</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Se elimina la FK en products y se crea tabla intermedia product_categories]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. N:N requiere tabla intermedia para manejar múltiples relaciones.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Se agregan múltiples columnas category_id_1, category_id_2, etc.]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Eso violaría principios de normalización.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Se duplican las tablas products y categories]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Las tablas base se mantienen igual.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo cambian las anotaciones JPA, la BD permanece igual]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. La estructura de BD cambia fundamentalmente.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: REL12  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[Servicio Dependencies - Best Practices]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: En ProductServiceImpl, es mejor práctica inyectar UserService y CategoryService en lugar de UserRepository y CategoryRepository directamente.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Es mejor inyectar repositorios directamente en ProductService para:</p><ul><li>Evitar <strong>acoplamiento horizontal</strong> entre servicios</li><li>Prevenir <strong>dependencias circulares</strong></li><li>Facilitar <strong>testing independiente</strong></li><li>Mantener <strong>responsabilidades claras</strong></li></ul><p>ProductService debe validar entidades relacionadas directamente, no delegar a otros servicios.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>REL_TF12</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Mejor inyectar repositorios para evitar acoplamiento.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Repositories directos evitan acoplamiento entre servicios.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+</quiz>

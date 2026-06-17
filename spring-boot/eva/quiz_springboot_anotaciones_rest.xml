@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+<!-- question: 0  -->
+  <question type="category">
+    <category>
+      <text><![CDATA[$course$/top/Por defecto en 384597/Back/SpringBoot/03_anotaciones_rest]]></text>
+    </category>
+    <info format="html">
+      <text></text>
+    </info>
+    <idnumber>SPRING_ANOTACIONES_REST</idnumber>
+  </question>
+
+<!-- PREGUNTAS VERDADERO/FALSO - ANOTACIONES SPRING BOOT REST -->
+
+<!-- question: SB01  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@RestController vs @Controller]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: La anotación @RestController en Spring Boot incluye automáticamente @ResponseBody en todos los métodos del controlador, mientras que @Controller requiere agregar @ResponseBody explícitamente para retornar JSON.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> <code>@RestController</code> es una anotación compuesta que combina <code>@Controller + @ResponseBody</code>. Todos los métodos retornan directamente JSON/XML serializado automáticamente. Con <code>@Controller</code> solo, los métodos retornan vistas (templates) a menos que se agregue <code>@ResponseBody</code> explícitamente.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_TF01</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @RestController incluye @ResponseBody automáticamente.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Esta es precisamente la diferencia entre ambas anotaciones.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB02  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@RequestMapping - Métodos Múltiples]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: @RequestMapping sin especificar el atributo 'method' acepta todos los métodos HTTP (GET, POST, PUT, DELETE, etc.) por defecto.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> Cuando se usa <code>@RequestMapping("/ruta")</code> sin especificar <code>method</code>, el endpoint responde a TODOS los métodos HTTP. Es mejor práctica usar anotaciones específicas como <code>@GetMapping</code>, <code>@PostMapping</code>, <code>@PutMapping</code>, <code>@DeleteMapping</code> o especificar explícitamente el método con <code>@RequestMapping(value="/ruta", method=RequestMethod.GET)</code>.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_TF02</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Sin especificar method acepta todos los métodos HTTP.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestMapping sin method acepta cualquier verbo HTTP.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB03  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@PathVariable - Requerido]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: Los parámetros anotados con @PathVariable son siempre obligatorios y la petición falla si no se proporcionan en la URL.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> <code>@PathVariable</code> extrae valores obligatorios de la ruta URL. Si defines <code>/api/users/{id}</code> y haces GET a <code>/api/users</code> sin ID, Spring no encuentra el mapping y retorna 404. Para hacerlo opcional necesitarías usar <code>@PathVariable(required=false)</code> o definir dos endpoints distintos.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_TF03</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @PathVariable es obligatorio por defecto en la ruta.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Los PathVariable son requeridos a menos que se especifique required=false.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB04  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@RequestBody - Serialización Automática]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: @RequestBody deserializa automáticamente el JSON del body de la petición a un objeto Java usando Jackson, sin necesidad de parsearlo manualmente.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> Spring Boot incluye Jackson por defecto, que se encarga automáticamente de convertir el JSON del request body al objeto Java especificado (DTO o entidad). No necesitas usar ObjectMapper manualmente. La deserialización ocurre antes de que el método del controlador se ejecute, y si el JSON es inválido, se lanza una excepción automáticamente.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_TF04</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Jackson deserializa automáticamente JSON a objetos Java.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Esta es precisamente la función de @RequestBody con Jackson.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB05  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@RequestParam - Query Params]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: @RequestParam se utiliza para capturar parámetros de query string (ejemplo: /api/users?name=Juan&age=25), y son opcionales por defecto a menos que se especifique required=true.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Es al revés. <code>@RequestParam</code> SÍ captura query params, pero son <strong>obligatorios por defecto</strong>. Si defines <code>@RequestParam String name</code> y no envías <code>?name=valor</code>, la petición falla con 400 Bad Request. Para hacerlos opcionales debes usar <code>@RequestParam(required=false)</code> o <code>@RequestParam(defaultValue="valor")</code>.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_TF05</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestParam es obligatorio por defecto, no opcional.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @RequestParam es required=true por defecto.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB06  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[Anotaciones Composed - GetMapping]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: @GetMapping, @PostMapping, @PutMapping, @PatchMapping y @DeleteMapping son simplemente alias convenientes de @RequestMapping con el método HTTP específico pre-configurado.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> Estas anotaciones son <strong>composed annotations</strong> (meta-anotaciones) que internamente usan <code>@RequestMapping</code> con el método HTTP correspondiente. Por ejemplo, <code>@GetMapping("/users")</code> es equivalente a <code>@RequestMapping(value="/users", method=RequestMethod.GET)</code>. Son azúcar sintáctico para código más limpio y legible.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_TF06</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Son composed annotations de @RequestMapping.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Son meta-anotaciones que simplifican @RequestMapping.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS OPCIÓN MÚLTIPLE - ANOTACIONES SPRING BOOT REST -->
+
+<!-- question: SB101  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Anotación Correcta - Controlador REST]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué anotación debe usarse para marcar una clase como controlador REST en Spring Boot que retorna automáticamente JSON?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@RestController</code> es la anotación correcta para controladores REST. Combina <code>@Controller</code> y <code>@ResponseBody</code>, indicando que todos los métodos retornan datos serializados (JSON/XML) directamente al cliente, no vistas HTML.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC01</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@RestController]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @RestController es para APIs REST que retornan JSON.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@Controller]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @Controller es para vistas MVC, no APIs REST.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@Service]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @Service es para la capa de lógica de negocio.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@Component]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @Component es genérico, no específico para REST.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB102  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Capturar ID de URL - Anotación]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Para capturar el ID de la URL en el endpoint DELETE /api/users/{id}, ¿qué anotación debe usarse en el parámetro del método?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@PathVariable</code> extrae valores de segmentos variables en la ruta URL. Se usa como: <code>@DeleteMapping("/{id}") public void delete(@PathVariable int id)</code>. El nombre del parámetro debe coincidir con el placeholder en la ruta, o especificar explícitamente: <code>@PathVariable("id")</code>.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC02</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@PathVariable]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @PathVariable captura valores de la ruta URL.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@RequestParam]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestParam es para query strings (?param=value).]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@RequestBody]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestBody es para el cuerpo de la petición.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@RequestHeader]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestHeader es para capturar headers HTTP.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB103  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Deserializar JSON Body - Anotación]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[En un endpoint POST que recibe un objeto CreateUserDto en el body como JSON, ¿qué anotación debe usarse en el parámetro?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@RequestBody</code> indica que el parámetro debe deserializarse del cuerpo de la petición HTTP. Spring usa Jackson automáticamente para convertir el JSON a un objeto Java. Ejemplo: <code>@PostMapping public User create(@RequestBody CreateUserDto dto)</code>. Si el JSON es inválido o no coincide con la estructura del DTO, se lanza excepción.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC03</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@RequestBody]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @RequestBody deserializa el JSON del body.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@RequestParam]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestParam es para query strings, no body.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@PathVariable]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @PathVariable es para valores en la ruta URL.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@ModelAttribute]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @ModelAttribute es para form data, no JSON.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB104  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Mapeo Base Path - Anotación]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Para definir que todos los endpoints de un controlador comparten el prefijo "/api/users", ¿dónde y cómo se aplica @RequestMapping?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@RequestMapping("/api/users")</code> a nivel de clase establece el prefijo base para todos los endpoints del controlador. Luego cada método usa su propia anotación (@GetMapping, @PostMapping) con rutas relativas. Ejemplo: método con @GetMapping("/{id}") queda como GET /api/users/{id}.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC04</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[A nivel de clase antes de la declaración del controlador]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @RequestMapping a nivel de clase define el prefijo base.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[En cada método individualmente]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Eso causaría duplicación, no prefijo compartido.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[En el archivo application.properties]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Las rutas se definen con anotaciones, no en properties.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[No es posible, debe repetirse en cada método]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestMapping a nivel de clase permite prefijo compartido.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB105  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Query Params Opcionales - Sintaxis]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Para capturar un query param opcional 'page' en GET /api/products?page=2 con valor por defecto 1, ¿cuál es la sintaxis correcta?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@RequestParam(defaultValue="1") int page</code> es la forma correcta. Hace el parámetro opcional y si no se envía en la URL, usa el valor por defecto. Alternativamente se puede usar <code>@RequestParam(required=false, defaultValue="1")</code> aunque defaultValue ya lo hace opcional implícitamente.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC05</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@RequestParam(defaultValue="1") int page]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. defaultValue hace el param opcional con valor por defecto.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@RequestParam int page = 1]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. La sintaxis de Java para default no funciona con anotaciones.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@PathVariable(optional=true) int page]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. PathVariable es para rutas, no query params.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@RequestParam(required=true) int page]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. required=true lo hace obligatorio, no opcional.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB106  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Método HTTP - Actualización Parcial]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué anotación de Spring Boot se usa específicamente para implementar un endpoint de actualización parcial siguiendo convenciones REST?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@PatchMapping</code> se usa para actualizaciones parciales (PATCH). Permite enviar solo los campos que cambian, a diferencia de <code>@PutMapping</code> que reemplaza el recurso completo. Ejemplo: <code>@PatchMapping("/{id}") public User partialUpdate(@PathVariable int id, @RequestBody PartialUpdateUserDto dto)</code>.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC06</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@PatchMapping]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @PatchMapping es para actualizaciones parciales HTTP PATCH.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@PutMapping]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @PutMapping es para reemplazo completo, no parcial.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@PostMapping]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @PostMapping es para crear recursos nuevos.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@UpdateMapping]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @UpdateMapping no existe en Spring Boot.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB107  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Múltiples Path Variables - Sintaxis]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Para el endpoint GET /api/users/{userId}/orders/{orderId}, ¿cuál es la forma correcta de capturar ambos IDs?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p>Se pueden usar múltiples <code>@PathVariable</code> en el mismo método: <code>@GetMapping("/{userId}/orders/{orderId}") public Order getOrder(@PathVariable int userId, @PathVariable int orderId)</code>. Los nombres de los parámetros deben coincidir con los placeholders en la ruta, o especificarlos explícitamente.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC07</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@PathVariable int userId, @PathVariable int orderId]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Se pueden usar múltiples @PathVariable en un método.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@PathVariable("userId,orderId") String ids]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Cada PathVariable se captura por separado.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@RequestParam int userId, int orderId]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestParam es para query strings, no rutas.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[No es posible capturar múltiples path variables]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Spring permite múltiples @PathVariable sin problema.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB108  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Código de Estado HTTP - Anotación]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Para especificar que un endpoint POST debe retornar código HTTP 201 Created al crear un recurso exitosamente, ¿qué anotación se usa?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@ResponseStatus(HttpStatus.CREATED)</code> o <code>@ResponseStatus(code = HttpStatus.CREATED)</code> en el método indica que la respuesta exitosa debe tener código 201. También se puede usar <code>ResponseEntity</code> con <code>return ResponseEntity.status(HttpStatus.CREATED).body(dto)</code> para mayor control.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC08</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@ResponseStatus(HttpStatus.CREATED)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @ResponseStatus especifica el código HTTP de respuesta.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@HttpStatus(201)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @HttpStatus no existe, es @ResponseStatus.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@StatusCode(CREATED)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @StatusCode no es una anotación de Spring.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@PostMapping(status=201)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @PostMapping no tiene atributo status.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB109  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[ResponseEntity vs Objeto Directo]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la ventaja de retornar ResponseEntity<UserDto> en lugar de UserDto directamente en un método de controlador?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>ResponseEntity</code> permite control completo sobre la respuesta HTTP: código de estado, headers y body. Ejemplo: <code>return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/users/1").body(dto)</code>. Retornar el DTO directamente solo serializa el body con código 200 por defecto.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC09</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[Permite controlar código HTTP, headers y body de la respuesta]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. ResponseEntity da control total sobre la respuesta HTTP.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[Es más rápido y consume menos memoria]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. La diferencia de rendimiento es insignificante.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[Evita la necesidad de usar @RestController]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. ResponseEntity y @RestController son independientes.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[No hay ventaja, son exactamente equivalentes]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. ResponseEntity proporciona mayor control.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB110  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Validación Request Body - Anotación]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Para activar validaciones Bean Validation (Jakarta Validation) en un DTO recibido con @RequestBody, ¿qué anotación adicional se necesita?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@Valid</code> activa la validación del DTO basada en anotaciones como <code>@NotNull</code>, <code>@NotEmpty</code>, <code>@Email</code>, etc. Sintaxis: <code>@PostMapping public User create(@Valid @RequestBody CreateUserDto dto)</code>. Si la validación falla, Spring lanza <code>MethodArgumentNotValidException</code> automáticamente con código 400.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC10</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@Valid]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @Valid activa Bean Validation en el RequestBody.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@Validated]]></text>
+      <feedback format="html">
+        <text><![CDATA[Parcialmente correcto. @Validated también funciona, pero @Valid es estándar.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@NotNull]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @NotNull se usa EN el DTO, no en el parámetro.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[No se necesita, Spring valida automáticamente]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Se requiere @Valid para activar validación.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: SB111  -->
+  <!-- <question type="multichoice">
+    <name>
+      <text><![CDATA[Header Personalizado - Captura]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Para capturar un header HTTP personalizado 'X-API-Key' de la petición, ¿qué anotación y sintaxis se usa?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><code>@RequestHeader("X-API-Key") String apiKey</code> captura el valor del header especificado. Si el header no existe y no se especifica <code>required=false</code>, la petición falla con 400. Útil para autenticación, versionado por header, o metadatos personalizados.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3300000</penalty>
+    <hidden>0</hidden>
+    <idnumber>SB_MC11</idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[@RequestHeader("X-API-Key") String apiKey]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @RequestHeader captura valores de headers HTTP.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@Header("X-API-Key") String apiKey]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. La anotación correcta es @RequestHeader, no @Header.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@RequestParam("X-API-Key") String apiKey]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @RequestParam es para query params, no headers.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[@PathVariable("X-API-Key") String apiKey]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @PathVariable es para segmentos de ruta, no headers.]]></text>
+      </feedback>
+    </answer>
+  </question> -->
+
+<!-- question: SB112  -->
+
+
+</quiz>

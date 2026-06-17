@@ -1,0 +1,616 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+<!-- question: 0  -->
+  <question type="category">
+    <category>
+      <text><![CDATA[$course$/top/Por defecto en 384597/Back/SpringBoot/11_autenticacion]]></text>
+    </category>
+    <info format="html">
+      <text></text>
+    </info>
+    <idnumber>SPRING_AUTENTICACION_JWT</idnumber>
+  </question>
+
+<!-- PREGUNTAS VERDADERO/FALSO - SPRING BOOT AUTENTICACIÓN -->
+
+<!-- question: AUTH01  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[Spring Security Dependencias]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: Para implementar autenticación JWT en Spring Boot solo se necesita agregar la dependencia spring-boot-starter-security.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Se necesitan TRES dependencias principales: <code>spring-boot-starter-security</code> (framework de seguridad), <code>jjwt-api</code> + <code>jjwt-impl</code> + <code>jjwt-jackson</code> (librería JWT), y opcionalmente <code>spring-security-test</code> para testing. La dependencia de security sola no incluye soporte para JWT.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>AUTH_TF01</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Se necesitan también las librerías jjwt para JWT.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Se requieren spring-boot-starter-security + jjwt-api + jjwt-impl + jjwt-jackson.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH02  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@ConfigurationProperties Mapeo]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: La anotación @ConfigurationProperties(prefix = "jwt") mapea automáticamente las propiedades del application.yml a los campos de la clase JwtProperties.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> <code>@ConfigurationProperties</code> permite mapeo automático type-safe de propiedades YAML a campos Java. Si tienes <code>jwt.secret: "key"</code> en YAML, se mapea automáticamente a <code>private String secret;</code> en JwtProperties. Ventajas: centralizado, reutilizable, validación en tiempo de compilación.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>AUTH_TF02</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. ConfigurationProperties mapea automáticamente YAML a campos Java.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Esta es precisamente la función de @ConfigurationProperties.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH03  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[RoleEntity - Enum vs String]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: Es mejor usar String para el campo 'name' de RoleEntity en lugar de un enum porque es más flexible para agregar nuevos roles dinámicamente.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Usar <code>@Enumerated(EnumType.STRING)</code> con un enum RoleName es la mejor práctica porque: garantiza type-safety (solo valores válidos), evita typos ("ADMIN" vs "ADMNI"), facilita refactorización, y proporciona autocompletado en IDE. Si necesitas roles dinámicos, la solución es una tabla de permisos, no strings arbitrarios.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>AUTH_TF03</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Enum proporciona type-safety y previene errores.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Enum es mejor por type-safety, evita typos y facilita mantenimiento.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH04  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[UserEntity-RoleEntity Relación]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: La relación entre UserEntity y RoleEntity debe ser @OneToMany en lugar de @ManyToMany porque un usuario solo puede tener un rol.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> La relación es <code>@ManyToMany</code> porque un usuario puede tener MÚLTIPLES roles (ej: USER + ADMIN) y un rol puede pertenecer a MÚLTIPLES usuarios. Esto crea una tabla intermedia <code>user_roles</code> con FK a ambas tablas. OneToMany sería si los roles fueran específicos de cada usuario (no reutilizables).</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>AUTH_TF04</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Usuario puede tener múltiples roles, requiere @ManyToMany.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @ManyToMany permite múltiples roles por usuario y reutilización.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH05  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[JWT Secret Key Longitud]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: Para el algoritmo HS256, la clave secreta JWT debe tener al menos 256 bits (32 caracteres) de longitud.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> El algoritmo HMAC-SHA256 (HS256) requiere una clave de AL MENOS 256 bits (32 bytes/caracteres) para ser seguro. Claves más cortas generan un error al inicializar <code>Keys.hmacShaKeyFor()</code>. En producción se recomienda usar 512 bits (64 caracteres) generados aleatoriamente con <code>openssl rand -base64 64</code>.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>AUTH_TF05</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. HS256 requiere mínimo 256 bits (32 caracteres) para seguridad.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. 256 bits (32 caracteres) es el mínimo requerido para HS256.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH06  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[JWT Expiration Recomendado]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: Los access tokens JWT deben tener una expiración de 24 horas o más para evitar que los usuarios tengan que hacer login frecuentemente.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Los access tokens deben tener vida CORTA (15-60 minutos recomendado, configurado como <code>jwt.expiration: 1800000</code> = 30 min). Esto minimiza el riesgo si son interceptados. Para evitar re-login frecuente se usan <strong>refresh tokens</strong> con vida larga (7-30 días) que permiten renovar access tokens sin re-autenticación.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>AUTH_TF06</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Access tokens deben ser cortos (15-60 min) por seguridad.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Access tokens cortos + refresh tokens largos es la práctica correcta.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS DE OPCIÓN MÚLTIPLE -->
+
+<!-- question: AUTH07  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[JwtUtil - Método generateToken]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué información se incluye en el payload del JWT generado por el método generateToken() de JwtUtil?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: sub (userId), email, roles, iat, exp, iss</strong></p><p><strong>Explicación:</strong> El token incluye: <code>sub</code> (subject = ID usuario), <code>email</code> (custom claim), <code>roles</code> (lista de roles como strings), <code>iat</code> (issued at = fecha emisión), <code>exp</code> (expiration = fecha expiración), <code>iss</code> (issuer = identificador de la app). NUNCA incluir contraseñas o datos sensibles.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC07</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[sub (userId), email, roles, iat, exp, iss]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Claims estándar (sub, iat, exp, iss) + custom claims (email, roles).]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[username, password, roles]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. NUNCA incluir contraseñas en JWT. Usar claims estándar.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo el userId cifrado]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. JWT no cifra, incluye múltiples claims para identificación completa.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[sessionId y timestamp]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. JWT es stateless, no usa sessions. Usa claims estándar JWT.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH08  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[JwtUtil - Validación de Token]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[En el método validateToken() de JwtUtil, ¿cuáles excepciones se capturan para determinar si un token es inválido?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: SignatureException, ExpiredJwtException, MalformedJwtException, UnsupportedJwtException</strong></p><p><strong>Explicación:</strong> <code>SignatureException</code> (firma no coincide = token modificado o clave incorrecta), <code>ExpiredJwtException</code> (token expiró), <code>MalformedJwtException</code> (formato inválido = no tiene 3 partes), <code>UnsupportedJwtException</code> (algoritmo no soportado), <code>IllegalArgumentException</code> (claims vacíos).</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC08</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[SignatureException, ExpiredJwtException, MalformedJwtException, UnsupportedJwtException]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Estas excepciones cubren todos los casos de token inválido.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[IOException, SQLException]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Esas son excepciones de I/O y BD, no de validación JWT.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo Exception genérica]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Se deben capturar excepciones específicas de JWT para logging detallado.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[NullPointerException, RuntimeException]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Son excepciones genéricas, no específicas de validación JWT.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH09  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[DTOs - LoginRequestDto Validaciones]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué anotaciones de validación se aplican al campo 'email' en LoginRequestDto?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: @NotBlank, @Email, @Size</strong></p><p><strong>Explicación:</strong> <code>@NotBlank</code> (no puede ser null, vacío o solo espacios), <code>@Email</code> (debe ser formato email válido), <code>@Size(max = 100)</code> (longitud máxima 100 caracteres). Estas validaciones se ejecutan automáticamente en el controlador con <code>@Valid</code> antes de procesar el login.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC09</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[@NotBlank, @Email, @Size]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Valida no vacío, formato email y longitud máxima.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo @NotNull]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Se necesita validación más granular: formato, longitud, no vacío.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@Unique, @Indexed]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Esas son anotaciones de BD, no de validación de DTOs.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@Pattern con regex de email]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Aunque funciona, @Email es más semántico y mantenible.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH10  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[RoleEntity - Tabla Separada Ventajas]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la principal ventaja de tener RoleEntity como tabla separada en lugar de un campo simple en UserEntity?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Reutilización de roles, múltiples roles por usuario, escalabilidad</strong></p><p><strong>Explicación:</strong> Con tabla separada: un rol se define una vez y se asigna a múltiples usuarios (reutilización), usuario puede tener múltiples roles (ManyToMany), fácil agregar/quitar roles sin modificar UserEntity, escalable para sistema de permisos granulares, auditoría independiente de roles.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC10</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Reutilización de roles, múltiples roles por usuario, escalabilidad]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Separación permite reutilización, flexibilidad y escalabilidad.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Mejor rendimiento en consultas]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Tabla separada puede requerir JOINs, pero las ventajas superan esto.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Requiere menos espacio en disco]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Puede requerir más espacio (tabla intermedia), no es la ventaja principal.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Es más simple de implementar]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Campo simple es más fácil, pero menos flexible y escalable.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS DE CÓDIGO -->
+
+<!-- question: AUTH11  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Código - UserEntity Roles Mapping]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la configuración correcta de la relación ManyToMany entre UserEntity y RoleEntity?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: La opción A</strong></p><p><strong>Explicación:</strong></p><code>@ManyToMany(fetch = FetchType.EAGER)<br>@JoinTable(name = "user_roles",<br>&nbsp;&nbsp;joinColumns = @JoinColumn(name = "user_id"),<br>&nbsp;&nbsp;inverseJoinColumns = @JoinColumn(name = "role_id"))<br>private Set&lt;RoleEntity&gt; roles = new HashSet&lt;&gt;();</code><p>EAGER es correcto porque los roles se necesitan al autenticar. JoinTable define tabla intermedia. Set evita duplicados.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC11</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[<pre>@ManyToMany(fetch = FetchType.EAGER)
+@JoinTable(name = "user_roles",
+    joinColumns = @JoinColumn(name = "user_id"),
+    inverseJoinColumns = @JoinColumn(name = "role_id"))
+private Set&lt;RoleEntity&gt; roles = new HashSet&lt;&gt;();</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. EAGER para cargar roles al autenticar, JoinTable bien definida, Set para evitar duplicados.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@OneToMany(mappedBy = "user")
+private List&lt;RoleEntity&gt; roles;</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Usa OneToMany en lugar de ManyToMany, no permite reutilización de roles.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@ManyToMany(fetch = FetchType.LAZY)
+@JoinColumn(name = "role_id")
+private Set&lt;RoleEntity&gt; roles;</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. LAZY causaría LazyInitializationException al autenticar. JoinColumn es incorrecto para N:N.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@ElementCollection
+private List&lt;String&gt; roles;</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. ElementCollection es para tipos simples, no para entidades relacionadas.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH12  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Código - JwtProperties Configuration]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la configuración correcta en application.yml para JWT con vida de 30 minutos?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: La configuración A</strong></p><p><strong>Explicación:</strong></p><code>jwt:<br>&nbsp;&nbsp;secret: ${JWT_SECRET:mySecretKeyForJWT...256bits}<br>&nbsp;&nbsp;expiration: 1800000  # 30 minutos<br>&nbsp;&nbsp;refresh-expiration: 604800000  # 7 días<br>&nbsp;&nbsp;issuer: "fundamentos01-api"<br>&nbsp;&nbsp;header: "Authorization"<br>&nbsp;&nbsp;prefix: "Bearer "</code><p>1800000 ms = 30 min, usa variable de entorno con fallback, prefix con espacio.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC12</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[<pre>jwt:
+  secret: ${JWT_SECRET:defaultSecretKey256Bits...}
+  expiration: 1800000
+  refresh-expiration: 604800000
+  issuer: "fundamentos01-api"
+  header: "Authorization"
+  prefix: "Bearer "</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. 1800000 ms = 30 min, variable de entorno con fallback, todas las propiedades necesarias.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>jwt:
+  secret: "123456"
+  expiration: 30
+  header: "Token"</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Secret muy corto (<256 bits), expiration en minutos no ms, header no estándar.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>security:
+  jwt-token: "secret"
+  timeout: 1800</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Estructura incorrecta, no usa prefix "jwt", falta configuración completa.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>jwt:
+  expiration: 86400000  # 24 horas
+  prefix: "Token "</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. 24 horas es inseguro para access token, prefix no estándar, falta secret.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH13  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Código - generateToken Implementation]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la implementación correcta del método generateToken() usando la librería jjwt?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: La opción A</strong></p><p><strong>Explicación:</strong></p><code>return Jwts.builder()<br>&nbsp;&nbsp;.subject(userId.toString())<br>&nbsp;&nbsp;.claim("email", user.getEmail())<br>&nbsp;&nbsp;.claim("roles", roles)<br>&nbsp;&nbsp;.issuedAt(new Date())<br>&nbsp;&nbsp;.expiration(new Date(System.currentTimeMillis() + expiration))<br>&nbsp;&nbsp;.issuer(issuer)<br>&nbsp;&nbsp;.signWith(key)<br>&nbsp;&nbsp;.compact();</code><p>Usa API moderna de jjwt, configura todos los claims necesarios, firma con clave HMAC.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC13</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[<pre>return Jwts.builder()
+    .subject(userId.toString())
+    .claim("email", user.getEmail())
+    .claim("roles", roles)
+    .issuedAt(new Date())
+    .expiration(new Date(System.currentTimeMillis() + expiration))
+    .issuer(issuer)
+    .signWith(key)
+    .compact();</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. API moderna jjwt, todos los claims necesarios, firma correcta con HMAC.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>return JWT.create()
+    .withClaim("user", user)
+    .sign(Algorithm.HMAC256(secret));</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. API de auth0 java-jwt (no jjwt), incluye entidad completa (inseguro), falta claims estándar.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>Map&lt;String, Object&gt; claims = new HashMap&lt;&gt;();
+return Jwts.builder()
+    .setClaims(claims)
+    .compact();</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Claims vacíos, falta subject, expiración, issuer y firma.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>return Base64.getEncoder()
+    .encodeToString(userId.toString().getBytes());</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Base64 no es JWT, no tiene firma ni validación, totalmente inseguro.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH14  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[RegisterRequestDto - Validación Password]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué validaciones se deben aplicar al campo password en RegisterRequestDto?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: @NotBlank, @Size(min = 8), @Pattern con regex de complejidad</strong></p><p><strong>Explicación:</strong> <code>@NotBlank</code> (no vacío), <code>@Size(min = 8)</code> (longitud mínima 8 caracteres), <code>@Pattern</code> con regex para validar mayúsculas, minúsculas, números y caracteres especiales. Esto garantiza contraseñas seguras antes de hashear con BCrypt. En producción considerar validador de contraseñas débiles comunes.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC14</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[@NotBlank, @Size(min = 8), @Pattern con regex de complejidad]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Valida no vacío, longitud mínima y complejidad de contraseña.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo @NotNull]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Se necesita validación de longitud y complejidad para seguridad.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@Email]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @Email es para validar emails, no contraseñas.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@Size(max = 20)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Limitar máximo es contraproducente, necesitamos validar mínimo y complejidad.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: AUTH15  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[AuthResponseDto - Estructura]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué información debe incluir AuthResponseDto después de un login exitoso?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: accessToken, refreshToken, userId, email, roles</strong></p><p><strong>Explicación:</strong> El DTO debe incluir: <code>accessToken</code> (JWT para autenticar requests), <code>refreshToken</code> (para renovar access token), <code>userId</code> (ID del usuario), <code>email</code> (identificador), <code>roles</code> (Set de nombres de roles). El frontend usa esta información para almacenar token y mostrar datos del usuario. NUNCA incluir password.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>AUTH_MC15</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[accessToken, refreshToken, userId, email, roles]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Incluye tokens, identificadores y permisos necesarios para el cliente.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[username, password, sessionId]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. NUNCA devolver password. JWT no usa sessionId (stateless).]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo el accessToken]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Cliente necesita también refreshToken y datos del usuario.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[UserEntity completa serializada]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Expone datos innecesarios (password hash, relaciones). Usar DTO específico.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+</quiz>

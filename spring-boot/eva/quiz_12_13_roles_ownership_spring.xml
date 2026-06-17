@@ -1,0 +1,626 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+<!-- question: 0  -->
+  <question type="category">
+    <category>
+      <text><![CDATA[$course$/top/Por defecto en 384597/Back/SpringBoot/12_13_roles_ownership]]></text>
+    </category>
+    <info format="html">
+      <text></text>
+    </info>
+    <idnumber>SPRING_ROLES_OWNERSHIP</idnumber>
+  </question>
+
+<!-- PREGUNTAS VERDADERO/FALSO - ROLES Y OWNERSHIP SPRING BOOT -->
+
+<!-- question: ROLES01  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@EnableMethodSecurity Obligatorio]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: Para que las anotaciones @PreAuthorize funcionen correctamente, es obligatorio agregar @EnableMethodSecurity(prePostEnabled = true) en SecurityConfig.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> Sin <code>@EnableMethodSecurity(prePostEnabled = true)</code> en la configuración de seguridad, las anotaciones <code>@PreAuthorize</code>, <code>@PostAuthorize</code> y <code>@Secured</code> son IGNORADAS y los métodos se ejecutan sin validación de permisos. Esta anotación habilita el procesamiento de expresiones SpEL en anotaciones de seguridad.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>ROLES_TF01</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @EnableMethodSecurity es necesario para activar @PreAuthorize.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Sin @EnableMethodSecurity, @PreAuthorize no funciona.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES02  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[hasRole() vs hasAuthority()]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: En @PreAuthorize, hasRole('ADMIN') y hasAuthority('ADMIN') son equivalentes y buscan el mismo authority en el usuario.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> <code>hasRole('ADMIN')</code> añade automáticamente el prefijo "ROLE_" y busca "ROLE_ADMIN" en authorities. <code>hasAuthority('ADMIN')</code> busca exactamente "ADMIN" sin agregar prefijo. Para que funcionen correctamente: usar <code>hasRole('ADMIN')</code> con authorities "ROLE_ADMIN", o usar <code>hasAuthority('ROLE_ADMIN')</code> con el nombre completo.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>ROLES_TF02</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. hasRole() añade prefijo "ROLE_", hasAuthority() busca nombre exacto.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Son diferentes: hasRole() añade "ROLE_", hasAuthority() no.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES03  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[Validación Ownership en Controlador]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: Es mejor validar ownership (propiedad de recursos) usando expresiones complejas en @PreAuthorize del controlador en lugar de hacerlo en el servicio.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Validar ownership en el SERVICIO es mejor práctica porque: permite cargar el recurso en una sola query (no dos), centraliza lógica de negocio, es reutilizable desde otros lugares, más fácil de testear, y evita expresiones SpEL complejas en <code>@PreAuthorize</code>. El controlador debe solo extraer el usuario con <code>@AuthenticationPrincipal</code> y pasar al servicio.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>ROLES_TF03</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Validación en servicio es mejor: query única, reutilizable, testeable.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Ownership se valida en servicio, no con expresiones complejas en controlador.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES04  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[ADMIN Bypass Ownership]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: En la validación de ownership, usuarios con rol ROLE_ADMIN deben pasar la misma validación que usuarios normales para mantener consistencia.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> ADMIN (y MODERATOR) deben tener <strong>bypass automático</strong> de validación de ownership, permitiéndoles modificar/eliminar cualquier recurso sin importar el propietario. Esto se implementa verificando primero si tiene rol privilegiado: <code>if (hasAnyRole(user, "ROLE_ADMIN", "ROLE_MODERATOR")) return;</code> antes de validar ownership. Es funcionalidad esperada de roles administrativos.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>ROLES_TF04</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. ADMIN debe tener bypass automático para modificar cualquier recurso.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. ADMIN y MODERATOR deben poder saltarse validación de ownership.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES05  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[AuthorizationDeniedException vs AccessDeniedException]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: AuthorizationDeniedException y AccessDeniedException son la misma excepción en Spring Security y solo se necesita manejar una de ellas en GlobalExceptionHandler.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Falso.</strong></p><p><strong>Explicación:</strong> Son excepciones DIFERENTES. <code>AuthorizationDeniedException</code> (Spring Security 6.x) se lanza cuando <code>@PreAuthorize</code> falla. <code>AccessDeniedException</code> (legacy) se usa en código personalizado o configuraciones antiguas, y se lanza manualmente desde servicios (ej: validación de ownership). Ambas deben manejarse en GlobalExceptionHandler para devolver 403 correctamente.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>ROLES_TF05</idnumber>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Son excepciones diferentes, ambas deben manejarse.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Son diferentes: AuthorizationDeniedException (@PreAuthorize) y AccessDeniedException (código custom).]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES06  -->
+  <question type="truefalse">
+    <name>
+      <text><![CDATA[@AuthenticationPrincipal Uso]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Verdadero o Falso: @AuthenticationPrincipal en el controlador inyecta automáticamente el usuario autenticado desde el JWT, permitiendo pasarlo como parámetro al servicio.]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Verdadero.</strong></p><p><strong>Explicación:</strong> <code>@AuthenticationPrincipal UserDetailsImpl currentUser</code> extrae automáticamente el usuario del SecurityContext (establecido por JwtAuthenticationFilter) y lo inyecta en el método del controlador. Esto permite pasarlo explícitamente al servicio como parámetro, haciendo el código más testeable y menos acoplado a Spring Security que usar SecurityContextHolder directamente.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.5000000</penalty>
+    <hidden>0</hidden>
+    <idnumber>ROLES_TF06</idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text><![CDATA[true]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @AuthenticationPrincipal inyecta el usuario del JWT automáticamente.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text><![CDATA[false]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Esta es precisamente la función de @AuthenticationPrincipal.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS DE OPCIÓN MÚLTIPLE -->
+
+<!-- question: ROLES07  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Tres Niveles de Seguridad]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuáles son los tres niveles de validación de seguridad que debe pasar un request en una API con ownership?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Autenticación (401), Autorización por Rol (403), Ownership (403)</strong></p><p><strong>Explicación de los tres niveles:</strong></p><p><strong>1. Autenticación:</strong> JwtAuthenticationFilter valida token → Si falla: 401 Unauthorized</p><p><strong>2. Autorización por Rol:</strong> @PreAuthorize o SecurityConfig valida roles → Si falla: 403 Forbidden</p><p><strong>3. Ownership:</strong> Servicio valida propiedad del recurso → Si falla: 403 Forbidden</p><p>Se ejecutan en secuencia como capas de seguridad.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC07</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Autenticación (401), Autorización por Rol (403), Ownership (403)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Tres capas: token válido → rol correcto → propietario del recurso.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Frontend, Backend, Database]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Son capas arquitectónicas, no niveles de seguridad.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[GET, POST, DELETE]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Son métodos HTTP, no niveles de validación.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Controller, Service, Repository]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Son capas de código, no niveles de seguridad.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES08  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Expresiones @PreAuthorize]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué expresión de @PreAuthorize permite que un método sea ejecutado por usuarios con rol ADMIN o MODERATOR?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")</strong></p><p><strong>Explicación:</strong> <code>hasAnyRole()</code> permite especificar múltiples roles, el usuario necesita tener AL MENOS UNO de ellos para acceder. Spring Security añade automáticamente el prefijo "ROLE_" a cada rol especificado, buscando "ROLE_ADMIN" o "ROLE_MODERATOR" en las authorities del usuario.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC08</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[@PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. hasAnyRole() permite múltiples roles, necesita al menos uno.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@PreAuthorize("hasRole('ADMIN') and hasRole('MODERATOR')")]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. AND requiere AMBOS roles, no al menos uno.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@PreAuthorize("hasAuthority('ADMIN', 'MODERATOR')")]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. hasAuthority() no acepta múltiples parámetros, usar hasAnyRole().]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[@PreAuthorize("permitAll()")]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. permitAll() permite a CUALQUIERA, no solo ADMIN/MODERATOR.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES09  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[GlobalExceptionHandler - Excepciones Seguridad]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué pasa si NO manejas AuthorizationDeniedException en GlobalExceptionHandler cuando un usuario sin permisos intenta acceder a un endpoint con @PreAuthorize?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Devuelve 500 Internal Server Error en lugar de 403 Forbidden</strong></p><p><strong>Explicación:</strong> Sin manejador específico para <code>AuthorizationDeniedException</code>, Spring devuelve error genérico 500 con stack trace (en desarrollo) o mensaje genérico (en producción). El cliente no sabe si es error de servidor o falta de permisos. Se debe agregar <code>@ExceptionHandler(AuthorizationDeniedException.class)</code> que devuelva ResponseEntity con status 403 y mensaje claro.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC09</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Devuelve 500 Internal Server Error en lugar de 403 Forbidden]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Sin manejador específico, se trata como error del servidor (500).]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Spring Security automáticamente devuelve 403 sin necesidad de manejador]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Se necesita manejador explícito en GlobalExceptionHandler.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[El endpoint se ejecuta sin validación]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @PreAuthorize bloquea ejecución, problema es el código de error devuelto.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Devuelve 401 Unauthorized]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. 401 es para autenticación, este es problema de autorización.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES10  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Pasar Usuario a Servicio]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la mejor práctica para pasar el usuario autenticado desde el controlador al servicio para validar ownership?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Extraer con @AuthenticationPrincipal en controlador y pasar como parámetro</strong></p><p><strong>Explicación:</strong> Usar <code>@AuthenticationPrincipal UserDetailsImpl currentUser</code> en el controlador y pasarlo explícitamente al servicio (<code>service.update(id, dto, currentUser)</code>) es mejor porque: más testeable (no usa estado global), más explícito (se ve qué métodos necesitan usuario), menos acoplado a Spring Security, y facilita mocks en tests.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC10</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Extraer con @AuthenticationPrincipal en controlador y pasar como parámetro]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Más testeable, explícito y menos acoplado que alternativas.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Usar SecurityContextHolder.getContext() directamente en el servicio]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Usa estado global, menos testeable y más acoplado.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Pasar solo el userId como Long desde el controlador]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Se necesita el usuario completo para verificar roles.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Usar ThreadLocal para compartir el usuario]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Complica testing y debugging, menos explícito.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- PREGUNTAS DE CÓDIGO -->
+
+<!-- question: ROLES11  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Código - validateOwnership Implementación]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la implementación correcta del método validateOwnership() en ProductService?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: La opción A</strong></p><p><strong>Explicación:</strong></p><code>private void validateOwnership(ProductEntity product, UserDetailsImpl currentUser) {<br>&nbsp;&nbsp;// ADMIN y MODERATOR bypass<br>&nbsp;&nbsp;if (hasAnyRole(currentUser, "ROLE_ADMIN", "ROLE_MODERATOR")) {<br>&nbsp;&nbsp;&nbsp;&nbsp;return;<br>&nbsp;&nbsp;}<br>&nbsp;&nbsp;// USER solo puede modificar sus productos<br>&nbsp;&nbsp;if (!product.getOwner().getId().equals(currentUser.getId())) {<br>&nbsp;&nbsp;&nbsp;&nbsp;throw new AccessDeniedException("No puedes modificar productos ajenos");<br>&nbsp;&nbsp;}<br>}</code><p>Orden correcto: verificar roles privilegiados primero (bypass), luego ownership.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC11</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[<pre>private void validateOwnership(ProductEntity product, UserDetailsImpl currentUser) {
+    // ADMIN y MODERATOR bypass
+    if (hasAnyRole(currentUser, "ROLE_ADMIN", "ROLE_MODERATOR")) {
+        return;
+    }
+    // USER solo puede modificar sus productos
+    if (!product.getOwner().getId().equals(currentUser.getId())) {
+        throw new AccessDeniedException("No puedes modificar productos ajenos");
+    }
+}</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Orden apropiado: verifica roles privilegiados primero, luego ownership.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>private void validateOwnership(ProductEntity product, UserDetailsImpl currentUser) {
+    if (!product.getOwner().getId().equals(currentUser.getId())) {
+        throw new AccessDeniedException("Forbidden");
+    }
+    // ADMIN nunca puede modificar
+}</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Bloquea a ADMIN también, no implementa bypass de roles privilegiados.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@PreAuthorize("hasRole('ADMIN') or #product.owner.id == authentication.principal.id")
+private void validateOwnership(ProductEntity product) {
+    // Validación en anotación
+}</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. @PreAuthorize no puede usarse en métodos privados, debe ser en métodos públicos.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>private void validateOwnership(ProductEntity product, Long userId) {
+    if (!product.getOwner().getId().equals(userId)) {
+        return;  // Permitir siempre
+    }
+}</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Lógica invertida (permite en lugar de denegar) y falta verificar roles.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES12  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Código - Controlador con @AuthenticationPrincipal]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Cuál es la firma correcta del método update() en ProductController para validar ownership?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: La opción A</strong></p><p><strong>Explicación:</strong></p><code>@PutMapping("/{id}")<br>public ResponseEntity&lt;ProductResponseDto&gt; update(<br>&nbsp;&nbsp;&nbsp;&nbsp;@PathVariable Long id,<br>&nbsp;&nbsp;&nbsp;&nbsp;@Valid @RequestBody UpdateProductDto dto,<br>&nbsp;&nbsp;&nbsp;&nbsp;@AuthenticationPrincipal UserDetailsImpl currentUser) {<br>&nbsp;&nbsp;ProductResponseDto updated = productService.update(id, dto, currentUser);<br>&nbsp;&nbsp;return ResponseEntity.ok(updated);<br>}</code><p>@AuthenticationPrincipal extrae usuario del JWT, se pasa al servicio para validar.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC12</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[<pre>@PutMapping("/{id}")
+public ResponseEntity&lt;ProductResponseDto&gt; update(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateProductDto dto,
+        @AuthenticationPrincipal UserDetailsImpl currentUser) {
+    ProductResponseDto updated = productService.update(id, dto, currentUser);
+    return ResponseEntity.ok(updated);
+}</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. @AuthenticationPrincipal inyecta usuario, se pasa explícitamente al servicio.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@PutMapping("/{id}")
+@PreAuthorize("@productService.isOwner(#id)")
+public ResponseEntity&lt;ProductResponseDto&gt; update(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateProductDto dto) {
+    // Validación en @PreAuthorize
+}</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Validación compleja en @PreAuthorize, difícil de mantener, no pasa usuario.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@PutMapping("/{id}")
+public ResponseEntity&lt;ProductResponseDto&gt; update(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateProductDto dto,
+        @RequestHeader("Authorization") String token) {
+    // Parsear token manualmente
+}</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. No necesitas parsear token, @AuthenticationPrincipal lo hace automáticamente.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[<pre>@PutMapping("/{id}")
+public ResponseEntity&lt;ProductResponseDto&gt; update(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateProductDto dto) {
+    // Usuario se obtiene en el servicio con SecurityContextHolder
+}</pre>]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Menos explícito y testeable que pasar usuario como parámetro.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES13  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Código - GlobalExceptionHandler Handlers]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Qué handlers deben agregarse en GlobalExceptionHandler para manejar correctamente excepciones de roles y ownership?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: AuthorizationDeniedException, AccessDeniedException, AuthenticationException</strong></p><p><strong>Explicación:</strong> <code>@ExceptionHandler(AuthorizationDeniedException.class)</code> maneja fallos de @PreAuthorize (Spring Security 6.x) → 403. <code>@ExceptionHandler(AccessDeniedException.class)</code> maneja excepciones lanzadas desde servicios (validación ownership) → 403. <code>@ExceptionHandler(AuthenticationException.class)</code> maneja fallos de autenticación → 401. Todos necesarios para respuestas HTTP correctas.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC13</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[AuthorizationDeniedException, AccessDeniedException, AuthenticationException]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Maneja @PreAuthorize (AuthorizationDeniedException), ownership (AccessDeniedException), y auth (AuthenticationException).]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo Exception genérica]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Exception genérica devuelve 500, necesitas handlers específicos para 401/403.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[IOException, SQLException]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Son excepciones de I/O y BD, no de seguridad.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Solo AuthorizationDeniedException]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Falta AccessDeniedException (ownership) y AuthenticationException (auth).]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES14  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[Escenario - Flujo Completo de Validación]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Usuario B (ROLE_USER) intenta actualizar Producto #1 (owner = Usuario A) con PUT /api/products/1. ¿Qué sucede en cada nivel de validación?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Token válido (pasa), Usuario autenticado (pasa), No es owner ni privilegiado (falla con 403)</strong></p><p><strong>Flujo completo:</strong></p><p><strong>1. Autenticación:</strong> JwtAuthenticationFilter valida token → OK (Usuario B autenticado)</p><p><strong>2. Autorización:</strong> .anyRequest().authenticated() → OK (Usuario B autenticado)</p><p><strong>3. Ownership:</strong> productService.update() llama validateOwnership() → Usuario B no es ADMIN/MODERATOR → Usuario B no es dueño (dueño es Usuario A) → throw AccessDeniedException → 403 Forbidden</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC14</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Token válido (pasa), Usuario autenticado (pasa), No es owner ni privilegiado (falla con 403)]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Pasa autenticación y autorización básica, falla en validación de ownership.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Falla inmediatamente con 401 porque no es el dueño]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Tiene token válido (401 es para auth), falla en ownership con 403.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Pasa todas las validaciones porque tiene ROLE_USER]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. ROLE_USER no es suficiente, debe ser propietario o tener rol privilegiado.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Falla en @PreAuthorize con 403 porque no tiene ROLE_ADMIN]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. update() no tiene @PreAuthorize, falla en validateOwnership en servicio.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+<!-- question: ROLES15  -->
+  <question type="multichoice">
+    <name>
+      <text><![CDATA[hasAnyRole Helper Method]]></text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[¿Por qué es útil el método auxiliar hasAnyRole(UserDetailsImpl user, String... roles) en ProductService?]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[<p><strong>Respuesta correcta: Verifica si el usuario tiene al menos uno de los roles especificados para bypass de ownership</strong></p><p><strong>Explicación:</strong> El método itera sobre las authorities del usuario y verifica si alguna coincide con los roles especificados (ROLE_ADMIN, ROLE_MODERATOR). Retorna true si encuentra al menos una coincidencia, permitiendo implementar bypass fácilmente: <code>if (hasAnyRole(user, "ROLE_ADMIN", "ROLE_MODERATOR")) return;</code> Reutilizable y más legible que verificar manualmente en cada lugar.</p>]]></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <idnumber>ROLES_MC15</idnumber>
+    <answer fraction="100" format="html">
+      <text><![CDATA[Verifica si el usuario tiene al menos uno de los roles especificados para bypass de ownership]]></text>
+      <feedback format="html">
+        <text><![CDATA[Correcto. Método reutilizable para verificar roles privilegiados y permitir bypass.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Asigna automáticamente roles al usuario]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Solo VERIFICA roles existentes, no los asigna.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Carga los roles desde la base de datos]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. Roles ya están cargados en UserDetailsImpl, solo los verifica.]]></text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="html">
+      <text><![CDATA[Convierte roles a formato OAuth2]]></text>
+      <feedback format="html">
+        <text><![CDATA[Incorrecto. No hace conversión, solo verifica si existen roles específicos.]]></text>
+      </feedback>
+    </answer>
+  </question>
+
+</quiz>

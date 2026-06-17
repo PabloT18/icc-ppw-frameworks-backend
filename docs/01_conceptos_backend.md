@@ -8,7 +8,7 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" width="80" alt="Java Logo">
 </div>
 
-## Práctica 1: Conceptos Fundamentales del Backend
+## 1: Conceptos Fundamentales del Backend
 
 ### Autores
 
@@ -29,7 +29,10 @@ El **backend** es la parte de una aplicación que se ejecuta en el servidor y se
 
 Mientras el frontend controla lo que el usuario ve, el backend controla **cómo funciona** la aplicación detrás de escena.
 
-El objetivo de esta práctica es comprender los conceptos esenciales necesarios antes de trabajar con frameworks como **Spring Boot** y **NestJS**.
+
+
+<img src="assets/01-conceptos-01.png" alt="alt text" style="max-width: 800px; display: block; margin: 0 auto; margin-bottom: 30px;">
+
 
 ---
 
@@ -48,6 +51,12 @@ Cliente → (HTTP Request) → Servidor → Procesa → (HTTP Response) → Clie
 ```
 
 En backend trabajamos con servicios web que atienden miles de peticiones por segundo.
+
+<!-- ![alt text](assets/01-conceptos-02.png) -->
+
+
+<img src="assets/01-conceptos-02.png" alt="alt text" style="max-width: 800px; display: block; margin: 0 auto; margin-bottom: 30px;">
+
 
 ---
 
@@ -78,6 +87,11 @@ Respuesta:
 ]
 ```
 
+
+
+
+<img src="assets/01-conceptos-03.png" alt="alt text" style="max-width: 800px; display: block; margin: 0 auto; margin-bottom: 30px;">
+
 ---
 
 ## Backend vs Frontend
@@ -104,10 +118,16 @@ Cada petición puede ejecutarse en su propio hilo.
 Ventajas: robustez, estabilidad.
 Desventajas: requiere buena gestión de memoria.
 
+<img src="assets/01-conceptos-04.png" alt="alt text" style="max-width: 500px;">
+
 ### Event Loop (Node/NestJS)
 
 Modelo de un solo hilo con operaciones asincrónicas.
 Ideal para miles de conexiones concurrentes.
+
+
+<img src="assets/01-conceptos-05.png" alt="alt text" style="max-width: 500px;">
+
 
 ---
 
@@ -139,13 +159,20 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - **Headers**: Metadatos de la petición
 - **Body**: Datos enviados (solo en POST, PUT, PATCH)
 
+
+
+<img src="assets/01-conceptos-06.png" alt="alt text" style="max-width: 700px; display: block; margin: 0 auto; margin-bottom: 30px; margin-top: 30px;">
 ---
 
 ### Métodos HTTP (HTTP Verbs)
 
 Los métodos HTTP definen la **acción** que queremos realizar sobre un recurso.
 
-#### 🟢 GET - Obtener/Consultar datos
+
+<img src="assets/01-conceptos-07.png" alt="alt text" style="max-width: 700px; display: block; margin: 0 auto; margin-bottom: 30px; margin-top: 30px;">
+
+
+#### GET - Obtener/Consultar datos
 
 **Propósito**: Recuperar información del servidor sin modificarla.
 
@@ -168,7 +195,7 @@ GET /api/orders?status=pending&page=2
 
 ---
 
-#### 🟡 POST - Crear recursos
+#### POST - Crear recursos
 
 **Propósito**: Enviar datos al servidor para crear un nuevo recurso.
 
@@ -205,7 +232,7 @@ Content-Type: application/json
 
 ---
 
-#### 🔵 PUT - Actualizar completo
+#### PUT - Actualizar completo
 
 **Propósito**: Reemplazar completamente un recurso existente.
 
@@ -233,7 +260,7 @@ Content-Type: application/json
 
 ---
 
-#### 🟣 PATCH - Actualizar parcial
+#### PATCH - Actualizar parcial
 
 **Propósito**: Modificar solo algunos campos de un recurso existente.
 
@@ -267,7 +294,7 @@ Content-Type: application/json
 
 ---
 
-#### 🔴 DELETE - Eliminar recursos
+#### DELETE - Eliminar recursos
 
 **Propósito**: Eliminar un recurso del servidor.
 
@@ -295,7 +322,7 @@ Authorization: Bearer token123
 
 ---
 
-#### 🟠 Otros métodos HTTP menos comunes
+#### Otros métodos HTTP menos comunes
 
 | Método | Descripción | Uso |
 |--------|-------------|-----|
@@ -304,9 +331,12 @@ Authorization: Bearer token123
 | **CONNECT** | Establece un túnel hacia el servidor | Proxies, HTTPS |
 | **TRACE** | Devuelve la petición tal como la recibe | Debugging (raramente usado) |
 
+
+<img src="assets/01-conceptos-08.png" alt="alt text" style="max-width: 700px;">
+
 ---
 
-### 📊 Códigos de Respuesta HTTP (Status Codes)
+### Códigos de Respuesta HTTP (Status Codes)
 
 Los códigos HTTP indican el **resultado** de la operación.
 
@@ -319,7 +349,7 @@ Los códigos HTTP indican el **resultado** de la operación.
 
 ---
 
-#### **2xx - Éxito** ✅
+#### **2xx - Éxito** 
 
 | Código | Nombre | Significado | Cuándo usar |
 |--------|--------|-------------|-------------|
@@ -354,7 +384,7 @@ Location: /api/users/124
 
 ---
 
-#### **3xx - Redirección** 🔄
+#### **3xx - Redirección**
 
 | Código | Nombre | Significado |
 |--------|--------|-------------|
@@ -364,7 +394,7 @@ Location: /api/users/124
 
 ---
 
-#### **4xx - Errores del Cliente** ❌
+#### **4xx - Errores del Cliente**
 
 Estos errores indican que **el cliente hizo algo mal**.
 
@@ -416,7 +446,7 @@ Content-Type: application/json
 
 ---
 
-#### **5xx - Errores del Servidor** 🔥
+#### **5xx - Errores del Servidor** 
 
 Estos errores indican que **el servidor falló** al procesar una petición válida.
 
@@ -443,7 +473,7 @@ Content-Type: application/json
 
 ---
 
-### 📚 Recursos para explorar todos los códigos HTTP
+###  Recursos para explorar todos los códigos HTTP
 
 **Lista completa de códigos de estado HTTP**:
 - [MDN Web Docs - HTTP Status Codes](https://developer.mozilla.org/es/docs/Web/HTTP/Status)
@@ -451,11 +481,16 @@ Content-Type: application/json
 - [HTTP Cats](https://http.cat/) (versión con gatos)
 - [RFC 7231 - HTTP/1.1 Semantics](https://tools.ietf.org/html/rfc7231)
 
+
 ---
 
 ### Headers HTTP
 
 Los headers son **metadatos** que acompañan la petición o respuesta.
+
+
+
+<img src="assets/01-conceptos-09.png" alt="alt text" style="max-width: 700px; display: block; margin: 0 auto; margin-bottom: 30px; margin-top: 30px;">
 
 #### Headers comunes de petición (Request):
 
@@ -510,19 +545,6 @@ name=Ana&email=ana@example.com&age=25
 
 ---
 
-### 🎯 Resumen de cuándo usar cada método
-
-| Acción | Método | Endpoint | Body | Respuesta |
-|--------|--------|----------|------|-----------|
-| Listar usuarios | GET | `/api/users` | No | 200 + array |
-| Ver un usuario | GET | `/api/users/123` | No | 200 + objeto |
-| Crear usuario | POST | `/api/users` | Sí | 201 + objeto |
-| Actualizar completo | PUT | `/api/users/123` | Sí (todos los campos) | 200 + objeto |
-| Actualizar parcial | PATCH | `/api/users/123` | Sí (solo campos a cambiar) | 200 + objeto |
-| Eliminar usuario | DELETE | `/api/users/123` | No | 204 o 200 |
-
----
-
 ## Estado (State) y Stateless
 
 Los servidores modernos implementan arquitectura **sin estado (stateless)**:
@@ -568,11 +590,15 @@ Esto es justo lo que frameworks como Spring Boot y NestJS automatizan.
 
 Estos conceptos se verán en profundidad en las siguientes prácticas.
 
----
+
+
+<img src="assets/01-conceptos-10.png" alt="alt text" style="max-width: 700px; display: block; margin: 0 auto; margin-bottom: 30px; margin-top: 30px;">
+
+
 
 # Práctica 
 
-Al finalizar este tema, debes comprender:
+Al finalizar este tema, se debe comprender:
 
 * cómo funciona un servidor
 * qué es una petición y una respuesta
