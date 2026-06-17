@@ -9,12 +9,14 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" width="80" alt="TS Logo">
 </div>
 
-## Práctica 2: Arquitectura del Backend Moderno
+## Arquitecturas del Backend
 
 ### Autores
 
 **Pablo Torres**
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+
 GitHub: [PabloT18](https://github.com/PabloT18)
 
 ---
