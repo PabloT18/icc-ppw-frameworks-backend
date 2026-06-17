@@ -14,9 +14,9 @@
 
 **Pablo Torres**
 
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+ [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
-💻 GitHub: PabloT18
+GitHub: PabloT18
 
 ---
 

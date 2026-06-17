@@ -1,5 +1,8 @@
 # Ignore docs/eva directory and all its contents
 docs/eva/
+docs/pdfs/
+
 resumen.md
 instrucciones.md
 spring-boot/p67/a_dodente/eva/
+

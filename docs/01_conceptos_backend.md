@@ -8,13 +8,13 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" width="80" alt="Java Logo">
 </div>
 
-## 1: Conceptos Fundamentales del Backend
+## Conceptos Fundamentales del Backend
 
-### Autores
+## Autores
 
 **Pablo Torres**
-📧 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
-💻 GitHub: [PabloT18](https://github.com/PabloT18)
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+GitHub: [PabloT18](https://github.com/PabloT18)
 
 ---
 
