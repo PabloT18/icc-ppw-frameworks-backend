@@ -1,56 +1,148 @@
 # Programación y Plataformas Web
 
-# **NestJS – Persistencia con TypeORM, Entidades, Repositorios y Conexión a Base de Datos**
+# Frameworks Backend: NestJS – Persistencia con TypeORM, Entidades, Repositorios y Base de Datos
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nestjs/nestjs-original.svg" width="110" alt="Nest Logo">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="95">
 </div>
 
-## **Práctica 5 (NestJS): Persistencia real con PostgreSQL, Entidades TypeORM y Repositorios**
+---
 
-### **Autores**
+# Práctica 5 (NestJS): Persistencia real con PostgreSQL, Entidades TypeORM y Repositorios
+
+### Autores
 
 **Pablo Torres**
 
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
 GitHub: PabloT18
 
 ---
 
-# **1. Instalación y Preparación del Entorno**
+# 1. Introducción
 
-Para utilizar una base de datos real con NestJS se necesitan:
+En la práctica anterior se organizó el CRUD REST usando servicios.
 
-1. **TypeORM** (ORM para TypeScript)
-2. **Driver PostgreSQL**
-3. **Configuración de conexión**
-4. **Base de datos en ejecución (Docker recomendado)**
+La lógica dejó de estar directamente dentro del controlador y se movió a `UsersService`.
 
-## **1.1. Instalación de dependencias**
+Hasta ese momento, los datos todavía se almacenaban en memoria usando:
+
+```ts
+private users: UserModel[] = [];
+private currentId = 1;
+```
+
+Ese enfoque sirve para practicar el flujo de una API REST, pero tiene una limitación importante: los datos se pierden cada vez que se reinicia la aplicación.
+
+En esta práctica se reemplaza el arreglo en memoria por una base de datos real usando:
+
+* PostgreSQL
+* TypeORM
+* entidades TypeORM
+* repositorios
+* conexión mediante `TypeOrmModule`
+
+A partir de esta práctica ya no se utilizará:
+
+* arreglo en memoria dentro del servicio
+* generación manual de ID con `currentId`
+
+---
+
+# 2. Flujo después de aplicar repositorios y base de datos
+
+Ahora el flujo será:
+
+```txt
+Cliente
+  ↓
+UsersController
+  ↓
+UsersService
+  ↓
+Repository<UserEntity>
+  ↓
+PostgreSQL
+  ↓
+UserEntity
+  ↓
+UserMapper
+  ↓
+UserModel
+  ↓
+UserResponseDto
+  ↓
+Cliente
+```
+
+El servicio ya no manejará directamente un arreglo en memoria.
+
+La persistencia se delega al repositorio.
+
+El repositorio se comunica con PostgreSQL mediante TypeORM.
+
+---
+
+## 2.1. Responsabilidad de cada clase
+
+| Clase                    | Responsabilidad                                        |
+| ------------------------ | ------------------------------------------------------ |
+| `UsersController`        | Recibir peticiones HTTP y llamar al servicio           |
+| `UsersService`           | Implementar la lógica de negocio y usar el repositorio |
+| `Repository<UserEntity>` | Ejecutar operaciones de persistencia                   |
+| `UserEntity`             | Representar la tabla en la base de datos               |
+| `UserModel`              | Representar el usuario dentro de la aplicación         |
+| `UserMapper`             | Convertir entre DTOs, modelos y entidades              |
+| `CreateUserDto`          | Recibir datos para crear usuario                       |
+| `UpdateUserDto`          | Recibir datos para actualización completa              |
+| `PartialUpdateUserDto`   | Recibir datos para actualización parcial               |
+| `UserResponseDto`        | Devolver datos seguros al cliente                      |
+| `ErrorResponseDto`       | Devolver mensajes de error                             |
+
+---
+
+# 3. Instalación y configuración de dependencias
+
+Para trabajar con PostgreSQL desde NestJS se necesitan tres dependencias principales:
+
+* `@nestjs/typeorm`
+* `typeorm`
+* `pg`
+
+---
+
+## 3.1. Dependencias necesarias
 
 Ejecutar en la raíz del proyecto:
 
 ```bash
-pnpm install --save @nestjs/typeorm typeorm pg
+pnpm install @nestjs/typeorm typeorm pg
 ```
 
-![alt text](assets/03-repositorios_persistencia-05.png)
+`@nestjs/typeorm` permite integrar TypeORM con NestJS.
 
-Donde:
-* `@nestjs/typeorm` → Integración de TypeORM con NestJS
-* `typeorm` → ORM para TypeScript/JavaScript
-* `pg` → Driver de PostgreSQL para Node.js
+`typeorm` permite trabajar con entidades, repositorios y consultas.
 
-## **1.2. Configuración de TypeORM en el módulo principal**
+`pg` permite que la aplicación se conecte al motor PostgreSQL.
+
+---
+
+# 4. Configuración de conexión en `app.module.ts`
 
 Archivo:
-`src/app.module.ts`
 
-```typescript
+```txt
+src/app.module.ts
+```
+
+Configuración:
+
+```ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 
@@ -64,8 +156,8 @@ import { ProductsModule } from './products/products.module';
       password: 'ups123',
       database: 'devdb-nest',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // Solo para desarrollo
-      logging: true,     // Muestra SQL en consola
+      synchronize: true,
+      logging: true,
     }),
     UsersModule,
     ProductsModule,
@@ -74,154 +166,202 @@ import { ProductsModule } from './products/products.module';
 export class AppModule {}
 ```
 
-### **Explicación de la configuración**
+---
 
-#### **Propiedades de conexión**
+## 4.1. Explicación de cada propiedad
 
-```typescript
+### Propiedades de conexión
+
+```ts
 type: 'postgres'
 ```
-* Especifica el tipo de base de datos
-* Opciones: `'postgres'`, `'mysql'`, `'mongodb'`, `'sqlite'`, etc.
 
-```typescript
+Indica que TypeORM se conectará a PostgreSQL.
+
+```ts
 host: 'localhost'
 port: 5432
 ```
-* **host**: Dirección donde se ejecuta PostgreSQL
-* **port**: Puerto (5432 es el puerto por defecto de PostgreSQL)
 
-```typescript
+Indica el servidor y puerto donde se ejecuta PostgreSQL.
+
+```ts
 username: 'ups'
 password: 'ups123'
-database: 'devdb'
+database: 'devdb-nest'
 ```
-* Credenciales de acceso a la base de datos
-* **database**: Nombre de la base de datos a utilizar
 
-#### **Propiedades de TypeORM**
+Estos valores corresponden al usuario, contraseña y base de datos configurados en el contenedor Docker.
 
-```typescript
+Para NestJS se usará la base:
+
+```txt
+devdb-nest
+```
+
+---
+
+### Propiedades de TypeORM
+
+```ts
 entities: [__dirname + '/**/*.entity{.ts,.js}']
 ```
-* **entities**: Array de rutas donde TypeORM buscará las entidades
-* `__dirname + '/**/*.entity{.ts,.js}'` → Busca todos los archivos que terminen en `.entity.ts` o `.entity.js`
-* TypeORM detecta automáticamente todas las clases con decorador `@Entity()`
 
-```typescript
+Indica dónde TypeORM buscará las entidades.
+
+Busca todos los archivos que terminen en:
+
+```txt
+.entity.ts
+.entity.js
+```
+
+---
+
+```ts
 synchronize: true
 ```
-* **synchronize**: Sincroniza automáticamente el esquema de la BD con las entidades
-* `true` → Crea/actualiza tablas al iniciar la aplicación (solo desarrollo)
-* `false` → No modifica el esquema (producción, usar migraciones)
-* ⚠️ **PELIGRO**: En producción puede causar pérdida de datos
 
-```typescript
+Permite que TypeORM cree o actualice las tablas automáticamente según las entidades.
+
+Para esta práctica se usará:
+
+```ts
+synchronize: true
+```
+
+porque permite crear las tablas durante el desarrollo.
+
+En producción no se recomienda usar `synchronize: true`.
+
+---
+
+```ts
 logging: true
 ```
-* **logging**: Muestra las consultas SQL ejecutadas en la consola
-* Útil para debugging y aprendizaje
-* En producción se configura con niveles: `['error', 'warn']`
 
-### **Buenas prácticas de configuración**
+Permite ver las consultas SQL generadas por TypeORM en consola.
 
-Para proyectos reales, usar variables de entorno:
-
-```typescript
-// app.module.ts
-TypeOrmModule.forRoot({
-  type: 'postgres',
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  entities: [__dirname + '/**/*.entity{.ts,.js}'],
-  synchronize: process.env.NODE_ENV === 'development',
-  logging: process.env.NODE_ENV === 'development',
-})
-```
-
-Archivo `.env`:
-```
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=ups
-DB_PASSWORD=ups123
-DB_NAME=devdb
-NODE_ENV=development
-```
-
-## **1.3. Requisitos previos**
-
-La base de datos debe existir antes de iniciar NestJS:
-
-```
-Base: devdb
-Usuario: ups
-Contraseña: ups123
-```
-
-Creada mediante Docker según:
-
-📌 [`docs/05_b_instalacion_postgres_docker.md`](../../../docs/05_b_instalacion_postgres_docker.md)
+Esto es útil para aprendizaje y depuración.
 
 ---
 
-# **2. Modelo vs Entidad Persistente en NestJS**
+# 5. Base de datos PostgreSQL mediante Docker
 
-Hasta el tema anterior se trabajó con:
+Esta práctica utiliza la base de datos levantada mediante Docker en la guía complementaria `05-B`.
 
-### Un **modelo User** sin decoradores, usado solo en memoria
+Los datos de conexión para NestJS son:
 
-Ese modelo **no sirve para persistencia** porque:
+| Parámetro     | Valor        |
+| ------------- | ------------ |
+| Host          | `localhost`  |
+| Puerto        | `5432`       |
+| Usuario       | `ups`        |
+| Contraseña    | `ups123`     |
+| Base de datos | `devdb-nest` |
 
-* No posee decoradores de TypeORM
-* No representa una tabla
-* No tiene ID gestionado por BD
-* No funciona con el ORM
-* No debe exponerse directamente en la API
+Para verificar que el contenedor está activo:
 
-Por lo tanto, en este tema se crea **por primera vez una entidad real User**.
-
-### **Arquitectura de capas en NestJS**
-
-```
-DTO → Modelo de Dominio → Entidad TypeORM
-Entidad TypeORM → Modelo de Dominio → DTO
+```bash
+docker ps
 ```
 
-Esta separación permite:
-* Independencia entre dominio y persistencia
-* Cambiar el ORM sin afectar la lógica de negocio
-* Aplicar reglas de negocio en el modelo de dominio
-* Controlar qué se expone en la API
+Debe aparecer el contenedor:
+
+```txt
+postgres-dev
+```
+
+Si está detenido, iniciarlo con:
+
+```bash
+docker start postgres-dev
+```
+
+Si la base `devdb-nest` no existe, crearla con:
+
+```bash
+docker exec -it postgres-dev psql -U ups -d postgres -c "CREATE DATABASE \"devdb-nest\";"
+```
 
 ---
 
-# **3. Superclase de Auditoría (BaseEntity)**
+# 6. Modelo vs Entidad persistente
 
-Todas las entidades deben tener:
+Hasta la práctica anterior se trabajó con:
 
-* ID autogenerado
-* Fechas de creación/actualización
-* Marca lógica de eliminado (soft delete)
+```txt
+UserModel
+```
 
-TypeORM permite crear una clase base con estos campos comunes.
+Ese modelo representa los datos internos de la aplicación.
 
-## **Creación de BaseEntity**
+Pero para guardar datos en PostgreSQL se necesita una entidad TypeORM:
+
+```txt
+UserEntity
+```
+
+---
+
+## 6.1. Diferencia entre Model y Entity
+
+| Elemento          | Función                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| `UserModel`       | Representa el usuario dentro de la lógica de la aplicación |
+| `UserEntity`      | Representa cómo se guarda el usuario en la base de datos   |
+| `UserResponseDto` | Representa lo que se devuelve al cliente                   |
+| `CreateUserDto`   | Representa lo que el cliente envía para crear un usuario   |
+
+---
+
+## 6.2. Por qué no usar directamente la entidad como respuesta
+
+No se debe devolver directamente `UserEntity` al cliente porque:
+
+* representa la estructura de la base de datos
+* puede tener campos internos
+* puede exponer información sensible
+* acopla la API a la persistencia
+* dificulta cambios futuros en la base de datos
+
+Por eso se mantiene el flujo:
+
+```txt
+Entity → Model → ResponseDto
+```
+
+---
+
+# 7. Superclase de auditoría `BaseEntity`
+
+Todas las entidades pueden compartir campos comunes como:
+
+* id
+* fecha de creación
+* fecha de actualización
+* eliminado lógico
+
+Para eso se crea una clase base.
 
 Archivo:
-`src/core/entities/base.entity.ts`
 
-```typescript
-import { 
-  PrimaryGeneratedColumn, 
-  CreateDateColumn, 
-  UpdateDateColumn, 
-  Column 
-} from 'typeorm';
+```txt
+src/core/entities/base.entity.ts
+```
 
+Código:
+
+```ts
+/*
+ * Superclase base para entidades TypeORM.
+ *
+ * Contiene campos comunes de persistencia como id,
+ * createdAt, updatedAt y deleted.
+ *
+ * No representa por sí sola una tabla de negocio.
+ * Sus atributos se heredan en las entidades hijas.
+ */
 export abstract class BaseEntity {
 
   @PrimaryGeneratedColumn('increment')
@@ -238,81 +378,36 @@ export abstract class BaseEntity {
 }
 ```
 
-### **Explicación de decoradores**
+---
 
-#### **@PrimaryGeneratedColumn('increment')**
-```typescript
-@PrimaryGeneratedColumn('increment')
-id: number;
-```
-* Define la clave primaria de la tabla
-* `'increment'` → Autoincremento secuencial (1, 2, 3, ...)
-* Otras opciones: `'uuid'` para generar UUIDs
-* Genera: `id SERIAL PRIMARY KEY` en PostgreSQL
+## 7.1. Explicación de decoradores
 
-#### **@CreateDateColumn**
-```typescript
-@CreateDateColumn({ type: 'timestamp' })
-createdAt: Date;
-```
-* Establece automáticamente la fecha de creación
-* Solo se asigna una vez al insertar el registro
-* TypeORM maneja el valor automáticamente
-* No es necesario asignarlo manualmente
-
-#### **@UpdateDateColumn**
-```typescript
-@UpdateDateColumn({ type: 'timestamp' })
-updatedAt: Date;
-```
-* Actualiza automáticamente la fecha en cada modificación
-* TypeORM actualiza el valor en cada `save()`
-* Útil para auditoría y rastreo de cambios
-
-#### **@Column**
-```typescript
-@Column({ default: false })
-deleted: boolean;
-```
-* Define una columna regular
-* `default: false` → Valor por defecto en la BD
-* Permite soft delete (marcar como eliminado sin borrar físicamente)
-
-### **Ventajas de BaseEntity**
-
-* **Reutilización**: Todas las entidades heredan estos campos
-* **Consistencia**: Estructura uniforme en todas las tablas
-* **Auditoría**: Rastreo automático de cambios
-* **Mantenibilidad**: Cambios centralizados
+| Decorador                 | Función                                            |
+| ------------------------- | -------------------------------------------------- |
+| `@PrimaryGeneratedColumn` | Marca el identificador principal autogenerado      |
+| `@CreateDateColumn`       | Asigna automáticamente la fecha de creación        |
+| `@UpdateDateColumn`       | Actualiza automáticamente la fecha de modificación |
+| `@Column`                 | Define una columna normal en la tabla              |
 
 ---
 
-# **4. Creación de la Entidad User con TypeORM**
-
-Las clases creadas en las secciones anteriores NO son entidades persistentes. 
-Son modelos de dominio usados en memoria.
-
-Por lo que se recomienda crear una entidad real `UserEntity` que represente la tabla `users` en PostgreSQL.
-Cambiar el nombre del arvhivo para evitar confusiones.
-
-Antes teníamos:
-`src/users/entities/user.entity.ts` → Modelo de dominio
-
-Debe quedar como:
-`src/users/models/user.model.ts` → Modelo de dominio
-y la entidad como:
-`src/users/entities/user.entity.ts` → Entidad persistente
-
-
-## **Entidad UserEntity**
+# 8. Creación de la entidad persistente UserEntity
 
 Archivo:
-`src/users/entities/user.entity.ts`
 
-```typescript
-import { Entity, Column } from 'typeorm';
-import { BaseEntity } from '../../core/entities/base.entity';
+```txt
+users/entities/user.entity.ts
+```
 
+Código:
+
+```ts
+/*
+ * Entidad TypeORM del recurso users.
+ *
+ * Representa la tabla users en PostgreSQL.
+ * Esta clase sí pertenece a la capa de persistencia.
+ */
 @Entity('users')
 export class UserEntity extends BaseEntity {
 
@@ -323,375 +418,290 @@ export class UserEntity extends BaseEntity {
   email: string;
 
   @Column({ type: 'varchar', nullable: false })
-  password: string;
+  passwordHash: string;
 }
-```
-
-### **Explicación de decoradores**
-
-#### **@Entity('users')**
-```typescript
-@Entity('users')
-export class UserEntity extends BaseEntity
-```
-* Marca la clase como una entidad de TypeORM
-* `'users'` → Nombre de la tabla en PostgreSQL
-* Si se omite el nombre, usa el nombre de la clase en minúsculas
-
-#### **@Column con opciones**
-```typescript
-@Column({ type: 'varchar', length: 150, nullable: false })
-name: string;
-```
-* **type**: Tipo de datos en PostgreSQL (`varchar`, `int`, `boolean`, `text`, etc.)
-* **length**: Longitud máxima (solo para `varchar`)
-* **nullable**: Si acepta valores NULL (`false` = `NOT NULL`)
-
-```typescript
-@Column({ type: 'varchar', length: 150, unique: true, nullable: false })
-email: string;
-```
-* **unique**: Crea un índice único en la columna
-* Genera: `UNIQUE CONSTRAINT` en PostgreSQL
-* Evita emails duplicados a nivel de base de datos
-
-### **Tabla generada en PostgreSQL**
-
-Al iniciar la aplicación, TypeORM crea automáticamente:
-
-```sql
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(150) NOT NULL,
-  email VARCHAR(150) UNIQUE NOT NULL,
-  password VARCHAR NOT NULL,
-  createdAt TIMESTAMP DEFAULT now(),
-  updatedAt TIMESTAMP DEFAULT now(),
-  deleted BOOLEAN DEFAULT false
-);
 ```
 
 ---
 
-# **5. Repositorios en NestJS con TypeORM**
+## 8.1. Explicación de decoradores
 
-Los repositorios reemplazan completamente las listas en memoria.
+| Decorador          | Función                                         |
+| ------------------ | ----------------------------------------------- |
+| `@Entity('users')` | Indica que la clase representa la tabla `users` |
+| `@Column`          | Configura propiedades de las columnas           |
+| `nullable: false`  | Indica que la columna no permite valores nulos  |
+| `unique: true`     | Indica que el correo no se puede repetir        |
+| `length: 150`      | Define la longitud máxima de la columna         |
 
-## **Configuración del repositorio en el módulo**
+---
+
+# 9. Actualización del modelo UserModel
+
+El modelo se mantiene como clase de dominio.
 
 Archivo:
-`src/users/users.module.ts`
 
-```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersController } from './controllers/users.controller';
-import { UsersService } from './services/users.service';
-import { UserEntity } from './entities/user.entity';
+```txt
+users/models/user.model.ts
+```
 
+Código:
+
+```ts
+/*
+ * Modelo de dominio del recurso users.
+ *
+ * Representa al usuario dentro de la lógica de negocio.
+ * No es una entidad de base de datos y no debe tener decoradores de TypeORM.
+ */
+export class UserModel {
+
+  id: number;
+
+  name: string;
+
+  email: string;
+
+  createdAt: Date;
+
+  updatedAt: Date;
+
+  deleted: boolean;
+
+  password: string;
+
+  passwordHash: string;
+}
+```
+
+---
+
+# 10. Registro del repositorio en el módulo
+
+En NestJS con TypeORM no se crea una interfaz de repositorio como en Spring Data JPA.
+
+TypeORM proporciona un repositorio genérico:
+
+```txt
+Repository<UserEntity>
+```
+
+Para poder inyectarlo en el servicio, primero se registra la entidad en el módulo.
+
+Archivo:
+
+```txt
+users/users.module.ts
+```
+
+Código:
+
+```ts
+/*
+ * Módulo del recurso users.
+ *
+ * Registra el controlador, el servicio y la entidad que usará TypeORM.
+ */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity])
+    TypeOrmModule.forFeature([UserEntity]),
   ],
   controllers: [UsersController],
   providers: [UsersService],
 })
 export class UsersModule {}
-
 ```
 
-### **¿Qué hace TypeOrmModule.forFeature()?**
+---
 
-```typescript
+## 10.1. Explicación de `TypeOrmModule.forFeature`
+
+```ts
 TypeOrmModule.forFeature([UserEntity])
 ```
 
-**1. Registra las entidades en el módulo**
-* Indica qué entidades están disponibles en este módulo
-* TypeORM crea automáticamente un repositorio para cada entidad
-* El repositorio se inyecta en los servicios
+Permite que NestJS registre el repositorio de `UserEntity` dentro del módulo.
 
-**2. Proporciona el Repository<UserEntity>**
-* NestJS crea una instancia de `Repository<UserEntity>`
-* Se puede inyectar en servicios con `@InjectRepository()`
-* El repositorio maneja todas las operaciones de BD
+A partir de eso, se puede inyectar:
 
-**3. Aísla responsabilidades**
-* Cada módulo declara sus propias entidades
-* No hay conflictos entre módulos
-* Mejor organización del código
-
-## **Uso del repositorio en el servicio**
-
-Archivo:
-`src/users/services/users.service.ts`
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { CreateUserDto } from '../dtos/create-user.dto';
-import { UserResponseDto } from '../dtos/user-response.dto';
-
-@Injectable()
-export class UsersService {
-
-  constructor(
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
-  ) {}
-
-  // Métodos CRUD aquí...
-}
-```
-
-### **Inyección del repositorio**
-
-```typescript
-constructor(
-  @InjectRepository(UserEntity)
-  private readonly userRepository: Repository<UserEntity>,
-) {}
-```
-
-**@InjectRepository(UserEntity)**
-* Decorador que le indica a NestJS qué repositorio inyectar
-* NestJS busca el repositorio registrado en `TypeOrmModule.forFeature()`
-* Proporciona el repositorio específico para `UserEntity`
-
-**Repository&lt;UserEntity&gt;**
-* Tipo genérico de TypeORM
-* Especifica que este repositorio trabaja con `UserEntity`
-* Proporciona type-safety: todos los métodos están tipados
-
-**private readonly**
-* `private` → Solo accesible dentro del servicio
-* `readonly` → No se puede reasignar después del constructor
-
-### **Métodos automáticos del Repository**
-
-TypeORM proporciona automáticamente:
-
-#### **Métodos de consulta**
-```typescript
-// Obtener todos los registros
-await this.userRepository.find()
-
-// Obtener un registro por ID
-await this.userRepository.findOne({ where: { id: 1 } })
-
-// Obtener con condiciones
-await this.userRepository.findOne({ where: { email: 'test@test.com' } })
-
-// Contar registros
-await this.userRepository.count()
-
-// Verificar existencia
-await this.userRepository.exist({ where: { email: 'test@test.com' } })
-```
-
-#### **Métodos de escritura**
-```typescript
-// Guardar (insert o update)
-await this.userRepository.save(userEntity)
-
-// Crear instancia sin guardar
-const user = this.userRepository.create({ name: 'Test', email: 'test@test.com' })
-
-// Eliminar físicamente
-await this.userRepository.delete(id)
-
-// Eliminar por entidad
-await this.userRepository.remove(userEntity)
-```
-
-#### **Métodos con QueryBuilder**
-```typescript
-// Consultas complejas
-await this.userRepository
-  .createQueryBuilder('user')
-  .where('user.name LIKE :name', { name: '%John%' })
-  .andWhere('user.deleted = :deleted', { deleted: false })
-  .getMany()
-```
-
-### **¿Por qué Repository&lt;UserEntity&gt;?**
-
-Similar a Spring Boot, TypeORM usa genéricos:
-
-```typescript
-Repository<T>
-```
-
-Donde:
-* **T** → Tipo de la entidad que gestiona el repositorio
-
-En nuestro caso:
-```typescript
+```ts
 Repository<UserEntity>
-      ↑
-   Entidad
 ```
 
-**Ventajas:**
-* **Type-safe**: El compilador verifica los tipos
-* **IntelliSense**: Autocompletado en el IDE
-* **Consistencia**: Todos los repositorios siguen el mismo patrón
-* **Sin SQL manual**: TypeORM genera las consultas
+dentro de `UsersService`.
 
 ---
 
-# **6. Transformaciones: Factory Methods en TypeScript**
+## 10.2. Métodos automáticos de Repository
 
-Los servicios NO deben devolver entidades directamente.
+TypeORM proporciona métodos como:
 
-## **Patrón Factory Method en la clase de dominio**
+```ts
+save(entity)
+find()
+findOne(options)
+delete(id)
+remove(entity)
+count()
+exist(options)
+```
+
+Por eso ya no se necesita crear manualmente un arreglo ni recorrerlo para hacer operaciones básicas.
+
+---
+
+# 11. Actualización del UserMapper
+
+Hasta la práctica anterior, el mapper convertía:
+
+```txt
+CreateUserDto → UserModel
+UserModel → UserResponseDto
+```
+
+Ahora también debe convertir:
+
+```txt
+UserModel → UserEntity
+UserEntity → UserModel
+```
 
 Archivo:
-`src/users/models/user.model.ts`
 
-```typescript
-import { UserEntity } from '../entities/user.entity';
-import { CreateUserDto } from '../dtos/create-user.dto';
-import { UpdateUserDto } from '../dtos/update-user.dto';
-import { PartialUpdateUserDto } from '../dtos/partial-update-user.dto';
-import { UserResponseDto } from '../dtos/user-response.dto';
+```txt
+users/mappers/user.mapper.ts
+```
 
-export class User {
-  constructor(
-    public id: number,
-    public name: string,
-    public email: string,
-    public password: string,
-    public createdAt: Date,
-  ) {}
+Cambian algunos nombres de métodos para reflejar mejor su función.
 
-  // ==================== FACTORY METHODS ====================
+Código:
 
-  /**
-   * Crea un User desde un DTO de creación
+```ts
+/*
+ * Clase encargada de convertir objetos entre DTOs, modelos y entidades.
+ *
+ * En esta práctica se agrega la conversión hacia UserEntity
+ * porque ya se trabaja con persistencia real en PostgreSQL.
+ */
+export class UserMapper {
+
+  /*
+   * Convierte un CreateUserDto en UserModel.
+   *
+   * El DTO contiene los datos recibidos desde la API.
+   * El modelo representa el usuario dentro de la lógica de la aplicación.
    */
-  static fromDto(dto: CreateUserDto): User {
-    return new User(
-      0, // El ID se asigna en BD
-      dto.name,
-      dto.email,
-      dto.password, // Aquí se cifraría en un caso real
-      new Date(),
-    );
+  static toModelFromDto(dto: CreateUserDto): UserModel {
+    const model = new UserModel();
+
+    model.name = dto.name;
+    model.email = dto.email;
+    model.password = dto.password;
+    model.passwordHash = 'HASH_' + dto.password;
+
+    return model;
   }
 
-  /**
-   * Crea un User desde una entidad persistente
+  /*
+   * Convierte una entidad TypeORM en UserModel.
+   *
+   * Se usa cuando el repositorio devuelve datos desde PostgreSQL.
    */
-  static fromEntity(entity: UserEntity): User {
-    return new User(
-      entity.id,
-      entity.name,
-      entity.email,
-      entity.password,
-      entity.createdAt,
-    );
+  static toModelFromEntity(entity: UserEntity): UserModel {
+    const model = new UserModel();
+
+    model.id = entity.id;
+    model.name = entity.name;
+    model.email = entity.email;
+    model.passwordHash = entity.passwordHash;
+    model.createdAt = entity.createdAt;
+    model.updatedAt = entity.updatedAt;
+    model.deleted = entity.deleted;
+
+    return model;
   }
 
-  // ==================== CONVERSION METHODS ====================
-
-  /**
-   * Convierte este User a una entidad persistente
+  /*
+   * Convierte un UserModel en UserEntity.
+   *
+   * Se usa antes de guardar datos en la base de datos.
    */
-  toEntity(): UserEntity {
+  static toEntityFromModel(model: UserModel): UserEntity {
     const entity = new UserEntity();
-    if (this.id > 0) {
-      entity.id = this.id;
+
+    if (model.id !== undefined && model.id !== null) {
+      entity.id = model.id;
     }
-    entity.name = this.name;
-    entity.email = this.email;
-    entity.password = this.password;
+
+    entity.name = model.name;
+    entity.email = model.email;
+    entity.passwordHash = model.passwordHash;
+
     return entity;
   }
 
-  /**
-   * Convierte este User a un DTO de respuesta
+  /*
+   * Convierte un UserModel en UserResponseDto.
+   *
+   * No se expone password ni passwordHash.
    */
-  toResponseDto(): UserResponseDto {
-    return {
-      id: this.id,
-      name: this.name,
-      email: this.email,
-      createdAt: this.createdAt.toISOString(),
-    };
-    // NO incluye password
-  }
+  static toResponse(model: UserModel): UserResponseDto {
+    const response = new UserResponseDto();
 
-  /**
-   * Aplica actualización completa
-   */
-  update(dto: UpdateUserDto): User {
-    this.name = dto.name;
-    this.email = dto.email;
-    if (dto.password) {
-      this.password = dto.password;
-    }
-    return this;
-  }
+    response.id = model.id;
+    response.name = model.name;
+    response.email = model.email;
 
-  /**
-   * Aplica actualización parcial
-   */
-  partialUpdate(dto: PartialUpdateUserDto): User {
-    if (dto.name !== undefined) {
-      this.name = dto.name;
-    }
-    if (dto.email !== undefined) {
-      this.email = dto.email;
-    }
-    if (dto.password !== undefined) {
-      this.password = dto.password;
-    }
-    return this;
+    return response;
   }
 }
 ```
 
-### **Flujo de conversión**
+---
 
-```
-1. Cliente → CreateUserDto
-   ↓
-2. User.fromDto(dto) → User (dominio)
-   ↓
-3. user.toEntity() → UserEntity
-   ↓
-4. repository.save(entity) → BD PostgreSQL
-   ↓
-5. User.fromEntity(saved) → User
-   ↓
-6. user.toResponseDto() → UserResponseDto
-   ↓
-7. Cliente
-```
+# 12. Actualización de UsersService
+
+En NestJS no se usa una interfaz obligatoria para el servicio en esta práctica.
+
+El servicio mantiene las mismas operaciones, pero ahora los métodos son asíncronos porque acceden a la base de datos.
+
+En esta práctica, cuando no exista un registro, se lanzará un error simple con `NotFoundException`.
+
+El manejo centralizado de errores se trabajará posteriormente.
 
 ---
 
-# **7. Servicio con Programación Funcional**
+# 13. Actualización de UsersService
 
-El servicio usa el repositorio y transforma datos con enfoque funcional.
+La implementación del servicio ya no usa arreglo en memoria. Se debe eliminar:
+
+```ts
+private users: UserModel[] = [];
+private currentId = 1;
+```
+
+Ahora usa:
+
+```ts
+private readonly userRepository: Repository<UserEntity>;
+```
 
 Archivo:
-`src/users/services/users.service.ts`
 
-```typescript
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { User } from '../models/user.model';
-import { CreateUserDto } from '../dtos/create-user.dto';
-import { UpdateUserDto } from '../dtos/update-user.dto';
-import { PartialUpdateUserDto } from '../dtos/partial-update-user.dto';
-import { UserResponseDto } from '../dtos/user-response.dto';
+```txt
+users/services/users.service.ts
+```
 
+Código:
+
+```ts
+/*
+ * Servicio de usuarios.
+ *
+ * En esta clase se reemplaza el arreglo en memoria por Repository<UserEntity>.
+ * El repositorio se encarga de comunicarse con PostgreSQL mediante TypeORM.
+ */
 @Injectable()
 export class UsersService {
 
@@ -700,299 +710,562 @@ export class UsersService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  /**
-   * Obtener todos los usuarios (enfoque funcional)
-   */
-  async findAll(): Promise<UserResponseDto[]> {
-    // 1. Repository → Entities
-    const entities = await this.userRepository.find();
-
-    // 2. Entities → Domain Models → DTOs (programación funcional)
-    return entities
-      .map(User.fromEntity)           // Entity → User
-      .map(user => user.toResponseDto()); // User → DTO
-  }
-
-  /**
-   * Obtener un usuario por ID (enfoque funcional con manejo de errores)
-   */
-  async findOne(id: number): Promise<UserResponseDto> {
-    const entity = await this.userRepository.findOne({ where: { id } });
-
-    if (!entity) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    return User.fromEntity(entity).toResponseDto();
-  }
-
-  /**
-   * Crear usuario (flujo funcional)
-   */
-  async create(dto: CreateUserDto): Promise<UserResponseDto> {
-    // Flujo funcional: DTO → Model → Entity → Save → Model → DTO
-    const user = User.fromDto(dto);           // DTO → Domain
-    const entity = user.toEntity();            // Domain → Entity
-    const saved = await this.userRepository.save(entity); // Persistir
-    
-    return User.fromEntity(saved).toResponseDto(); // Entity → Domain → DTO
-  }
-
-  /**
-   * Actualizar usuario completo (PUT)
-   */
-  async update(id: number, dto: UpdateUserDto): Promise<UserResponseDto> {
-    const entity = await this.userRepository.findOne({ where: { id } });
-
-    if (!entity) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    // Flujo funcional con transformaciones
-    const updated = User.fromEntity(entity)  // Entity → Domain
-      .update(dto)                           // Aplicar cambios
-      .toEntity();                           // Domain → Entity
-
-    const saved = await this.userRepository.save(updated);
-    
-    return User.fromEntity(saved).toResponseDto();
-  }
-
-  /**
-   * Actualizar parcialmente (PATCH)
-   */
-  async partialUpdate(id: number, dto: PartialUpdateUserDto): Promise<UserResponseDto> {
-    const entity = await this.userRepository.findOne({ where: { id } });
-
-    if (!entity) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    const updated = User.fromEntity(entity)
-      .partialUpdate(dto)
-      .toEntity();
-
-    const saved = await this.userRepository.save(updated);
-    
-    return User.fromEntity(saved).toResponseDto();
-  }
-
-  /**
-   * Eliminar usuario
-   */
-  async delete(id: number): Promise<void> {
-    const result = await this.userRepository.delete(id);
-
-    if (result.affected === 0) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-  }
 }
 ```
 
-### **Ventajas del enfoque funcional en NestJS**
+En el constructor se inyecta el repositorio para poder usarlo en los métodos del servicio.
 
-1. **Transformaciones claras**: Cada paso es explícito
-2. **Inmutabilidad**: No se mutan objetos intermedios
-3. **Composición**: Se encadenan transformaciones
-4. **Type-safe**: TypeScript valida todos los tipos
-5. **Testeable**: Cada transformación es fácil de probar
+Ahora cada método del servicio debe usar el repositorio para realizar las operaciones de persistencia, en lugar de manipular un arreglo en memoria.
 
-### **Comparación con enfoque imperativo**
-
-**❌ Imperativo (evitar):**
-```typescript
+```ts
+/*
+ * Retorna todos los usuarios almacenados en PostgreSQL.
+ *
+ * El repositorio devuelve entidades.
+ * El mapper convierte entidades a modelos.
+ * Luego convierte modelos a DTOs de respuesta.
+ */
 async findAll(): Promise<UserResponseDto[]> {
-  const entities = await this.userRepository.find();
-  const result = [];
-  
-  for (let i = 0; i < entities.length; i++) {
-    const user = User.fromEntity(entities[i]);
-    const dto = user.toResponseDto();
-    result.push(dto);
+  return this.userRepository.find({
+    where: {
+      deleted: false,
+    },
+  })
+    .then((entities) =>
+      entities
+        .map(UserMapper.toModelFromEntity)
+        .map(UserMapper.toResponse),
+    );
+}
+
+/*
+ * Busca un usuario por id.
+ *
+ * Si no existe, lanza un error simple.
+ * El manejo formal de errores se implementará después.
+ */
+async findOne(id: number): Promise<UserResponseDto> {
+  const entity = await this.userRepository.findOne({
+    where: {
+      id,
+      deleted: false,
+    },
+  });
+
+  if (!entity) {
+    throw new NotFoundException('User not found');
   }
-  
-  return result;
+
+  const model = UserMapper.toModelFromEntity(entity);
+
+  return UserMapper.toResponse(model);
+}
+
+/*
+ * Crea un nuevo usuario.
+ *
+ * Convierte DTO a Model.
+ * Convierte Model a Entity.
+ * Guarda Entity en PostgreSQL.
+ * Convierte Entity guardada a Model.
+ * Devuelve Response DTO.
+ */
+async create(dto: CreateUserDto): Promise<UserResponseDto> {
+  const model = UserMapper.toModelFromDto(dto);
+
+  const entity = UserMapper.toEntityFromModel(model);
+
+  const savedEntity = await this.userRepository.save(entity);
+
+  const savedModel = UserMapper.toModelFromEntity(savedEntity);
+
+  return UserMapper.toResponse(savedModel);
+}
+
+/*
+ * Actualiza completamente un usuario.
+ *
+ * Busca la entidad existente.
+ * Actualiza los campos editables.
+ * Guarda los cambios.
+ * Devuelve DTO de respuesta.
+ */
+async update(id: number, dto: UpdateUserDto): Promise<UserResponseDto> {
+  const entity = await this.userRepository.findOne({
+    where: {
+      id,
+      deleted: false,
+    },
+  });
+
+  if (!entity) {
+    throw new NotFoundException('User not found');
+  }
+
+  entity.name = dto.name;
+  entity.email = dto.email;
+
+  const savedEntity = await this.userRepository.save(entity);
+
+  const model = UserMapper.toModelFromEntity(savedEntity);
+
+  return UserMapper.toResponse(model);
+}
+
+/*
+ * Actualiza parcialmente un usuario.
+ *
+ * Solo actualiza los campos enviados en el DTO.
+ */
+async partialUpdate(
+  id: number,
+  dto: PartialUpdateUserDto,
+): Promise<UserResponseDto> {
+  const entity = await this.userRepository.findOne({
+    where: {
+      id,
+      deleted: false,
+    },
+  });
+
+  if (!entity) {
+    throw new NotFoundException('User not found');
+  }
+
+  if (dto.name !== undefined) {
+    entity.name = dto.name;
+  }
+
+  if (dto.email !== undefined) {
+    entity.email = dto.email;
+  }
+
+  const savedEntity = await this.userRepository.save(entity);
+
+  const model = UserMapper.toModelFromEntity(savedEntity);
+
+  return UserMapper.toResponse(model);
+}
+
+/*
+ * Elimina lógicamente un usuario por id.
+ *
+ * Primero verifica que exista.
+ * Luego marca la entidad como eliminada usando deleted = true.
+ * No elimina físicamente el registro de la base de datos.
+ */
+async delete(id: number): Promise<void> {
+  const entity = await this.userRepository.findOne({
+    where: {
+      id,
+      deleted: false,
+    },
+  });
+
+  if (!entity) {
+    throw new NotFoundException('User not found');
+  }
+
+  entity.deleted = true;
+
+  await this.userRepository.save(entity);
 }
 ```
 
-**✅ Funcional (recomendado):**
-```typescript
-async findAll(): Promise<UserResponseDto[]> {
-  return (await this.userRepository.find())
-    .map(User.fromEntity)
-    .map(user => user.toResponseDto());
+---
+
+# 14. Actualización de UsersController
+
+El controlador casi no cambia.
+
+La diferencia es que ahora el servicio ya no usa un arreglo en memoria, sino un repositorio conectado a PostgreSQL.
+
+Como los métodos del servicio son asíncronos, el controlador puede retornar directamente las promesas.
+
+Archivo:
+
+```txt
+users/controllers/users.controller.ts
+```
+
+Código:
+
+```ts
+/*
+ * Controlador REST encargado de exponer los endpoints HTTP
+ * para la gestión de usuarios.
+ *
+ * El controlador sigue delegando las operaciones al servicio.
+ */
+@Controller('users')
+export class UsersController {
+
+  constructor(private readonly service: UsersService) {}
+
+  @Get()
+  findAll(): Promise<UserResponseDto[]> {
+    return this.service.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string): Promise<UserResponseDto> {
+    return this.service.findOne(Number(id));
+  }
+
+  @Post()
+  create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
+    return this.service.create(dto);
+  }
+
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    return this.service.update(Number(id), dto);
+  }
+
+  @Patch(':id')
+  partialUpdate(
+    @Param('id') id: string,
+    @Body() dto: PartialUpdateUserDto,
+  ): Promise<UserResponseDto> {
+    return this.service.partialUpdate(Number(id), dto);
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string): Promise<void> {
+    return this.service.delete(Number(id));
+  }
 }
 ```
 
 ---
 
-# **8. Flujo completo con base de datos real**
+# 15. ¿Qué cambió respecto a la práctica anterior?
 
+Antes:
+
+```ts
+private users: UserModel[] = [];
+private currentId = 1;
 ```
-Cliente HTTP
-    ↓
-Controlador (@Controller)
-    ↓ recibe CreateUserDto
-Servicio (@Injectable)
-    ↓ User.fromDto()
-    ↓ user.toEntity()
-    ↓ repository.save()
-Repository (TypeORM)
-    ↓ SQL INSERT
-Base de Datos PostgreSQL
-    ↓ retorna UserEntity
-Repository
-    ↓ User.fromEntity()
-    ↓ user.toResponseDto()
-Servicio
-    ↓ UserResponseDto
-Controlador
-    ↓ JSON
-Cliente HTTP
+
+Ahora:
+
+```ts
+@InjectRepository(UserEntity)
+private readonly userRepository: Repository<UserEntity>
+```
+
+Antes el ID se asignaba manualmente:
+
+```ts
+user.id = this.currentId;
+this.currentId++;
+```
+
+Ahora lo genera PostgreSQL:
+
+```ts
+@PrimaryGeneratedColumn('increment')
+id: number;
+```
+
+Antes los datos se perdían al reiniciar.
+
+Ahora los datos permanecen guardados en PostgreSQL.
+
+---
+
+# 16. Verificación en PostgreSQL
+
+Para verificar las tablas desde el contenedor:
+
+```bash
+docker exec -it postgres-dev psql -U ups -d devdb-nest
+```
+
+Dentro de `psql`:
+
+```sql
+\dt
+```
+
+Para consultar usuarios:
+
+```sql
+SELECT * FROM users;
+```
+
+Para salir:
+
+```sql
+\q
+```
+
+También se puede verificar desde:
+
+* DBeaver
+* DataGrip
+* TablePlus
+* VS Code PostgreSQL
+
+---
+
+# 17. Pruebas sugeridas en Postman / Bruno
+
+## Crear usuario
+
+Método:
+
+```txt
+POST
+```
+
+Ruta:
+
+```txt
+/api/users
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Pérez",
+  "email": "juan@ups.edu.ec",
+  "password": "123456"
+}
 ```
 
 ---
 
-# **9. Salida esperada en consola**
+## Listar usuarios
 
-Al iniciar la aplicación NestJS con TypeORM configurado:
+Método:
 
-### **Conexión exitosa**
-```
-[Nest] LOG [TypeOrmModule] TypeOrmModule dependencies initialized
-[Nest] LOG [InstanceLoader] UserEntity loaded
+```txt
+GET
 ```
 
-### **Creación de tabla automática (synchronize: true)**
-```sql
-query: CREATE TABLE "users" (
-  "id" SERIAL NOT NULL,
-  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-  "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-  "deleted" boolean NOT NULL DEFAULT false,
-  "name" character varying(150) NOT NULL,
-  "email" character varying(150) NOT NULL,
-  "password" character varying NOT NULL,
-  CONSTRAINT "UQ_email" UNIQUE ("email"),
-  CONSTRAINT "PK_users" PRIMARY KEY ("id")
-)
-```
+Ruta:
 
-### **Consulta SQL al ejecutar findAll()**
-```sql
-query: SELECT "UserEntity"."id", "UserEntity"."name", "UserEntity"."email", 
-       "UserEntity"."createdAt", "UserEntity"."updatedAt", "UserEntity"."deleted" 
-FROM "users" "UserEntity"
+```txt
+/api/users
 ```
 
 ---
 
-# **10. Actividad práctica**
+## Buscar usuario por ID
 
-El estudiante debe replicar toda la arquitectura aprendida en el módulo:
+Método:
 
-```
-src/products/
-```
-
-## **10.1. Crear ProductEntity**
-
-Debe extender de `BaseEntity` e incluir:
-
-```typescript
-name: string        // VARCHAR(200), NOT NULL
-description: string // TEXT
-price: number       // DECIMAL(10,2), NOT NULL
-stock: number       // INTEGER, NOT NULL, DEFAULT 0
+```txt
+GET
 ```
 
-## **10.2. Crear ProductRepository**
+Ruta:
 
-Configurar en `ProductsModule`:
+```txt
+/api/users/1
+```
 
-```typescript
+---
+
+## Actualizar usuario completo
+
+Método:
+
+```txt
+PUT
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Actualizado",
+  "email": "juan.actualizado@ups.edu.ec"
+}
+```
+
+---
+
+## Actualizar usuario parcialmente
+
+Método:
+
+```txt
+PATCH
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+Body:
+
+```json
+{
+  "email": "nuevo.correo@ups.edu.ec"
+}
+```
+
+---
+
+## Eliminar usuario
+
+Método:
+
+```txt
+DELETE
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+---
+
+# 18. Salida esperada en consola
+
+Al ejecutar la aplicación, debe verse que NestJS se conecta a PostgreSQL mediante TypeORM.
+
+También se podrán observar consultas SQL si está habilitado:
+
+```ts
+logging: true
+```
+
+Ejemplo conceptual:
+
+```sql
+SELECT
+  "UserEntity"."id" AS "UserEntity_id",
+  "UserEntity"."createdAt" AS "UserEntity_createdAt",
+  "UserEntity"."updatedAt" AS "UserEntity_updatedAt",
+  "UserEntity"."deleted" AS "UserEntity_deleted",
+  "UserEntity"."name" AS "UserEntity_name",
+  "UserEntity"."email" AS "UserEntity_email",
+  "UserEntity"."passwordHash" AS "UserEntity_passwordHash"
+FROM
+  "users" "UserEntity"
+WHERE
+  "UserEntity"."deleted" = false
+```
+
+---
+
+# 19. Actividad práctica
+
+Se debe replicar toda la arquitectura aprendida, pero ahora en el módulo:
+
+```txt
+products/
+```
+
+Debe implementar:
+
+### 19.1 Crear `ProductEntity`
+
+La entidad debe extender de `BaseEntity`.
+
+---
+
+### 19.2 Registrar la entidad en `ProductsModule`
+
+Debe usar:
+
+```ts
 TypeOrmModule.forFeature([ProductEntity])
 ```
 
-## **10.3. Crear modelo de dominio Product**
+---
 
-Con factory methods:
-* `Product.fromDto()`
-* `Product.fromEntity()`
-* `product.toEntity()`
-* `product.toResponseDto()`
+### 19.3 Actualizar `ProductMapper`
 
-## **10.4. Implementar ProductsService**
+Debe permitir conversiones entre:
 
-Con programación funcional en todos los métodos:
-* `findAll()`
-* `findOne(id)`
-* `create(dto)`
-* `update(id, dto)`
-* `partialUpdate(id, dto)`
-* `delete(id)`
+```txt
+CreateProductDto → ProductModel
+ProductModel → ProductEntity
+ProductEntity → ProductModel
+ProductModel → ProductResponseDto
+```
 
-## **10.5. Actualizar ProductsController**
+---
 
-Conectar el controlador con el servicio.
+### 19.4 Actualizar `ProductsService`
 
-## **10.6. Probar el CRUD completo**
+El servicio debe usar repositorio, no arreglo en memoria.
 
-* POST /api/products → Crear 5 productos
-* GET /api/products → Listar todos
-* GET /api/products/:id → Obtener uno
-* PUT /api/products/:id → Actualizar completo
-* PATCH /api/products/:id → Actualizar parcial
-* DELETE /api/products/:id → Eliminar
+Debe implementar:
 
-## **10.7. Validar en PostgreSQL**
+```txt
+findAll()
+findOne()
+create()
+update()
+partialUpdate()
+delete()
+```
 
-Usar DBeaver, pgAdmin o extensión de VSCode para verificar:
+---
+
+### 19.5 Actualizar `ProductsController`
+
+El controlador debe seguir delegando al servicio.
+
+No debe contener lógica de persistencia.
+
+---
+
+### 19.6 Probar el CRUD completo con PostgreSQL
+
+Probar:
+
+* POST create product
+* GET list products
+* GET product by id
+* PUT update product
+* PATCH partial update product
+* DELETE remove product
+
+### Datos para revisión
+
+Ingresar 5 productos mediante API REST.
+
+---
+
+# 20. Resultados y evidencias
+
+En la nueva entrada del README, se debe agregar:
+
+---
+
+## Captura de 5 productos creados en PostgreSQL
+
+Puede ser desde:
+
+* DBeaver
+* VS Code PostgreSQL
+* terminal con `psql`
+
+Consulta sugerida:
 
 ```sql
 SELECT * FROM products;
 ```
 
----
-
-# **11. Resultados y evidencias**
-
-## **11.1. Captura de ProductEntity**
-Screenshot del archivo `product.entity.ts` completo
-
-## **11.2. Captura de ProductsService**
-Screenshot del método `create()` con programación funcional
-
-## **11.3. Captura de PostgreSQL**
-Screenshot de consulta SQL mostrando los 5 productos creados:
-```sql
-SELECT id, name, description, price, stock, "createdAt" 
-FROM products 
-ORDER BY id;
-```
-
-## **11.4. Capturas de Postman/Thunder Client**
-* POST creando un producto
-* GET listando productos
-* PUT/PATCH actualizando
-* DELETE eliminando
-
----
-
----
-
-# **13. Comparación: NestJS vs Spring Boot**
-
-| Aspecto | NestJS (TypeORM) | Spring Boot (JPA/Hibernate) |
-|---------|------------------|------------------------------|
-| **Lenguaje** | TypeScript | Java/Kotlin |
-| **ORM** | TypeORM | Hibernate |
-| **Decorador Entity** | `@Entity()` | `@Entity` |
-| **Primary Key** | `@PrimaryGeneratedColumn()` | `@Id + @GeneratedValue` |
-| **Repositorio** | `Repository<T>` | `JpaRepository<T, ID>` |
-| **Inyección** | `@InjectRepository()` | Constructor injection |
-| **Configuración** | `TypeOrmModule.forRoot()` | `application.yml` |
-| **Sincronización** | `synchronize: true` | `ddl-auto: update` |
-
-Ambos frameworks siguen principios similares de arquitectura en capas y separación de responsabilidades.
+## Explicar brevemente el flujo de datos desde la API REST hasta PostgreSQL y viceversa, destacando el uso de BaseEntity.
