@@ -1,4 +1,3 @@
-
 # Programación y Plataformas Web
 
 # Frameworks Backend: NestJS – Servicios, Lógica de Negocio e Inyección de Dependencias
@@ -7,7 +6,7 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nestjs/nestjs-original.svg" width="110" alt="Nest Logo">
 </div>
 
-
+---
 
 # Práctica 4 (NestJS): Controladores + Servicios + Lógica de Negocio
 
@@ -17,150 +16,225 @@
 
 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
- GitHub: PabloT18
+GitHub: PabloT18
 
 ---
 
-
 # 1. Introducción
 
-En la práctica anterior (Práctica 3) se construyó un CRUD REST completo colocando **toda la lógica dentro del controlador**, incluyendo:
+En la práctica anterior se implementó un CRUD REST completo colocando toda la lógica dentro del controlador.
 
-* almacenamiento del arreglo en memoria
-* creación
-* consulta
-* actualizaciones
-* eliminación
-* manejo del ID incremental
+El controlador realizaba varias tareas al mismo tiempo:
 
-Ese enfoque es útil para comprender cómo funciona un controlador, pero **no es sostenible** en una aplicación real.
+* recibía peticiones HTTP
+* almacenaba usuarios en memoria
+* buscaba usuarios por ID
+* creaba nuevos usuarios
+* actualizaba usuarios
+* eliminaba usuarios
+* convertía modelos a DTOs de respuesta
 
-En NestJS, la arquitectura estándar es:
+Este enfoque sirve para comprender cómo funcionan los endpoints REST, pero no es adecuado para una aplicación más organizada.
 
-```
-Controller → Service → Repository / Data Source
-```
+En esta práctica se introduce el uso de servicios mediante `@Injectable()`.
 
-En esta práctica se introduce:
+El objetivo es mover la lógica del controlador hacia una clase de servicio, de manera que el controlador quede responsable únicamente de recibir la petición HTTP y delegar la operación.
 
-* servicios con `@Injectable()`
-* inyección de dependencias
-* separación de responsabilidades (SRP)
-* traslado de la lógica desde el controlador hacia el servicio
-* uso correcto del patrón MVCS en NestJS
+En esta práctica se trabajará con:
 
-El módulo trabajado será **users/**.
-En la parte práctica se replica la estructura para **products/**.
+* controladores
+* DTOs
+* modelos
+* mappers
+* servicios
+* almacenamiento en memoria con `UserModel[]`
 
+Todavía no se utiliza:
 
+* repositorios
+* entidades de base de datos
+* base de datos
 
-# 2. Estructura del módulo con servicios
+---
 
-Carpeta destino:
+# 2. Flujo después de aplicar servicios
 
-```
-src/users/
-```
+Ahora el flujo será:
 
-Ahora se utilizará:
-
-```
-users/
- ├── controllers/
- │     └── users.controller.ts
- ├── services/
- │     ├── users.service.ts
- ├── entities/
- ├── dtos/
- ├── mappers/
- └── users.module.ts
-```
-
-En este tema:
-
-* el controlador solo enruta solicitudes
-* la lógica del CRUD se traslada a `UsersService`
-* la lista en memoria vive dentro del servicio
-* NestJS inyecta automáticamente el servicio en el controlador
-
-
-
-# 3. Servicio (UsersService)
-
-## Generación del servicio
-
-Para crear el servicio se utiliza el CLI de NestJS:
-
-```bash
-nest generate service users/services/users --flat
+```txt
+Cliente
+  ↓
+UsersController
+  ↓
+UsersService
+  ↓
+UserModel[]
+  ↓
+UserMapper
+  ↓
+UserResponseDto
+  ↓
+Cliente
 ```
 
-O en su forma abreviada:
+El controlador ya no manejará directamente el arreglo de usuarios.
 
-```bash
-nest g s users/services/users --flat
+El arreglo en memoria se moverá al servicio.
+
+---
+
+## 2.1. Responsabilidad de cada clase
+
+| Clase                  | Responsabilidad                                |
+| ---------------------- | ---------------------------------------------- |
+| `UsersController`      | Recibir peticiones HTTP y llamar al servicio   |
+| `UsersService`         | Implementar la lógica de negocio               |
+| `UserModel`            | Representar el usuario dentro de la aplicación |
+| `UserMapper`           | Convertir entre DTOs y modelos                 |
+| `CreateUserDto`        | Recibir datos para crear usuario               |
+| `UpdateUserDto`        | Recibir datos para actualización completa      |
+| `PartialUpdateUserDto` | Recibir datos para actualización parcial       |
+| `UserResponseDto`      | Devolver datos seguros al cliente              |
+| `ErrorResponseDto`     | Devolver mensajes de error                     |
+
+---
+
+# 3. Creación del servicio
+
+Dentro de la carpeta correspondiente se creará el archivo:
+
+```txt
+users.service.ts
 ```
 
-Este comando:
-* Crea el archivo `users.service.ts` en `src/users/services/`
-* Genera la clase con el decorador `@Injectable()`
-* Incluye un archivo de pruebas `.spec.ts`
-* Registra automáticamente el servicio en el módulo
+---
 
-## El decorador @Injectable()
+## UsersService
+
+Archivo `users.service.ts`:
 
 ```ts
-@Injectable()
-export class UsersService {
-  // ...
-}
-```
-
-`@Injectable()` es un decorador que marca la clase como un **proveedor** que puede ser inyectado en otros componentes.
-
-Características:
-
-* **Inyección de dependencias**: permite que NestJS cree una instancia del servicio y la inyecte donde sea necesaria
-* **Singleton por defecto**: NestJS crea una única instancia compartida en toda la aplicación
-* **Gestión automática**: el framework controla el ciclo de vida del servicio
-* **Testeable**: facilita la creación de mocks para pruebas unitarias
-
-Sin este decorador, la clase no puede ser inyectada en controladores u otros servicios.
-
-## Implementación del servicio
-
-Archivo:
-`services/users.service.ts`
-
-La lógica que antes estuvo en el controlador se coloca en el servicio:
-
-```ts
-
+/*
+ * Servicio encargado de implementar las operaciones disponibles
+ * para la gestión de usuarios.
+ *
+ * En esta clase se mueve la lógica que antes estaba dentro del controlador.
+ *
+ * En esta práctica todavía no se usa repository ni base de datos.
+ * Por eso se mantiene un arreglo en memoria dentro del servicio.
+ */
 @Injectable()
 export class UsersService {
 
-  private users: User[] = [];
+  private users: UserModel[] = [];
   private currentId = 1;
 
-  findAll() {
-    return this.users.map(u => UserMapper.toResponse(u));
+  /*
+   * Retorna todos los usuarios registrados en memoria.
+   *
+   * Convierte cada UserModel a UserResponseDto para no exponer
+   * datos internos como password o passwordHash.
+   */
+  findAll(): UserResponseDto[] {
+
+    // Programación tradicional iterativa
+    /*
+    const dtos: UserResponseDto[] = [];
+
+    for (const user of this.users) {
+      dtos.push(UserMapper.toResponse(user));
+    }
+
+    return dtos;
+    */
+
+    // Programación funcional
+    return this.users.map((user) => UserMapper.toResponse(user));
   }
 
-  findOne(id: number) {
-    const user = this.users.find(u => u.id === id);
-    if (!user) return { error: 'User not found' };
+  /*
+   * Busca un usuario por id.
+   *
+   * Si el usuario existe, devuelve UserResponseDto.
+   * Si no existe, devuelve ErrorResponseDto.
+   */
+  findOne(id: number): object {
+
+    // Programación tradicional iterativa
+    /*
+    for (const user of this.users) {
+      if (user.id === id) {
+        return UserMapper.toResponse(user);
+      }
+    }
+
+    return {
+      error: 'User not found',
+    };
+    */
+
+    // Programación funcional
+    const user = this.users.find((item) => item.id === id);
+
+    if (!user) {
+      return {
+        error: 'User not found',
+      };
+    }
+
     return UserMapper.toResponse(user);
   }
 
-  create(dto: CreateUserDto) {
-    const entity = UserMapper.toEntity(this.currentId++, dto);
-    this.users.push(entity);
-    return UserMapper.toResponse(entity);
+  /*
+   * Crea un nuevo usuario.
+   *
+   * Recibe un CreateUserDto, lo convierte a UserModel,
+   * asigna un id generado en memoria y devuelve UserResponseDto.
+   */
+  create(dto: CreateUserDto): UserResponseDto {
+
+    const user = UserMapper.toModel(dto);
+
+    user.id = this.currentId;
+    this.currentId++;
+
+    this.users.push(user);
+
+    return UserMapper.toResponse(user);
   }
 
-  update(id: number, dto: UpdateUserDto) {
-    const user = this.users.find(u => u.id === id);
-    if (!user) return { error: 'User not found' };
+  /*
+   * Actualiza completamente un usuario existente.
+   *
+   * En PUT se reemplazan los campos editables enviados en el DTO.
+   * No se modifica el id ni createdAt.
+   */
+  update(id: number, dto: UpdateUserDto): object {
+
+    // Programación tradicional iterativa
+    /*
+    for (const user of this.users) {
+      if (user.id === id) {
+        user.name = dto.name;
+        user.email = dto.email;
+
+        return UserMapper.toResponse(user);
+      }
+    }
+
+    return {
+      error: 'User not found',
+    };
+    */
+
+    // Programación funcional
+    const user = this.users.find((item) => item.id === id);
+
+    if (!user) {
+      return {
+        error: 'User not found',
+      };
+    }
 
     user.name = dto.name;
     user.email = dto.email;
@@ -168,273 +242,472 @@ export class UsersService {
     return UserMapper.toResponse(user);
   }
 
-  partialUpdate(id: number, dto: PartialUpdateUserDto) {
-    const user = this.users.find(u => u.id === id);
-    if (!user) return { error: 'User not found' };
+  /*
+   * Actualiza parcialmente un usuario existente.
+   *
+   * En PATCH solo se actualizan los campos que llegan en el DTO.
+   * Los campos indefinidos se ignoran.
+   */
+  partialUpdate(id: number, dto: PartialUpdateUserDto): object {
 
-    if (dto.name !== undefined) user.name = dto.name;
-    if (dto.email !== undefined) user.email = dto.email;
+    // Programación tradicional iterativa
+    /*
+    for (const user of this.users) {
+      if (user.id === id) {
+
+        if (dto.name !== undefined) {
+          user.name = dto.name;
+        }
+
+        if (dto.email !== undefined) {
+          user.email = dto.email;
+        }
+
+        return UserMapper.toResponse(user);
+      }
+    }
+
+    return {
+      error: 'User not found',
+    };
+    */
+
+    // Programación funcional
+    const user = this.users.find((item) => item.id === id);
+
+    if (!user) {
+      return {
+        error: 'User not found',
+      };
+    }
+
+    if (dto.name !== undefined) {
+      user.name = dto.name;
+    }
+
+    if (dto.email !== undefined) {
+      user.email = dto.email;
+    }
 
     return UserMapper.toResponse(user);
   }
 
-  delete(id: number) {
-    const exists = this.users.some(u => u.id === id);
-    if (!exists) return { error: 'User not found' };
+  /*
+   * Elimina un usuario por id.
+   *
+   * Si el usuario existe, se elimina del arreglo en memoria.
+   * Si no existe, se devuelve un DTO de error.
+   */
+  delete(id: number): object {
 
-    this.users = this.users.filter(u => u.id !== id);
-    return { message: 'Deleted successfully' };
+    const exists = this.users.some((item) => item.id === id);
+
+    if (!exists) {
+      return {
+        error: 'User not found',
+      };
+    }
+
+    this.users = this.users.filter((item) => item.id !== id);
+
+    return {
+      message: 'Deleted successfully',
+    };
   }
 }
 ```
 
+---
 
+### Explicación de UsersService
 
-# 4. Registro del servicio en el módulo
+`UsersService` es la clase que implementa la lógica del módulo de usuarios.
 
-Archivo:
-`users.module.ts`
-
-El módulo debe exponer el servicio para ser inyectado:
-
-```ts
-@Module({
-  controllers: [UsersController],
-  providers: [UsersService],
-})
-export class UsersModule {}
-```
-
-Con esto NestJS sabe:
-
-* qué servicio debe crear
-* cuándo debe inyectarlo
-* dónde debe usarlo
-
-
-
-# 5. Controlador usando el servicio
-
-## Inyección de dependencias
-
-La inyección de dependencias (DI) es un patrón de diseño donde una clase recibe sus dependencias desde el exterior en lugar de crearlas internamente.
-
-En NestJS, la inyección se realiza a través del **constructor**:
+Se marca con:
 
 ```ts
-constructor(private readonly service: UsersService) {}
+@Injectable()
 ```
 
-### ¿Cómo funciona?
+Este decorador le indica a NestJS que esta clase debe ser registrada como un proveedor.
 
-1. **Declaración en el constructor**
-   * Se define el tipo de servicio que se necesita
-   * `private readonly` crea automáticamente una propiedad de clase
-   * NestJS detecta la dependencia por el tipo
+Cuando una clase tiene `@Injectable()`, NestJS puede crear una instancia automáticamente y entregarla a otras clases mediante inyección de dependencias.
 
-2. **Resolución automática**
-   * NestJS busca el servicio registrado en el módulo (`providers: [UsersService]`)
-   * Crea o reutiliza la instancia del servicio (singleton)
-   * Inyecta la instancia en el controlador
-
-3. **Uso en métodos**
-   * El servicio está disponible como `this.service`
-   * Se pueden llamar sus métodos directamente
-
-### Beneficios de la inyección de dependencias
-
-* **Desacoplamiento**: el controlador no sabe cómo se crea el servicio
-* **Testabilidad**: se puede reemplazar el servicio real con un mock
-* **Reutilización**: el mismo servicio se inyecta en múltiples lugares
-* **Mantenibilidad**: cambios en el servicio no afectan al controlador
-* **Ciclo de vida gestionado**: NestJS controla cuándo crear y destruir instancias
-
-### Ejemplo visual del flujo
-
-```
-NestJS Container
-├── Crea UsersService
-│   └── Instancia única (singleton)
-├── Inyecta en UsersController
-│   └── constructor(private service: UsersService)
-└── UsersController usa this.service.findAll()
-```
-
-## Implementación del controlador
-
-Archivo:
-`controllers/users.controller.ts`
-
-El controlador ya no contiene lógica. Solo enruta:
+En esta práctica, el arreglo:
 
 ```ts
-@Controller('api/users')
+private users: UserModel[] = [];
+```
+
+ya no vive en el controlador.
+
+Ahora vive en el servicio.
+
+Esto permite que el controlador quede más limpio.
+
+---
+
+# 4. Actualizar UsersController
+
+Archivo `users.controller.ts`:
+
+```ts
+/*
+ * Controlador REST encargado de exponer los endpoints HTTP
+ * para la gestión de usuarios.
+ *
+ * En esta práctica el controlador ya no contiene la lógica del CRUD.
+ * Solo recibe la petición y delega la operación al servicio.
+ */
+@Controller('users')
 export class UsersController {
 
-  constructor(private readonly service: UsersService) {}
+  private readonly service: UsersService;
 
+  /*
+   * Inyección de dependencias por constructor.
+   *
+   * NestJS busca una instancia de UsersService,
+   * la crea porque está registrada como provider,
+   * y la inyecta automáticamente en el controlador.
+   */
+  constructor(service: UsersService) {
+    this.service = service;
+  }
+
+  /*
+   * Endpoint para listar todos los usuarios.
+   *
+   * GET /users
+   */
   @Get()
-  findAll() {
+  findAll(): UserResponseDto[] {
     return this.service.findAll();
   }
 
+  /*
+   * Endpoint para buscar un usuario por id.
+   *
+   * GET /users/:id
+   */
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): object {
     return this.service.findOne(Number(id));
   }
 
+  /*
+   * Endpoint para crear un nuevo usuario.
+   *
+   * POST /users
+   */
   @Post()
-  create(@Body() dto: CreateUserDto) {
+  create(@Body() dto: CreateUserDto): UserResponseDto {
     return this.service.create(dto);
   }
 
+  /*
+   * Endpoint para actualizar completamente un usuario.
+   *
+   * PUT /users/:id
+   */
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+  ): object {
     return this.service.update(Number(id), dto);
   }
 
+  /*
+   * Endpoint para actualizar parcialmente un usuario.
+   *
+   * PATCH /users/:id
+   */
   @Patch(':id')
-  partialUpdate(@Param('id') id: string, @Body() dto: PartialUpdateUserDto) {
+  partialUpdate(
+    @Param('id') id: string,
+    @Body() dto: PartialUpdateUserDto,
+  ): object {
     return this.service.partialUpdate(Number(id), dto);
   }
 
+  /*
+   * Endpoint para eliminar un usuario.
+   *
+   * DELETE /users/:id
+   */
   @Delete(':id')
-  delete(@Param('id') id: string) {
+  delete(@Param('id') id: string): object {
     return this.service.delete(Number(id));
   }
 }
 ```
 
-Esto permite que:
+---
 
-* el controlador sea mínimo
-* el servicio sea el centro de la lógica
-* la prueba unitaria del servicio sea directa
-* el cambio futuro hacia una base de datos no afecte al controlador
+## Explicación del controlador actualizado
 
+El controlador ya no tiene:
 
-
-# 6. ¿Por qué se implementa así?
-
-### Separación fuerte entre capas
-
-Un controlador solo:
-
-* recibe
-* valida mínimamente
-* enruta
-
-Un servicio:
-
-* contiene reglas de negocio
-* administra datos
-* aplica validaciones complejas
-* prepara información antes del repositorio
-
-### Inyección de dependencias
-
-NestJS crea el servicio y se lo entrega al controlador automáticamente.
-
-Esto permite:
-
-* pruebas unitarias sin servidor
-* reemplazar implementaciones con facilidad
-* mantenimiento claro y ordenado
-
-### Preparación para persistencia real
-
-En una práctica posterior:
-
-```
-this.users = []
+```ts
+private users: UserModel[] = [];
+private currentId = 1;
 ```
 
-se reemplazará por:
+Tampoco contiene directamente la lógica de búsqueda, creación, actualización o eliminación.
 
-```
-UserRepository (TypeORM / Mongo / Prisma)
-```
+Ahora solo tiene una dependencia:
 
-y el controlador seguirá funcionando sin cambios.
-
-
-
-# 7. Flujo interno después de aplicar servicios
-
-```
-Cliente
-  ↓
-Controlador (DTO)
-  ↓ llama →
-Servicio (lógica, reglas, validaciones)
-  ↓ usa →
-Entidad + Mapper
-  ↓
-Controlador (Response DTO)
-  ↓
-Cliente
+```ts
+private readonly service: UsersService;
 ```
 
-Este es el modelo MVCS aplicado correctamente en NestJS.
+Esta dependencia se recibe por constructor:
 
-
-
-# 8. Endpoints disponibles
-
-| Método | Ruta             | Descripción                |
-| ------ | ---------------- | -------------------------- |
-| GET    | `/api/users`     | Lista usuarios             |
-| GET    | `/api/users/:id` | Obtiene usuario            |
-| POST   | `/api/users`     | Crea usuario               |
-| PUT    | `/api/users/:id` | Reemplaza usuario completo |
-| PATCH  | `/api/users/:id` | Actualiza parcialmente     |
-| DELETE | `/api/users/:id` | Elimina usuario            |
-
-
-
-# 9. Actividad práctica
-
-Los estudiantes deben replicar la estructura para:
-
-```
-src/products/
+```ts
+constructor(service: UsersService) {
+  this.service = service;
+}
 ```
 
-Creando:
+Esto se conoce como inyección de dependencias por constructor.
 
+NestJS detecta que el controlador necesita un `UsersService`.
+
+Luego busca una clase registrada como provider dentro del módulo.
+
+Encuentra:
+
+```ts
+@Injectable()
+export class UsersService
 ```
-controllers/
-dtos/
-entities/
-mappers/
-services/
-    products.service.ts
+
+Entonces crea una instancia de `UsersService` y la inyecta en el controlador.
+
+---
+
+# 5. Inyección de dependencias
+
+La inyección de dependencias permite que una clase no cree manualmente los objetos que necesita.
+
+En lugar de hacer esto:
+
+```ts
+private service = new UsersService();
 ```
 
-Y deben:
+NestJS se encarga de crear e inyectar el objeto:
 
-1. Implementar los 6 endpoints REST
-2. Colocar toda la lógica en `ProductsService`
-3. Dejar el controlador limpio usando inyección de dependencias
+```ts
+private readonly service: UsersService;
 
+constructor(service: UsersService) {
+  this.service = service;
+}
+```
 
+Esto mejora la organización del código y facilita futuras pruebas.
 
-# 10. Resultados y evidencias
+---
 
-Cada estudiante debe entregar:
+## Implementación de un servicio y su inyección
 
-### 1. Captura del `constructor` de `ProductsController`
+Se usa un servicio porque permite separar:
 
+```txt
+qué recibe el controlador
+```
 
+de:
 
-### 2. Captura completa de
+```txt
+cómo se ejecuta la lógica
+```
 
-`products.service.ts`
+El controlador llama:
 
-### 3. Explicación breve:
+```ts
+return this.service.findOne(Number(id));
+```
 
-* por qué se utiliza un servicio
-* cómo funciona la inyección de dependencias
-* por qué el controlador debe ser mínimo
-* cómo esto beneficia al modelo MVCS
+El servicio define cómo se busca el usuario:
 
+```ts
+const user = this.users.find((item) => item.id === id);
+
+if (!user) {
+  return {
+    error: 'User not found',
+  };
+}
+
+return UserMapper.toResponse(user);
+```
+
+Esto permite que más adelante se pueda cambiar la implementación interna sin modificar el controlador.
+
+---
+
+# 6. Pruebas sugeridas en Postman / Bruno
+
+## Crear usuario
+
+Método:
+
+```txt
+POST
+```
+
+Ruta:
+
+```txt
+/api/users
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Pérez",
+  "email": "juan@ups.edu.ec",
+  "password": "123456"
+}
+```
+
+---
+
+## Listar usuarios
+
+Método:
+
+```txt
+GET
+```
+
+Ruta:
+
+```txt
+/api/users
+```
+
+---
+
+## Buscar usuario por ID
+
+Método:
+
+```txt
+GET
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+---
+
+## Actualizar usuario completo
+
+Método:
+
+```txt
+PUT
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Actualizado",
+  "email": "juan.actualizado@ups.edu.ec"
+}
+```
+
+---
+
+## Actualizar usuario parcialmente
+
+Método:
+
+```txt
+PATCH
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+Body:
+
+```json
+{
+  "email": "nuevo.correo@ups.edu.ec"
+}
+```
+
+---
+
+## Eliminar usuario
+
+Método:
+
+```txt
+DELETE
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+---
+
+# 7. Actividad práctica
+
+## 1. Replicar la estructura implementada en `users/` para el recurso `products/`.
+
+---
+
+# 8. Resultados y evidencias
+
+En la nueva entrada del README, se debe agregar:
+
+## Captura completa de ProductsService
+
+Debe evidenciarse:
+
+* uso de `@Injectable()`
+* arreglo en memoria
+* generación de ID
+* uso del mapper
+* métodos CRUD implementados
+
+---
+
+## Captura de ProductsController
+
+Debe evidenciarse:
+
+* inyección de `ProductsService`
+* endpoints llamando al servicio
+* ausencia de lógica CRUD dentro del controlador
+
+---
+
+## Explicación breve
+
+```txt
+¿Cómo se inyecta el servicio en el controlador?
+```
