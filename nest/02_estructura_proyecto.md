@@ -1,4 +1,3 @@
-
 # Programación y Plataformas Web
 
 # Frameworks Backend: NestJS – Estructura del Proyecto
@@ -7,7 +6,7 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nestjs/nestjs-original.svg" width="100" alt="Nest Logo">
 </div>
 
-## Práctica 2 (NestJS): Arquitectura Interna, Organización del Proyecto y Estructura Modular
+## Práctica 2 (NestJS): Estructura del Proyecto, Arquitectura Interna y Organización Modular
 
 ### Autores
 
@@ -21,559 +20,418 @@ GitHub: [PabloT18](https://github.com/PabloT18)
 
 # 1. Introducción
 
-En la práctica anterior se revisó cómo crear un proyecto NestJS y cómo definir un endpoint básico.
-En esta práctica se estudiará cómo NestJS organiza internamente sus componentes, cómo funciona su arquitectura modular, qué elementos conforman un backend profesional y cómo estructurar el proyecto siguiendo buenas prácticas empresariales.
+En el tema anterior se revisó cómo crear un proyecto NestJS, ejecutar el servidor y crear un primer endpoint.
+
+En esta práctica se profundiza en cómo se **estructura internamente un proyecto backend profesional**, cómo NestJS organiza sus componentes, cómo detecta módulos, controladores y servicios, y cómo aplicar una arquitectura modular basada en dominios.
 
 El objetivo es comprender:
 
 * cómo se organiza un proyecto NestJS a nivel de carpetas
-* cómo se relacionan módulos, controladores y servicios
-* cómo funciona la inyección de dependencias
-* cómo dividir la aplicación por dominios
-* cómo estandarizar una arquitectura que permita escalar el sistema
-
-NestJS está diseñado desde su núcleo para trabajar con:
-
-* módulos
-* controladores
-* servicios
-* proveedores
-* pipes, filters, interceptors
-* componentes reutilizables
-
-Esto hace que la estructura del proyecto sea clara, mantenible y adecuada para proyectos grandes.
+* cómo funcionan módulos, controladores, servicios, modelos y DTOs dentro de MVCS
+* por qué el módulo raíz es fundamental
+* cómo NestJS registra los componentes mediante módulos
+* cómo organizar el proyecto como si fuera una aplicación empresarial real
 
 ---
 
 # 2. ¿Cómo organiza NestJS un proyecto?
 
-NestJS sigue tres pilares fundamentales:
+NestJS utiliza tres elementos clave:
 
----
+### **1. Módulo raíz**
 
-## **1. Arquitectura modular**
+Es el módulo principal de la aplicación:
 
-Todo en NestJS gira alrededor de módulos.
-
-Un módulo:
-
-* agrupa controladores, servicios y proveedores
-* encapsula lógica por dominio
-* puede ser importado por otros módulos
-* permite mantener el proyecto ordenado
-
-Ejemplo de módulo inicial:
-
-```
-AppModule → módulo raíz
-StatusModule → módulo creado por el estudiante
-UsersModule → módulo del dominio usuarios
-ProductsModule → módulo del dominio productos
+```txt
+app.module.ts
 ```
 
----
-
-## **2. Decoradores**
-
-NestJS utiliza decoradores para definir comportamientos:
-
-| Decorador             | Función                         |
-| --------------------- | ------------------------------- |
-| `@Module()`           | Declara un módulo               |
-| `@Controller()`       | Declara un controlador          |
-| `@Get()`, `@Post()`   | Manejan rutas HTTP              |
-| `@Injectable()`       | Declara un servicio o proveedor |
-| `@Param()`, `@Body()` | Obtienen valores del request    |
-
-Esta sintaxis permite un código limpio y expresivo.
-
----
-
-## **3. Inyección de dependencias (DI)**
-
-NestJS utiliza un contenedor de inyección de dependencias que:
-
-* crea instancias de servicios
-* administra el ciclo de vida de objetos
-* permite reutilizar lógica en otros módulos
-* ordena las responsabilidades de manera clara
-
-Por ejemplo, un controlador solicita un servicio:
+Ejemplo:
 
 ```ts
-constructor(private readonly usersService: UsersService) {}
-```
-
-NestJS suministra automáticamente la instancia correcta.
-
----
-
-# 3. Archivos esenciales de un proyecto NestJS
-
-| Archivo             | Función                                                |
-| ------------------- | ------------------------------------------------------ |
-| `main.ts`           | Punto de entrada del servidor                          |
-| `app.module.ts`     | Módulo raíz donde se registran los módulos principales |
-| `app.controller.ts` | Controlador raíz                                       |
-| `app.service.ts`    | Servicio raíz                                          |
-| `nest-cli.json`     | Configuración del CLI                                  |
-| `tsconfig.json`     | Configuración de TypeScript                            |
-| `package.json`      | Dependencias del proyecto                              |
-
----
-
-# 4. Estructura inicial generada por NestJS
-
-```
-src/
- ├── app.controller.ts
- ├── app.service.ts
- ├── app.module.ts
- ├── main.ts
-test/
-package.json
-tsconfig.json
-nest-cli.json
-```
-
-Esta estructura es funcional, pero insuficiente para un proyecto real.
-En adelante se organizará el backend siguiendo una arquitectura modular por dominio.
-
----
-
-# 5. Arquitectura MVCS aplicada en NestJS
-
-NestJS implementa MVCS de forma natural:
-
-| Capa          | Carpeta sugerida             |
-| ------------- | ---------------------------- |
-| Presentación  | `controllers/`               |
-| Negocio       | `services/`                  |
-| Dominio       | `entities/`                  |
-| Persistencia  | (posterior) ORM/Repositorios |
-| Comunicación  | `dtos/`                      |
-| Configuración | `config/`                    |
-| Utilidades    | `utils/`                     |
-
-A diferencia de otros frameworks, NestJS NO distribuye estas carpetas de manera automática, sino que permite organizarlas dentro de **módulos por dominio**.
-
----
-
-# 6. Estructura modular recomendada (proyecto grande)
-
-Se recomienda organizar el proyecto por **dominios**, replicando la estructura de una aplicación real.
-
-Estructura principal:
-
-```
-src/
- ├── config/
- ├── utils/
- ├── users/
- ├── products/
- ├── auth/
- └── app.module.ts
-```
-
-Cada dominio contiene:
-
-```
-users/
-  ├── controllers/
-  ├── services/
-  ├── dtos/
-  ├── entities/
-  ├── mappers/
-  ├── utils/
-  └── users.module.ts
-```
-
-Esta arquitectura:
-
-* facilita asignar módulos por grupos de estudiantes
-* escala sin desorden
-* permite que cada dominio crezca sin afectar otros
-* imita la estructura de microservicios pero dentro de un monolito modular
-
----
-
-# 7. Flujo interno de NestJS dentro de esta estructura
-
-```
-HTTP Request → Nest Runtime
-        ↓
-Module Resolver
-        ↓
-Controller (users/controllers)
-        ↓
-Service (users/services)
-        ↓
-Base de Datos (posterior)
-        ↓
-DTO o respuesta JSON
-```
-
-NestJS utiliza su motor interno para:
-
-* encontrar el módulo correcto
-* inyectar el servicio solicitado
-* procesar decoradores
-* manejar tuberías, filtros, interceptores
-
----
-
-# 8. Actividad práctica del tema 02
-
-
-
-## 1. Crear carpetas base para configuración y utilidades
-
-**Estas carpetas NO tienen comandos CLI específicos, crear manualmente:**
-
-```bash
-# Desde la raíz del proyecto
-mkdir src/config
-mkdir src/utils
-```
-
-Estructura:
-```
-src/
-  ├── config/     # Configuraciones globales (BD, env, etc.)
-  ├── utils/      # Funciones auxiliares reutilizables
-  └── app.module.ts
-```
-
----
-
-## 2. Generar módulos de dominio usando NestJS CLI
-
-**Usar comandos oficiales de NestJS para generar módulos completos:**
-
-**EN LA PRACTICA SE DEBEN CREAR 3 MÓDULOS: `users`, `products` y `auth`.**
-**PARA  `users`, `products` VER COMANDOS DE  (3. Crear subcarpetas adicionales dentro de cada módulo)** 
-**PARA `auth` SE MUESTRA COMPLETO A CONTINUACIÓN (VERISON ESTANDAR):**
-
-### Generar módulo de Auth
-
-```bash
-# Generar el módulo
-nest generate module auth
-
-# Generar el controlador
-nest generate controller auth
-
-# Generar el servicio
-nest generate service auth
-```
-
-**Forma abreviada:**
-```bash
-nest g mo auth     # module
-nest g co auth     # controller
-nest g s auth      # service
-```
-
-**Resultado automático:**
-```
-src/auth/
-  ├── auth.controller.ts
-  ├── auth.controller.spec.ts
-  ├── auth.service.ts
-  ├── auth.service.spec.ts
-  └── auth.module.ts
-```
-
-```bash
-# Desde src/users/
-mkdir dtos
-mkdir entities
-mkdir mappers
-mkdir utils
-```
-Estructura final de `auth/` versión estandar:
-```auth/
-  ├── controllers/
-  ├── services/
-  ├── dtos/           # ← Manual
-  ├── entities/       # ← Manual
-  ├── mappers/        # ← Manual
-  ├── utils/          # ← Manual
-  ├── auth.controller.ts
-  ├── auth.controller.spec.ts
-  ├── auth.service.ts
-  ├── auth.service.spec.ts
-  └── auth.module.ts
-```
-
- **El CLI automáticamente**:
-- Crea el módulo con la estructura correcta
-- Registra el controller y service en `auth.module.ts`
-- Importa el módulo en `app.module.ts`
-- Añade decoradores necesarios
-
-
-
-
----
-
-## 3. Crear subcarpetas adicionales dentro de cada módulo
-
-**Las subcarpetas para DTOs, entities, mappers y utils NO tienen comandos CLI, crear manualmente:**
-
-Crear perviamente los modulos `users` y `products` con los comandos CLI indicados anteriormente.
-
-### Dentro del módulo `users/`, `products/`:
-
-
-**Nota**: Se deria organizar en subcarpetas `controllers/` y `services/` si se generan múltiples controladores o servicios en el futuro.
-
-```bash
-# Opción con estructura más organizada
-nest g mo users
-mkdir src/users/controllers
-mkdir src/users/services
-mkdir src/users/dtos
-mkdir src/users/entities
-mkdir src/users/mappers
-mkdir src/users/utils
-
-# Luego generar componentes en sus carpetas
-nest g co users/controllers/users --flat
-nest g s users/services/users --flat
-```
-
----
-
-## 4. Verificar archivos generados automáticamente
-
-### `users/users.controller.ts` (generado por CLI):
-
-```ts
-import { Controller } from '@nestjs/common';
-
-@Controller('users')
-export class UsersController {}
-```
-
-### `users/users.service.ts` (generado por CLI):
-
-```ts
-import { Injectable } from '@nestjs/common';
-
-@Injectable()
-export class UsersService {}
-```
-
-### `users/users.module.ts` (generado por CLI):
-
-```ts
-import { Module } from '@nestjs/common';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
-
 @Module({
-  controllers: [UsersController],
-  providers: [UsersService],
-})
-export class UsersModule {}
-```
-
-### `app.module.ts` (actualizado automáticamente por CLI):
-
-```ts
-import { Module } from '@nestjs/common';
-import { UsersModule } from './users/users.module';
-import { ProductsModule } from './products/products.module';
-import { AuthModule } from './auth/auth.module';
-
-@Module({
-  imports: [
-    UsersModule,
-    ProductsModule,
-    AuthModule,
-  ],
+  imports: [],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
 ```
 
----
+`AppModule` funciona como punto central de registro de los módulos principales del proyecto.
 
-## 5. Comandos adicionales útiles del CLI de NestJS (Los verás en el futuro, en las siguetes practicas)
+Esto significa:
 
-### Generar otros componentes:
-
-```bash
-# Generar Guard (protección de rutas)
-nest g guard auth/guards/jwt
-
-# Generar Interceptor (transformar respuestas)
-nest g interceptor common/interceptors/transform
-
-# Generar Pipe (validación)
-nest g pipe common/pipes/validation
-
-# Generar Filter (manejo de errores)
-nest g filter common/filters/http-exception
-
-# Generar Middleware
-nest g middleware common/middleware/logger
-
-# Generar DTO (clase)
-nest g class users/dtos/create-user.dto --no-spec
-
-# Generar Entity (clase)
-nest g class users/entities/user.entity --no-spec
-```
-
-### Ver ayuda del CLI:
-
-```bash
-nest --help
-nest generate --help
-```
+* si un módulo no se importa en `AppModule`, no forma parte de la aplicación
+* si un controlador no está registrado en un módulo, NestJS no lo expone
+* si un servicio no está registrado como provider, no puede ser inyectado
 
 ---
 
-## 6. Iniciar el servidor y verificar
+### **2. Sistema de módulos**
 
-```bash
-# Modo desarrollo
-pnpm start:dev
+Al iniciar la aplicación, NestJS:
 
-# o
-npm run start:dev
+```txt
+1. Ejecuta main.ts
+2. Crea la aplicación con NestFactory
+3. Carga AppModule
+4. Lee los módulos importados
+5. Registra controllers
+6. Registra providers o services
+7. Configura las rutas HTTP
+8. Inicia el servidor en el puerto configurado
 ```
 
-
----
-
-
-
-
-
----
-
-## 8. Estructura final del proyecto
-
-**Estructura resultante:**
-
-
-
-###  Estructura organizada (con subcarpetas controllers/ y services/)
-
-La organización deber qedar así:
-
-`auth/` version estandar
-`users/` y `products/` con subcarpetas
-
-en subcarpetas, debes usar comandos específicos indicados anteriormente
-
-**Estructura resultante**:
-
-```
-src/
-  ├── config/
-  ├── utils/
-  ├── users/
-  │   ├── controllers/           # ← Manual
-  │   │   └── users.controller.ts # ← CLI: nest g co users/controllers/users --flat
-  │   ├── services/              # ← Manual
-  │   │   └── users.service.ts    # ← CLI: nest g s users/services/users --flat
-  │   ├── dtos/                  # ← Manual
-  │   ├── entities/              # ← Manual
-  │   ├── mappers/               # ← Manual
-  │   ├── utils/                 # ← Manual
-  │   └── users.module.ts        # ← CLI
-  ├── products/
-  │   ├── controllers/
-  │   │   └── products.controller.ts
-  │   ├── services/
-  │   │   └── products.service.ts
-  │   ├── dtos/
-  │   ├── entities/
-  │   ├── mappers/
-  │   ├── utils/
-  │   └── products.module.ts
-  ├── auth/                      # ← CLI: nest g mo auth
-  │   ├── dtos/                  # ← Manual
-  │   ├── entities/              # ← Manual
-  │   ├── strategies/            # ← Manual
-  │   ├── guards/                # ← Manual
-  │   ├── auth.controller.ts     # ← CLI: nest g co auth (raíz del módulo)
-  │   ├── auth.service.ts        # ← CLI: nest g s auth (raíz del módulo)
-  │   └── auth.module.ts         # ← CLI
-  ├── app.module.ts
-  └── main.ts
-```
-
-⚠️ **Nota importante**: Si se usa subcarperas se debe actualizar las importaciones en los módulos:
+Ejemplo de carga inicial:
 
 ```ts
-// users/users.module.ts
-import { Module } from '@nestjs/common';
-import { UsersController } from './controllers/users.controller';  // ← Cambio de ruta
-import { UsersService } from './services/users.service';            // ← Cambio de ruta
-
-@Module({
-  controllers: [UsersController],
-  providers: [UsersService],
-})
-export class UsersModule {}
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api');
+  await app.listen(3000);
+}
+bootstrap();
 ```
-
-
 
 ---
 
-# 9. Resultados y Evidencias
+### **3. Decoradores**
 
-Cada estudiante debe entregar:
+NestJS utiliza decoradores para definir el rol de cada clase o método.
+
+Ejemplos:
+
+```txt
+@Module()       → define un módulo
+@Controller()   → define un controlador
+@Injectable()   → define un servicio o provider
+@Get()          → define un endpoint GET
+@Post()         → define un endpoint POST
+```
+
+Estos decoradores permiten que NestJS identifique qué clase cumple cada responsabilidad dentro de la aplicación.
+
+---
+
+# 3. npm, pnpm y yarn
+
+NestJS permite diferentes administradores de paquetes para instalar dependencias, ejecutar scripts y manejar el proyecto.
+
+---
+
+## 3.1 npm
+
+**Características**:
+
+* viene instalado junto con Node.js
+* ampliamente utilizado en proyectos JavaScript y TypeScript
+* usa el archivo `package-lock.json`
+* permite instalar dependencias con `npm install`
+
+**Ventajas**:
+
+* no requiere instalación adicional
+* alta compatibilidad
+* documentación abundante
+
+**Limitaciones**:
+
+* puede ser más lento en proyectos grandes
+* ocupa más espacio en algunas instalaciones
+
+---
+
+## 3.2 pnpm
+
+**Características**:
+
+* administrador de paquetes moderno
+* usa el archivo `pnpm-lock.yaml`
+* reutiliza dependencias mediante almacenamiento eficiente
+* permite instalaciones rápidas
+
+**Ventajas**:
+
+* mayor velocidad
+* menor uso de espacio en disco
+* adecuado para proyectos modernos
+* buena integración con proyectos TypeScript y monorepos
+
+**Por qué se utilizará pnpm en este curso**:
+
+* es eficiente para proyectos iterativos
+* permite instalar dependencias rápidamente
+* facilita trabajar con proyectos Node.js modernos
+* mantiene un archivo de bloqueo claro mediante `pnpm-lock.yaml`
+* estandariza el entorno de trabajo de los estudiantes
+
+---
+
+## 3.3 yarn
+
+**Características**:
+
+* administrador de paquetes alternativo
+* usa el archivo `yarn.lock`
+* fue muy usado antes de la adopción amplia de pnpm
+
+**Ventajas**:
+
+* estable
+* compatible con muchos proyectos existentes
+
+**Limitaciones**:
+
+* no será el gestor utilizado en esta asignatura
+* puede generar diferencias si se mezcla con npm o pnpm
+
+---
+
+# 4. Archivos esenciales en un proyecto NestJS
+
+| Archivo               | Función                                               |
+| --------------------- | ----------------------------------------------------- |
+| `main.ts`             | Punto de entrada de la aplicación NestJS              |
+| `app.module.ts`       | Módulo raíz donde se registran módulos principales    |
+| `app.controller.ts`   | Controlador inicial generado por NestJS               |
+| `app.service.ts`      | Servicio inicial generado por NestJS                  |
+| `package.json`        | Define dependencias, scripts y metadatos del proyecto |
+| `pnpm-lock.yaml`      | Registra versiones exactas de dependencias instaladas |
+| `nest-cli.json`       | Configuración del CLI de NestJS                       |
+| `tsconfig.json`       | Configuración general de TypeScript                   |
+| `tsconfig.build.json` | Configuración de TypeScript para compilación          |
+
+---
+
+# 5. Estructura interna generada por NestJS
+
+Estructura inicial:
+
+```txt
+fundamentos01/
+ ├── src/
+ │    ├── app.controller.ts
+ │    ├── app.controller.spec.ts
+ │    ├── app.module.ts
+ │    ├── app.service.ts
+ │    └── main.ts
+ ├── test/
+ ├── package.json
+ ├── pnpm-lock.yaml
+ ├── tsconfig.json
+ ├── tsconfig.build.json
+ └── nest-cli.json
+```
+
+Pero esta estructura es insuficiente para un proyecto real.
+
+A continuación se presenta cómo organizar una API profesional.
+
+---
+
+# 6. Arquitectura MVCS aplicada a NestJS
+
+En NestJS, MVCS se distribuye así:
+
+| Capa                     | Elemento NestJS |
+| ------------------------ | --------------- |
+| Presentación             | `controllers/`  |
+| Negocio                  | `services/`     |
+| Dominio                  | `models/`       |
+| Persistencia             | `repositories/` |
+| Comunicación DTO         | `dtos/`         |
+| Utilidades transversales | `utils/`        |
+| Configuraciones globales | `config/`       |
+| Organización modular     | `*.module.ts`   |
+
+---
+
+# 7. Estructura modular recomendada (proyecto grande)
+
+Se utilizará **estructura por dominios o recursos**.
+
+### Proyecto base:
+
+```txt
+src/
+    ├── config/
+    ├── utils/
+    ├── products/
+    ├── users/
+    ├── auth/
+    ├── app.module.ts
+    └── main.ts
+```
+
+Cada carpeta representa un dominio o recurso de la aplicación.
+
+Ejemplos:
+
+```txt
+users/      → gestión de usuarios
+products/   → gestión de productos
+auth/       → autenticación
+config/     → configuraciones globales
+utils/      → funciones auxiliares reutilizables
+```
+
+---
+
+# 8. Estructura modular dentro de cada dominio
+
+Cada módulo contiene **todas las capas necesarias**:
+
+```txt
+products/
+    ├── controllers/
+    ├── services/
+    ├── repositories/
+    ├── entities/
+    ├── dtos/
+    ├── mappers/
+    ├── utils/
+    └── products.module.ts
+```
+
+Lo mismo aplica para:
+
+```txt
+users/
+auth/
+orders/
+payments/
+etc.
+```
+
+En NestJS, cada dominio debe tener además su propio archivo de módulo:
+
+```txt
+users.module.ts
+products.module.ts
+auth.module.ts
+```
+
+Estos archivos permiten registrar los controladores y servicios de cada dominio.
+
+---
+
+# 9. Flujo interno de NestJS dentro de esta estructura
+
+```txt
+HTTP Request
+        ↓
+Servidor HTTP de NestJS
+        ↓
+AppModule
+        ↓
+Module del dominio
+        ↓
+Controller (products/controllers)
+        ↓
+Service (products/services)
+        ↓
+Repository (products/repositories)
+        ↓
+Base de Datos
+        ↓
+HTTP Response (DTO o JSON)
+```
+
+En esta práctica todavía no se implementa base de datos.
+
+La estructura se prepara para que en prácticas posteriores se pueda incorporar persistencia.
+
+---
+
+# 10. Actividad práctica
+
+En esta práctica se debe:
+
+### 1. Reorganizar el proyecto con la estructura modular:
+
+Crear dentro de:
+
+```txt
+src/
+```
+
+las carpetas:
+
+```txt
+config/
+utils/
+products/
+users/
+auth/
+```
+
+### 2. Dentro de `products/` crear carpetas similar a `users/`:
+
+Crear las carpetas necesarias para organizar el módulo por capas.
+
+### 3. Crear clases vacías para verificar la estructura modular:
+
+Ejemplo en `products/controllers`:
+
+```ts
+@Controller('products')
+export class ProductsController {}
+```
+
+Y en `products/services`:
+
+```ts
+@Injectable()
+export class ProductsService {}
+```
+
+También se debe verificar el archivo del módulo:
+
+```ts
+@Module({
+  controllers: [ProductsController],
+  providers: [ProductsService],
+})
+export class ProductsModule {}
+```
+
+### 4. Ejecutar la aplicación
+
+```bash
+pnpm start:dev
+```
+
+El proyecto debe compilar correctamente aun con clases vacías.
+
+---
+
+# 11. Resultados y Evidencias
+
+Cada estudiante debe agregar en su documento:
 
 ---
 
 ### 1. Captura del IDE mostrando la estructura modular:
 
-Debe visualizarse:
-
-```
-config/
-utils/
-users/
-products/
-auth/
-```
+Debe visualizarse claramente:
 
 ---
 
-### 2. Captura del archivo `users.module.ts`
+### 2. Captura del archivo `app.module.ts`
 
-Verificando que:
+Se debe verificar:
 
-* controla el dominio
-* contiene controller y service
-* está bien configurado
-
----
-
-### 3. Captura del árbol desde terminal
-
-Ejemplo:
-
-```bash
-tree src/users
-```
-
----
-
-### 4. Explicación breve escrita por el estudiante
-
-Debe describir:
-
-* cómo entiende la arquitectura modular
-* qué relación hay entre controller, service y módulo
-* por qué separar dominios mejora la mantenibilidad
+* el módulo raíz
+* los módulos importados
+* la ubicación correcta que permite cargar los dominios
 
 ---
 
 
+---
+
+### 3. Explicación breve
+
+Se debe redactar:
+
+* por qué es importante tener módulos separados
