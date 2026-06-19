@@ -409,8 +409,9 @@ TypeOrmModule.forRoot({
 
 Estos parámetros se usarán en:
 
-✔ `application.yml` (Spring Boot)
-✔ `TypeOrmModule.forRoot()` (NestJS)
+`application.yml` (Spring Boot)
+
+`TypeOrmModule.forRoot()` (NestJS)
 
 Además, los repositorios de ambos frameworks requieren:
 

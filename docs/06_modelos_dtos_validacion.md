@@ -409,7 +409,7 @@ El estudiante debe demostrar que la API rechaza:
 
 Estos conceptos se aplicarán directamente en:
 
-* [`spring-boot/06_modelos_dtos_validacion.md`](../spring-boot/p67/a_dodente/06_modelos_dtos_validacion.md)
-* [`nest/06_modelos_dtos_validacion.md`](../nest/p67/a_dodente/06_modelos_dtos_validacion.md)
+* [`spring-boot/06_modelos_dtos_validacion.md`](../spring-boot/06_modelos_dtos_validacion.md)
+* [`nest/06_modelos_dtos_validacion.md`](../nest/06_modelos_dtos_validacion.md)
 
 

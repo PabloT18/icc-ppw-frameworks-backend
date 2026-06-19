@@ -230,6 +230,6 @@ Al finalizar este tema, el estudiante comprende:
 
 Estos conceptos se aplicarán directamente en:
 
-* [`spring-boot/07_control_errores.md`](../spring-boot/p67/a_dodente/07_control_errores.md)
-* [`nest/07_control_errores.md`](../nest/p67/a_dodente/07_control_errores.md)
+* [`spring-boot/07_control_errores.md`](../spring-boot/07_control_errores.md)
+* [`nest/07_control_errores.md`](../nest/07_control_errores.md)
 

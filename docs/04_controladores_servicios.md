@@ -285,7 +285,7 @@ Al finalizar este tema, el estudiante comprende:
 
 Este conocimiento será aplicado directamente en:
 
-* [`spring-boot/04_servicios.md`](../spring-boot/p67/a_dodente/04_servicios.md)
+* [`spring-boot/04_servicios.md`](../spring-boot/04_servicios.md)
 
-* [`nest/04_servicios.md`](../nest/p67/a_dodente/04_servicios.md)
+* [`nest/04_servicios.md`](../nest/04_servicios.md)
 

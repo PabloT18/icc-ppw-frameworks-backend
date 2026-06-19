@@ -360,7 +360,7 @@ Estos conceptos se aplicarán directamente en los módulos específicos de cada 
 
 ### Spring Boot
 
- [`spring-boot/08_relacion_entidades.md.md`](../spring-boot/p67/a_dodente/08_relacion_entidades.md.md)
+ [`spring-boot/08_relacion_entidades.md.md`](../spring-boot/08_relacion_entidades.md.md)
 
 * relaciones JPA
 * anotaciones de cardinalidad
@@ -370,7 +370,7 @@ Estos conceptos se aplicarán directamente en los módulos específicos de cada 
 
 ### NestJS
 
-[`nest/08_relacion_entidades.md.md`](../nest/p67/a_dodente/08_relacion_entidades.md.md)
+[`nest/08_relacion_entidades.md.md`](../nest/08_relacion_entidades.md.md)
 
 * relaciones TypeORM
 * entidades relacionadas

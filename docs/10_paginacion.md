@@ -370,7 +370,7 @@ Estos conceptos se aplicarán directamente en los módulos específicos de cada 
 
 ### Spring Boot
 
-[`spring-boot/10_paginacion.md`](../spring-boot/p67/a_dodente/10_paginacion.md)
+[`spring-boot/10_paginacion.md`](../spring-boot/10_paginacion.md)
 
 * Spring Data JPA Pageable
 * Page y Slice
@@ -380,7 +380,7 @@ Estos conceptos se aplicarán directamente en los módulos específicos de cada 
 
 ### NestJS
 
-[`nest/10_paginacion.md`](../nest/p67/a_dodente/10_paginacion.md)
+[`nest/10_paginacion.md`](../nest/10_paginacion.md)
 
 * TypeORM FindOptions
 * take y skip

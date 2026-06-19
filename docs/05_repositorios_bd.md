@@ -50,9 +50,11 @@ En este tema se introducen los fundamentos de **persistencia con base de datos**
 
 Los detalles prácticos (PostgreSQL, configuración, anotaciones reales, migraciones y repositorios funcionales) se desarrollarán en:
 
-📌 `spring-boot/05_repositorios_bd.md`
-📌 `nest/05_repositorios_bd.md`
-📌 `05_b_instalacion_postgres_docker.md`
+ `05_b_instalacion_postgres_docker.md`
+
+ `spring-boot/05_repositorios_bd.md`
+ 
+ `nest/05_repositorios_bd.md`
 
 Este documento se concentra en la **teoría universal de persistencia**, aplicable a cualquier framework o lenguaje.
 
@@ -316,7 +318,7 @@ Al finalizar este tema, el estudiante comprende:
 
 Estos conceptos se aplicarán directamente en:
 
-* [`spring-boot/05_repositorios_bd.md`](../spring-boot/p67/a_dodente/05_repositorios_persistencia.md)
-* [`nest/05_repositorios_bd.md`](../nest/p67/a_dodente/05_repositorios_persistencia.md)
+* [`spring-boot/05_repositorios_bd.md`](../spring-boot/05_repositorios_persistencia.md)
+* [`nest/05_repositorios_bd.md`](../nest/05_repositorios_persistencia.md)
 * [`Docker-Postgres`](../docs/05_b_instalacion_postgres_docker.md)
 

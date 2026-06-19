@@ -612,8 +612,8 @@ Al finalizar este tema, se debe comprender:
 Estos fundamentos se aplicarán en:
 
 
-* [`spring-boot/01_configuracion.md`](../spring-boot/p67/a_dodente/01_configuracion.md)
-* [`nest/01_configuracion.md`](../nest/p67/a_dodente/01_configuracion.md)
+* [`spring-boot/01_configuracion.md`](../spring-boot/01_configuracion.md)
+* [`nest/01_configuracion.md`](../nest/01_configuracion.md)
 
 
 ---

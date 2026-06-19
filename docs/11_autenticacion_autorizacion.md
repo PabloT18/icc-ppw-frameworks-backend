@@ -450,7 +450,7 @@ Al finalizar este tema, el estudiante comprende:
 
 ---
 
-## 12. Aplicación directa en framework./spring-boot/p67/a_dodente/11_autenticacion_autorizacion.md)
+## 12. Aplicación directa en framework./spring-boot/11_autenticacion_autorizacion.md)
 
 * Spring Security configuración
 * JWT con Spring Boot
@@ -461,7 +461,7 @@ Al finalizar este tema, el estudiante comprende:
 
 ### NestJS
 
-[`nest/11_autenticacion_autorizacion.md`](../nest/p67/a_dodente/11_autenticacion_autorizacion.md)
+[`nest/11_autenticacion_autorizacion.md`](../nest/11_autenticacion_autorizacion.md)
 
 * Guards de autenticación
 * JWT strategy con Passport
@@ -472,7 +472,7 @@ Al finalizar este tema, el estudiante comprende:
 
 ### Spring Boot
 
-📄 **Práctica 11**: [`spring-boot/p67/a_dodente/11_autenticacion_autorizacion.md`](../spring-boot/p67/a_dodente/11_autenticacion_autorizacion.md)
+📄 **Práctica 11**: [`spring-boot/p67/a_dodente/11_autenticacion_autorizacion.md`](../spring-boot/11_autenticacion_autorizacion.md)
 
 * Spring Security configuración
 * JWT con jjwt library
@@ -481,14 +481,14 @@ Al finalizar este tema, el estudiante comprende:
 * JwtAuthenticationFilter
 * SecurityConfig completo
 
-📄 **Práctica 12**: [`spring-boot/p67/a_dodente/12_roles_preauthorize.md`](../spring-boot/p67/a_dodente/12_roles_preauthorize.md)
+📄 **Práctica 12**: [`spring-boot/p67/a_dodente/12_roles_preauthorize.md`](../spring-boot/12_roles_preauthorize.md)
 
 * @PreAuthorize annotations
 * Role-based endpoint protection
 * @AuthenticationPrincipal
 * Method security expressions
 
-📄 **Práctica 13**: [`spring-boot/p67/a_dodente/13_ownership_validacion.md`](../spring-boot/p67/a_dodente/13_ownership_validacion.md)
+📄 **Práctica 13**: [`spring-boot/p67/a_dodente/13_ownership_validacion.md`](../spring-boot/13_ownership_validacion.md)
 
 * validateOwnership() method
 * AccessDeniedException handling
@@ -497,21 +497,21 @@ Al finalizar este tema, el estudiante comprende:
 
 ### NestJS
 
-📄 **Práctica 11**: [`nest/p67/a_dodente/11_autenticacion_jwt.md`](../nest/p67/a_dodente/11_autenticacion_jwt.md)
+📄 **Práctica 11**: [`nest/p67/a_dodente/11_autenticacion_jwt.md`](../nest/11_autenticacion_jwt.md)
 
 * JWT strategy con Passport
 * JwtAuthGuard implementation
 * Bcrypt para hashing passwords
 * JWT module configuration
 
-📄 **Práctica 12**: [`nest/p67/a_dodente/12_roles_authorization.md`](../nest/p67/a_dodente/12_roles_authorization.md)
+📄 **Práctica 12**: [`nest/p67/a_dodente/12_roles_authorization.md`](../nest/12_roles_authorization.md)
 
 * @Roles decorator
 * RolesGuard implementation
 * Custom decorators
 * Reflector metadata
 
-📄 **Práctica 13**: [`nest/p67/a_dodente/13_ownership_validation.md`](../nest/p67/a_dodente/13_ownership_validation.md)
+📄 **Práctica 13**: [`nest/p67/a_dodente/13_ownership_validation.md`](../nest/13_ownership_validation.md)
 
 * Custom ownership guards
 * @UserFromToken decorator

@@ -1131,6 +1131,6 @@ Responder:
 Estos conceptos se aplicarán directamente en:
 
 
-* [`spring-boot/02_estructura_proyecto.md`](../spring-boot/p67/a_dodente/02_estructura_proyecto.md)
+* [`spring-boot/02_estructura_proyecto.md`](../spring-boot/02_estructura_proyecto.md)
 
-* [`nest/02_estructura_proyecto.md`](../nest/p67/a_dodente/02_estructura_proyecto.md)
+* [`nest/02_estructura_proyecto.md`](../nest/02_estructura_proyecto.md)

@@ -532,7 +532,7 @@ Estos conceptos se aplicarán directamente en los módulos específicos de cada 
 
 ### Spring Boot
 
-[`spring-boot/09_relacion_requestparam.md`](../spring-boot/p67/a_dodente/09_relacion_requestparam.md)
+[`spring-boot/09_relacion_requestparam.md`](../spring-boot/09_relacion_requestparam.md)
 
 * @RequestParam y validación
 * Specification para filtros dinámicos
@@ -542,7 +542,7 @@ Estos conceptos se aplicarán directamente en los módulos específicos de cada 
 
 ### NestJS
 
-[`nest/09_relacion_requestparam.md`](../nest/p67/a_dodente/09_relacion_requestparam.md)
+[`nest/09_relacion_requestparam.md`](../nest/09_relacion_requestparam.md)
 
 * @Query() decorators
 * ValidationPipe con DTOs de filtros

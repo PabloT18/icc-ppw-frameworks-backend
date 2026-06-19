@@ -558,7 +558,7 @@ Estos conceptos se implementan en los módulos específicos:
 
 ### Spring Boot
 
-📄 [`spring-boot/p67/a_dodente/12_roles_preauthorize.md`](../spring-boot/p67/a_dodente/12_roles_preauthorize.md)
+📄 [`spring-boot/p67/a_dodente/12_roles_preauthorize.md`](../spring-boot/12_roles_preauthorize.md)
 
 - @PreAuthorize y @Secured
 - Role hierarchy configuration
@@ -567,7 +567,7 @@ Estos conceptos se implementan en los módulos específicos:
 
 ### NestJS
 
-📄 [`nest/p67/a_dodente/12_roles_authorization.md`](../nest/p67/a_dodente/12_roles_authorization.md)
+📄 [`nest/p67/a_dodente/12_roles_authorization.md`](../nest/12_roles_authorization.md)
 
 - @Roles decorator
 - RolesGuard implementation

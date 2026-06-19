@@ -819,7 +819,7 @@ Estos conceptos se implementan en los módulos específicos:
 
 ### Spring Boot
 
-📄 [`spring-boot/p67/a_dodente/13_ownership_validacion.md`](../spring-boot/p67/a_dodente/13_ownership_validacion.md)
+📄 [`spring-boot/p67/a_dodente/13_ownership_validacion.md`](../spring-boot/13_ownership_validacion.md)
 
 - validateOwnership() en servicios
 - AccessDeniedException
@@ -828,7 +828,7 @@ Estos conceptos se implementan en los módulos específicos:
 
 ### NestJS
 
-📄 [`nest/p67/a_dodente/13_ownership_validation.md`](../nest/p67/a_dodente/13_ownership_validation.md)
+📄 [`nest/p67/a_dodente/13_ownership_validation.md`](../nest/13_ownership_validation.md)
 
 - Custom guards para ownership
 - @UserFromToken decorator
