@@ -44,8 +44,8 @@ Este módulo explica:
 
 Los temas siguientes utilizarán esta base:
 
-📌 `spring-boot/04_servicios_y_logica_negocio.md`
-📌 `nest/04_servicios_inyeccion_dependencias.md`
+`spring-boot/04_servicios_y_logica_negocio.md`
+`nest/04_servicios_inyeccion_dependencias.md`
 
 
 # 1. ¿Qué es un controlador?
@@ -70,11 +70,11 @@ Cliente HTTP → Controlador → Servicio → Resultado → Controlador → Clie
 
 ### ¿Qué NO hace un controlador?
 
-❌ No calcula reglas de negocio
-❌ No procesa datos complejos
-❌ No accede a archivos ni base de datos
-❌ No construye entidades internas
-❌ No contiene algoritmos
+- No calcula reglas de negocio
+- No procesa datos complejos
+- No accede a archivos ni base de datos
+- No construye entidades internas
+- No contiene algoritmos
 
 Un controlador solo **dirige el tráfico**.
 

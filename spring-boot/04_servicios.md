@@ -398,6 +398,27 @@ Esto permite que el controlador quede más limpio.
 
 ---
 
+
+### ErrorResponseDto
+
+`ErrorResponseDto` es un DTO simple que se utiliza para devolver mensajes de error al cliente.
+
+Lo crearemos en `core/dto/`:
+
+```java
+public class ErrorResponseDto {
+    private String message;
+
+    public ErrorResponseDto(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+}
+```
+
 # 4. Actualizar UsersController
 
 Archivo `UsersController.java`:
