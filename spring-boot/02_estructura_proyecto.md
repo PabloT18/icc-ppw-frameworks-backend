@@ -55,8 +55,8 @@ Spring Boot aplica `@ComponentScan` de forma automática para **buscar controlad
 
 Esto significa:
 
-* si un controller está fuera de este paquete → ❌ **no lo detecta**
-* si un servicio está en otro nivel no incluido → ❌ **no se registra como Bean**
+* si un controller está fuera de este paquete → **no lo detecta**
+* si un servicio está en otro nivel no incluido → **no se registra como Bean**
 
 ---
 
@@ -204,7 +204,7 @@ En Spring Boot, MVCS se distribuye así:
 
 # 7. Estructura modular recomendada (proyecto grande)
 
-Para enseñar arquitectura moderna, se utilizará **estructura por dominios**.
+Se utilizará **estructura por dominios o recursos**.
 
 ### Proyecto base:
 
@@ -245,13 +245,6 @@ payments/
 etc.
 ```
 
-### Ventajas pedagógicas:
-
-* permite que cada grupo cree módulos distintos
-* imita arquitectura empresarial real
-* facilita escalar funcionalidades
-* ordena responsabilidades
-* simplifica pruebas unitarias
 
 ---
 
@@ -277,39 +270,17 @@ HTTP Response (DTO o JSON)
 
 ---
 
-# 10. Actividad práctica del tema 02
+# 10. Actividad práctica
 
 En esta práctica se debe:
 
 ### 1. Reorganizar el proyecto con la estructura modular:
 
-Crear dentro de:
 
-```
-src/main/java/ec/edu/ups/icc/fundamentos01/
-```
 
-las carpetas:
+### 2. Dentro de `products/` crear carpetas simil a a `users/`:
 
-```
-config/
-utils/
-products/
-users/
-auth/
-```
 
-### 2. Dentro de `products/` crear carpetas:
-
-```
-controllers/
-services/
-repositories/
-entities/
-dtos/
-mappers/
-utils/
-```
 
 ### 3. Crear clases vacías para verificar ComponentScan:
 
@@ -351,14 +322,6 @@ Cada estudiante debe agregar en su documento:
 
 Debe visualizarse claramente:
 
-```
-products/
-users/
-auth/
-config/
-utils/
-```
-
 ---
 
 ### 2. Captura del archivo `Fundamentos01Application.java`
@@ -370,23 +333,15 @@ Se debe verificar:
 
 ---
 
-### 3. Captura del árbol generado desde terminal:
-
-Ejemplo:
-
-```bash
-tree src/main/java/ec/edu/ups/icc/fundamentos01
-```
 
 ---
 
-### 4. Explicación breve
+### 3. Explicación breve
 
 Se debe redactar:
 
 * por qué es importante tener módulos separados
-* cómo se relacionan controllers, services y repositories
-* qué problema evita mantener una estructura clara
+
 
 
 

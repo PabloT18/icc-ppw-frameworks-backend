@@ -1,5 +1,3 @@
-
-
 # Programación y Plataformas Web
 
 # Frameworks Backend: Spring Boot – Servicios, Lógica de Negocio e Inyección de Dependencias
@@ -8,6 +6,7 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="100" alt="Spring Boot Logo">
 </div>
 
+---
 
 # Práctica 4 (Spring Boot): Controladores + Servicios + Lógica de Negocio
 
@@ -17,281 +16,745 @@
 
 [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
- GitHub: PabloT18
+GitHub: PabloT18
 
 ---
 
 # 1. Introducción
 
-En la práctica anterior (Práctica 3) se implementó un **CRUD REST completo** colocando toda la lógica dentro del controlador:
+En la práctica anterior se implementó un CRUD REST completo colocando toda la lógica dentro del controlador.
 
-* creación de usuarios
-* búsqueda
-* actualización
-* eliminación
-* manejo del listado en memoria
+El controlador realizaba varias tareas al mismo tiempo:
 
-Este enfoque funciona para aprender los endpoints, pero **no escala** en proyectos reales.
+* recibía peticiones HTTP
+* almacenaba usuarios en memoria
+* buscaba usuarios por ID
+* creaba nuevos usuarios
+* actualizaba usuarios
+* eliminaba usuarios
+* convertía modelos a DTOs de respuesta
 
-En esta práctica se introduce:
+Este enfoque sirve para comprender cómo funcionan los endpoints REST, pero no es adecuado para una aplicación más organizada.
 
-* servicios (`@Service`)
-* inyección de dependencias
-* separación de responsabilidades (SRP)
-* traslado de la lógica del controlador al servicio
-* arquitectura MVCS aplicada correctamente
+En esta práctica se introduce el uso de servicios mediante `@Service`.
 
-El módulo de trabajo sigue siendo **users/**.
-En la parte práctica se replica todo para **products/**.
+El objetivo es mover la lógica del controlador hacia una clase de servicio, de manera que el controlador quede responsable únicamente de recibir la petición HTTP y delegar la operación.
+
+En esta práctica se trabajará con:
+
+* controladores
+* DTOs
+* modelos
+* mappers
+* servicios
+* almacenamiento en memoria con `List<UserModel>`
+
+Todavía no se utiliza:
+
+* repositorios
+* entidades JPA
+* base de datos
+
+---
 
 
-# 2. Estructura del módulo con servicios
+# 2. Flujo después de aplicar servicios
 
-Carpeta objetivo:
+Ahora el flujo será:
 
+```txt
+Cliente
+  ↓
+UsersController
+  ↓
+UserService
+  ↓
+UserServiceImpl
+  ↓
+List<UserModel>
+  ↓
+UserMapper
+  ↓
+UserResponseDto
+  ↓
+Cliente
 ```
-src/main/java/ec/edu/ups/icc/fundamentos01/users/
+
+El controlador ya no manejará directamente la lista de usuarios.
+
+La lista en memoria se moverá al servicio.
+
+---
+
+## 2.1. Responsabilidad de cada clase
+
+| Clase                  | Responsabilidad                                |
+| ---------------------- | ---------------------------------------------- |
+| `UsersController`      | Recibir peticiones HTTP y llamar al servicio   |
+| `UserService`          | Definir las operaciones disponibles del módulo |
+| `UserServiceImpl`      | Implementar la lógica de negocio               |
+| `UserModel`            | Representar el usuario dentro de la aplicación |
+| `UserMapper`           | Convertir entre DTOs y modelos                 |
+| `CreateUserDto`        | Recibir datos para crear usuario               |
+| `UpdateUserDto`        | Recibir datos para actualización completa      |
+| `PartialUpdateUserDto` | Recibir datos para actualización parcial       |
+| `UserResponseDto`      | Devolver datos seguros al cliente              |
+| `ErrorResponseDto`     | Devolver mensajes de error                     |
+
+---
+
+# 3. Creación del servicio
+
+Dentro de las carpetas correspondiente se crearán los archivos:
+
+```txt
+UserService.java
+UserServiceImpl.java
 ```
 
-La estructura ahora incluye:
+---
 
-```
-users/
- ├── controllers/
- ├── dtos/
- ├── entities/
- ├── mappers/
- ├── services/
- │     ├── UserService.java
- │     └── UserServiceImpl.java
-```
+## UserService.java
 
-En este tema:
-
-* el controlador queda reducido a **enrutar solicitudes y llamar al servicio**
-* la lógica de negocio se mueve a **UserServiceImpl**
-* la lista en memoria ahora vive dentro del **servicio**
-
-
-# 3. Definición del Servicio (Interfaz)
-
-Archivo:
-`services/UserService.java`
-
-Su función es declarar **qué operaciones ofrece el módulo**, sin implementar nada aún.
+Archivo `UserService.java`:
 
 ```java
-
+/*
+ * Servicio que define las operaciones disponibles
+ * para la gestión de usuarios.
+ *
+ * En esta interfaz se declaran las acciones del módulo,
+ * pero no se implementa la lógica.
+ */
 public interface UserService {
 
     List<UserResponseDto> findAll();
 
-    Object findOne(int id);
+    Object findOne(Long id);
 
     UserResponseDto create(CreateUserDto dto);
 
-    Object update(int id, UpdateUserDto dto);
+    Object update(Long id, UpdateUserDto dto);
 
-    Object partialUpdate(int id, PartialUpdateUserDto dto);
+    Object partialUpdate(Long id, PartialUpdateUserDto dto);
 
-    Object delete(int id);
+    Object delete(Long id);
 }
 ```
 
+---
 
-# 4. Implementación del Servicio
+### Explicación de UserService
 
-Archivo:
-`services/UserServiceImpl.java`
+`UserService` es una interfaz.
 
-Aquí se mueve toda la lógica antes ubicada en el controlador:
+Su función es declarar qué operaciones estarán disponibles para el módulo de usuarios.
+
+No contiene lógica.
+
+Define el contrato que luego será implementado por `UserServiceImpl`.
+
+Ejemplo:
 
 ```java
+List<UserResponseDto> findAll();
+```
 
+Esto significa que cualquier clase que implemente `UserService` debe tener un método para listar usuarios y devolver una lista de `UserResponseDto`.
+
+---
+
+## UserServiceImpl.java
+
+Archivo `UserServiceImpl.java`:
+
+```java
+/*
+ * Implementación del servicio de usuarios.
+ *
+ * En esta clase se mueve la lógica que antes estaba dentro del controlador:
+ * listar, buscar, crear, actualizar y eliminar usuarios.
+ *
+ * En esta práctica todavía no se usa repository ni base de datos.
+ * Por eso se mantiene una lista en memoria dentro del servicio.
+ */
 @Service
 public class UserServiceImpl implements UserService {
 
-    private List<User> users = new ArrayList<>();
-    private int currentId = 1;
+    private List<UserModel> users = new ArrayList<>();
+    private Long currentId = 1L;
 
+    /*
+     * Retorna todos los usuarios registrados en memoria.
+     *
+     * Convierte cada UserModel a UserResponseDto para no exponer
+     * datos internos como password o passwordHash.
+     */
     @Override
     public List<UserResponseDto> findAll() {
-        return users.stream().map(UserMapper::toResponse).toList();
-    }
 
-    @Override
-    public Object findOne(int id) {
+        // Programación tradicional iterativa
+        /*
+        List<UserResponseDto> dtos = new ArrayList<>();
+
+        for (UserModel user : users) {
+            dtos.add(UserMapper.toResponse(user));
+        }
+
+        return dtos;
+        */
+
+        // Programación funcional
         return users.stream()
-                .filter(u -> u.getId() == id)
-                .findFirst()
                 .map(UserMapper::toResponse)
-                .orElseGet(() -> new Object() { public String error = "User not found"; });
+                .toList();
     }
 
+    /*
+     * Busca un usuario por id.
+     *
+     * Si el usuario existe, devuelve UserResponseDto.
+     * Si no existe, devuelve ErrorResponseDto.
+     */
+    @Override
+    public Object findOne(Long id) {
+
+        // Programación tradicional iterativa
+        /*
+        for (UserModel user : users) {
+            if (user.getId().equals(id)) {
+                return UserMapper.toResponse(user);
+            }
+        }
+
+        return new ErrorResponseDto("User not found");
+        */
+
+        // Programación funcional
+        return users.stream()
+                .filter(user -> user.getId().equals(id))
+                .findFirst()
+                .map(user -> (Object) UserMapper.toResponse(user))
+                .orElseGet(() -> new ErrorResponseDto("User not found"));
+    }
+
+    /*
+     * Crea un nuevo usuario.
+     *
+     * Recibe un CreateUserDto, lo convierte a UserModel,
+     * asigna un id generado en memoria y devuelve UserResponseDto.
+     */
     @Override
     public UserResponseDto create(CreateUserDto dto) {
-        User user = UserMapper.toEntity(currentId++, dto.name, dto.email);
+
+        UserModel user = UserMapper.toModel(dto);
+
+        user.setId(currentId);
+        currentId++;
+
         users.add(user);
-        return UserMapper.toResponse(user);
-    }
-
-    @Override
-    public Object update(int id, UpdateUserDto dto) {
-        User user = users.stream().filter(u -> u.getId() == id).findFirst().orElse(null);
-        if (user == null) return new Object() { public String error = "User not found"; };
-
-        user.setName(dto.name);
-        user.setEmail(dto.email);
 
         return UserMapper.toResponse(user);
     }
 
+    /*
+     * Actualiza completamente un usuario existente.
+     *
+     * En PUT se reemplazan los campos editables enviados en el DTO.
+     * No se modifica el id ni createdAt.
+     */
     @Override
-    public Object partialUpdate(int id, PartialUpdateUserDto dto) {
-        User user = users.stream().filter(u -> u.getId() == id).findFirst().orElse(null);
-        if (user == null) return new Object() { public String error = "User not found"; };
+    public Object update(Long id, UpdateUserDto dto) {
 
-        if (dto.name != null) user.setName(dto.name);
-        if (dto.email != null) user.setEmail(dto.email);
+        // Programación tradicional iterativa
+        /*
+        for (UserModel user : users) {
+            if (user.getId().equals(id)) {
+                user.setName(dto.getName());
+                user.setEmail(dto.getEmail());
+
+                return UserMapper.toResponse(user);
+            }
+        }
+
+        return new ErrorResponseDto("User not found");
+        */
+
+        // Programación funcional
+        UserModel user = users.stream()
+                .filter(item -> item.getId().equals(id))
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            return new ErrorResponseDto("User not found");
+        }
+
+        user.setName(dto.getName());
+        user.setEmail(dto.getEmail());
 
         return UserMapper.toResponse(user);
     }
 
+    /*
+     * Actualiza parcialmente un usuario existente.
+     *
+     * En PATCH solo se actualizan los campos que llegan en el DTO.
+     * Los campos nulos se ignoran.
+     */
     @Override
-    public Object delete(int id) {
-        boolean removed = users.removeIf(u -> u.getId() == id);
-        if (!removed) return new Object() { public String error = "User not found"; };
+    public Object partialUpdate(Long id, PartialUpdateUserDto dto) {
 
-        return new Object() { public String message = "Deleted successfully"; };
+        // Programación tradicional iterativa
+        /*
+        for (UserModel user : users) {
+            if (user.getId().equals(id)) {
+
+                if (dto.getName() != null) {
+                    user.setName(dto.getName());
+                }
+
+                if (dto.getEmail() != null) {
+                    user.setEmail(dto.getEmail());
+                }
+
+                return UserMapper.toResponse(user);
+            }
+        }
+
+        return new ErrorResponseDto("User not found");
+        */
+
+        // Programación funcional
+        UserModel user = users.stream()
+                .filter(item -> item.getId().equals(id))
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            return new ErrorResponseDto("User not found");
+        }
+
+        if (dto.getName() != null) {
+            user.setName(dto.getName());
+        }
+
+        if (dto.getEmail() != null) {
+            user.setEmail(dto.getEmail());
+        }
+
+        return UserMapper.toResponse(user);
+    }
+
+    /*
+     * Elimina un usuario por id.
+     *
+     * Si el usuario existe, se elimina de la lista en memoria.
+     * Si no existe, se devuelve un DTO de error.
+     */
+    @Override
+    public Object delete(Long id) {
+
+        boolean removed = users.removeIf(user -> user.getId().equals(id));
+
+        if (!removed) {
+            return new ErrorResponseDto("User not found");
+        }
+
+        return new Object() {
+            public String message = "Deleted successfully";
+        };
     }
 }
 ```
 
+---
 
-# 5. Inyección del Servicio en el Controlador
+### Explicación de UserServiceImpl
 
-Archivo:
-`controllers/UsersController.java`
+`UserServiceImpl` es la clase que implementa la lógica definida en `UserService`.
 
-El controlador ahora queda limpio:
+Se marca con:
 
 ```java
-//.....
+@Service
+```
+
+Esta anotación le indica a Spring Boot que esta clase debe ser registrada como un bean de servicio.
+
+Cuando una clase tiene `@Service`, Spring puede crear una instancia automáticamente y entregarla a otras clases mediante inyección de dependencias.
+
+En esta práctica, la lista:
+
+```java
+private List<UserModel> users = new ArrayList<>();
+```
+
+ya no vive en el controlador.
+
+Ahora vive en el servicio.
+
+Esto permite que el controlador quede más limpio.
+
+---
+
+# 4. Actualizar UsersController
+
+Archivo `UsersController.java`:
+
+```java
+/*
+ * Controlador REST encargado de exponer los endpoints HTTP
+ * para la gestión de usuarios.
+ *
+ * En esta práctica el controlador ya no contiene la lógica del CRUD.
+ * Solo recibe la petición y delega la operación al servicio.
+ */
+@RestController
+@RequestMapping("/users")
 public class UsersController {
 
     private final UserService service;
 
+    /*
+     * Inyección de dependencias por constructor.
+     *
+     * Spring Boot busca una implementación de UserService,
+     * encuentra UserServiceImpl porque tiene @Service,
+     * crea el objeto y lo inyecta automáticamente.
+     */
     public UsersController(UserService service) {
         this.service = service;
     }
 
-   // TODO: actualizar endpoints que llaman a service
+    /*
+     * Endpoint para listar todos los usuarios.
+     *
+     * GET /users
+     */
+    @GetMapping
+    public List<UserResponseDto> findAll() {
+        return service.findAll();
+    }
+
+    /*
+     * Endpoint para buscar un usuario por id.
+     *
+     * GET /users/{id}
+     */
+    @GetMapping("/{id}")
+    public Object findOne(@PathVariable Long id) {
+        return service.findOne(id);
+    }
+
+    /*
+     * Endpoint para crear un nuevo usuario.
+     *
+     * POST /users
+     */
+    @PostMapping
+    public UserResponseDto create(@RequestBody CreateUserDto dto) {
+        return service.create(dto);
+    }
+
+    /*
+     * Endpoint para actualizar completamente un usuario.
+     *
+     * PUT /users/{id}
+     */
+    @PutMapping("/{id}")
+    public Object update(
+            @PathVariable Long id,
+            @RequestBody UpdateUserDto dto
+    ) {
+        return service.update(id, dto);
+    }
+
+    /*
+     * Endpoint para actualizar parcialmente un usuario.
+     *
+     * PATCH /users/{id}
+     */
+    @PatchMapping("/{id}")
+    public Object partialUpdate(
+            @PathVariable Long id,
+            @RequestBody PartialUpdateUserDto dto
+    ) {
+        return service.partialUpdate(id, dto);
+    }
+
+    /*
+     * Endpoint para eliminar un usuario.
+     *
+     * DELETE /users/{id}
+     */
+    @DeleteMapping("/{id}")
+    public Object delete(@PathVariable Long id) {
+        return service.delete(id);
+    }
 }
 ```
 
+---
 
-# 6. ¿Por qué se implementa así?
+## Explicación del controlador actualizado
 
-Separar controlador → servicio cumple estos objetivos:
+El controlador ya no tiene:
 
-### Mantener el controlador pequeño
-
-El controlador solo enruta solicitudes y devuelve respuestas.
-
-### Reutilizar lógica
-
-Si otro controlador necesitara lógica de usuarios, solo depende del servicio.
-
-### Facilitar pruebas unitarias
-
-El servicio se puede probar sin levantar el servidor.
-
-### Preparar el camino para una base de datos real
-
-Pronto se reemplazará:
-
-```
-List<User> users
+```java
+private List<UserModel> users = new ArrayList<>();
+private Long currentId = 1L;
 ```
 
-por:
+Tampoco contiene directamente la lógica de búsqueda, creación, actualización o eliminación.
 
-```
-UserRepository (Spring Data JPA)
-```
+Ahora solo tiene una dependencia:
 
-y el controlador seguirá funcionando igual.
-
-
-# 7. Flujo completo después de aplicar servicios
-
-```
-Cliente
-  ↓
-Controlador (recibe DTO)
-  ↓ llama →
-Servicio (reglas, validaciones, lógica)
-  ↓ usa →
-Entidad + Mapper
-  ↓
-Controlador (retorna DTO de respuesta)
-  ↓
-Cliente
+```java
+private final UserService service;
 ```
 
-Esto refleja el patrón MVCS aplicado correctamente.
+Esta dependencia se recibe por constructor:
 
-
-# 8. Endpoints disponibles
-
-| Método | Ruta             | Descripción                |
-| ------ | ---------------- | -------------------------- |
-| GET    | `/api/users`     | Lista usuarios             |
-| GET    | `/api/users/:id` | Obtiene usuario            |
-| POST   | `/api/users`     | Crea usuario               |
-| PUT    | `/api/users/:id` | Reemplaza usuario completo |
-| PATCH  | `/api/users/:id` | Actualiza parcialmente     |
-| DELETE | `/api/users/:id` | Elimina usuario            |
-
-
-# 9. Actividad práctica
-
-Los estudiantes deben replicar toda la estructura anterior para el módulo:
-
-```
-products/
+```java
+public UsersController(UserService service) {
+    this.service = service;
+}
 ```
 
-Creando:
+Esto se conoce como inyección de dependencias por constructor.
 
+Spring Boot detecta que el controlador necesita un `UserService`.
+
+Luego busca una clase que implemente esa interfaz.
+
+Encuentra:
+
+```java
+@Service
+public class UserServiceImpl implements UserService
 ```
-controllers/
-dtos/
-entities/
-mappers/
-services/
-    ProductService.java
-    ProductServiceImpl.java
+
+Entonces crea una instancia de `UserServiceImpl` y la inyecta en el controlador.
+
+---
+
+# 5. Inyección de dependencias
+
+La inyección de dependencias permite que una clase no cree manualmente los objetos que necesita.
+
+En lugar de hacer esto:
+
+```java
+private UserService service = new UserServiceImpl();
 ```
 
-Y deben implementar **los mismos 6 endpoints REST**, trasladando la lógica del controlador al servicio.
+Spring Boot se encarga de crear e inyectar el objeto:
+
+```java
+private final UserService service;
+
+public UsersController(UserService service) {
+    this.service = service;
+}
+```
+
+Esto mejora la organización del código y facilita futuras pruebas.
+
+---
+
+## Implemetación de una Interfaz y su Inyección
+
+Se usa una interfaz porque permite separar:
+
+```txt
+qué operaciones existen
+```
+
+de:
+
+```txt
+cómo se implementan esas operaciones
+```
+
+La interfaz declara:
+
+```java
+Object findOne(Long id);
+```
+
+La implementación define cómo se busca el usuario:
+
+```java
+return users.stream()
+        .filter(user -> user.getId().equals(id))
+        .findFirst()
+        .map(user -> (Object) UserMapper.toResponse(user))
+        .orElseGet(() -> new ErrorResponseDto("User not found"));
+```
+
+Esto permite que más adelante se pueda cambiar la implementación interna sin modificar el controlador.
+
+---
+
+# 6. Pruebas sugeridas en Postman / Bruno
+
+## Crear usuario
+
+Método:
+
+```txt
+POST
+```
+
+Ruta:
+
+```txt
+/api/users
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Pérez",
+  "email": "juan@ups.edu.ec",
+  "password": "123456"
+}
+```
+
+---
+
+## Listar usuarios
+
+Método:
+
+```txt
+GET
+```
+
+Ruta:
+
+```txt
+/api/users
+```
+
+---
+
+## Buscar usuario por ID
+
+Método:
+
+```txt
+GET
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+---
+
+## Actualizar usuario completo
+
+Método:
+
+```txt
+PUT
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Actualizado",
+  "email": "juan.actualizado@ups.edu.ec"
+}
+```
+
+---
+
+## Actualizar usuario parcialmente
+
+Método:
+
+```txt
+PATCH
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+Body:
+
+```json
+{
+  "email": "nuevo.correo@ups.edu.ec"
+}
+```
+
+---
+
+## Eliminar usuario
+
+Método:
+
+```txt
+DELETE
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+---
+
+# 7. Actividad práctica
+
+## 1. Replicar la estructura implementada en `users/` para el recurso `products/`.
+
+# 8. Resultados y evidencias
+
+En la nueva entrada del README, se debe agregar:
 
 
-# 10. Resultados y evidencias
+##  Captura completa de ProductServiceImpl.java
 
-Cada estudiante debe entregar:
+Debe evidenciarse:
 
-### 2. Captura del `constructor`  archivo
+* uso de `@Service`
+* lista en memoria
+* generación de ID
+* uso del mapper
+* métodos CRUD implementados
 
-`products.controller.java`
+---
 
-### 3. Captura completa del archivo
+## Captura de ProductsController.java
 
-`ProductServiceImpl.java`
+Debe evidenciarse:
 
-### 4. Explicación breve
+* inyección de `ProductService`
+* endpoints llamando al servicio
+* ausencia de lógica CRUD dentro del controlador
 
-* por qué se usa un servicio
-* qué ventajas aporta MVCS
-* por qué el controlador ahora está más limpio
+## 6. Explicación breve
+
+
+```txt
+¿Cómo se inyecta el servicio en el controlador?
+```
 
