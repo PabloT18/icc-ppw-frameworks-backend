@@ -1,415 +1,812 @@
-
 # Programación y Plataformas Web
 
-# **Modelos de Dominio, DTOs y Validación de Datos**
+# Frameworks Backend: Modelos, DTOs, Mappers y Validaciones
 
 <div align="center">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" width="80">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" width="80">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" width="80" alt="Java Logo">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" width="80" alt="TS Logo">
 </div>
 
-## **Práctica 6: Diseño de Modelos de Dominio, DTOs y Validación**
+## Práctica 6: Modelos, DTOs, Mappers y Validaciones
 
-### **Autores**
+### Autores
 
 **Pablo Torres**
 
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
-GitHub: PabloT18
+GitHub: [PabloT18](https://github.com/PabloT18)
 
+---
 
-# **Introducción**
+# Introducción
 
-En los temas anteriores se implementó:
+En los temas anteriores se construyó la base de una aplicación backend organizada por capas.
 
-* Controladores
-* Servicios
-* Entidades persistentes
-* Repositorios
-* Conexión a PostgreSQL
+Hasta este punto se ha trabajado con:
 
-Pero falta un elemento fundamental para cualquier API profesional:
+* controladores
+* servicios
+* modelos
+* DTOs
+* mappers
+* repositorios
+* entidades persistentes
+* base de datos
 
-### **Validar correctamente los datos que entran y salen de la aplicación**
+Sin embargo, para que una API backend sea mantenible y segura, no basta con recibir datos y guardarlos directamente.
 
-Por lo tanto, este documento desarrolla tres conceptos clave:
+Es necesario diferenciar claramente:
 
-1. **Modelos de dominio**
-2. **DTOs (Data Transfer Objects)**
-3. **Validación de datos (backend validation)**
-
-Estos conceptos permiten:
-
-* garantizar la integridad de los datos
-* evitar que entren datos inválidos al servicio o base de datos
-* definir qué datos se reciben y qué datos se exponen
-* mantener separadas las capas de dominio, API y persistencia
-* preparar la arquitectura para autenticación, reglas de negocio y seguridad
-
-El tema se aplica en ambos frameworks:
-
-* Spring Boot → `spring-boot/06_modelos_dtos_validacion.md`
-* NestJS → `nest/06_modelos_dtos_validacion.md`
-
-Este documento explica **la teoría general**, sin depender de un framework en particular.
+* qué datos entran por la API
+* qué objeto usa la lógica de negocio
+* qué estructura se guarda en la base de datos
+* qué datos se devuelven al cliente
+* qué reglas deben validarse antes de procesar la información
 
 
-# **1. ¿Qué es un Modelo de Dominio?**
+---
 
-Un **modelo de dominio** representa conceptos de negocio, no conceptos de base de datos ni de API.
+# 1. Problema inicial
 
-Un dominio define:
+En una aplicación pequeña puede parecer suficiente usar un solo objeto para todo.
 
-* reglas de negocio
-* invariantes (condiciones que siempre deben cumplirse)
-* métodos que expresan comportamientos
-* restricciones que no dependen de SQL ni HTTP
+Ejemplo:
 
-Ejemplos:
+```txt
+User
+```
 
-* Un `User` debe tener un email válido.
-* Un `Product` no puede tener precio negativo.
-* Un `Order` debe asegurar que todos los ítems pertenecen al mismo cliente.
-* Un método `applyDiscount()` nunca debe permitir descuento mayor al 100%.
+Y usarlo para:
 
-### **Importante: El dominio NO expone datos sensibles.**
+* recibir datos desde la API
+* aplicar lógica de negocio
+* guardar en base de datos
+* devolver la respuesta al cliente
 
-Por ejemplo:
+Aunque esto parece simple, genera problemas.
 
-* La entidad persistente tiene `password`
-* El DTO de salida **no debe incluirla**
-* El dominio puede tener lógica para validar contraseñas, pero nunca para exponerlas
+## 1.1 Problemas de usar un solo objeto
+
+Si se usa el mismo objeto para todo, pueden ocurrir errores como:
+
+* exponer datos sensibles
+* recibir campos que el cliente no debería enviar
+* guardar datos sin validación
+* acoplar la API con la base de datos
+* hacer difícil cambiar la estructura interna
+* mezclar responsabilidades
+* dificultar pruebas y mantenimiento
+
+Ejemplo no recomendado:
+
+```json
+{
+  "id": 1,
+  "name": "Ana",
+  "email": "ana@example.com",
+  "password": "123456",
+  "passwordHash": "$2a$10...",
+  "createdAt": "2026-06-20T10:00:00Z",
+  "internalStatus": "ACTIVE"
+}
+```
+
+El cliente no debería recibir:
+
+```txt
+password
+passwordHash
+internalStatus
+```
+
+Tampoco debería poder enviar libremente campos internos como:
+
+```txt
+id
+createdAt
+updatedAt
+role
+status
+```
+
+Por eso se separan DTOs, modelos y entidades.
+
+---
+
+# 2. Separación de objetos por responsabilidad
+
+Una arquitectura backend ordenada diferencia los objetos según su propósito.
+
+| Elemento   | Responsabilidad                                           |
+| ---------- | --------------------------------------------------------- |
+| DTO        | Representa datos que entran o salen por la API            |
+| Model      | Representa el concepto de negocio dentro del sistema      |
+| Entity     | Representa la estructura persistente en base de datos     |
+| Mapper     | Convierte datos entre DTO, Model y Entity                 |
+| Validation | Verifica que los datos cumplan reglas antes de procesarse |
 
 
-# **2. ¿Qué es un DTO y para qué sirve?**
+
+# 3. DTO
+
+## 3.1 ¿Qué es un DTO?
 
 DTO significa **Data Transfer Object**.
 
-### Un DTO define qué datos entran y salen de la aplicación.
+Un DTO es un objeto usado para transportar datos entre el cliente y el backend.
 
-Tipos de DTO:
+Su función principal es definir la forma de los datos que:
 
-| Tipo             | Propósito                                     |
-| ---------------- | --------------------------------------------- |
-| **Request DTO**  | Datos que envía el cliente (POST, PUT, PATCH) |
-| **Response DTO** | Datos que devuelve el backend                 |
-| **Partial DTO**  | Actualizaciones parciales (PATCH)             |
-| **Auth DTO**     | Login, registro, tokens, etc.                 |
+* entran por una petición
+* salen como respuesta
+* se validan antes de llegar a la lógica de negocio
 
-### **Los DTO NO deben contener lógica de negocio.**
+Un DTO no representa una tabla de base de datos.
 
-Son estructuras simples usadas para comunicación.
+Un DTO no debería contener lógica de negocio compleja.
 
-### **Los DTO NO deben ser entidades.**
+Un DTO define un contrato de comunicación.
 
-Las entidades contienen lógica de persistencia.
+---
 
+## 3.2 DTO de entrada
 
-# **3. Problema: Entradas sin validar**
+Un DTO de entrada define qué datos puede enviar el cliente.
 
-Sin validación:
+Ejemplo para crear un usuario:
 
-* `email` puede venir vacío
-* `price` puede ser negativo
-* `stock` puede ser un texto
-* un cliente puede crear productos con datos corruptos
-* puede insertarse basura en la base de datos
-
-Ejemplo incorrecto:
-
+```txt
+CreateUserDto
 ```
-POST /users
+
+Campos permitidos:
+
+```txt
+name
+email
+password
+```
+
+Ejemplo JSON:
+
+```json
 {
-  "name": "",
-  "email": "notaemail",
-  "password": 12345
+  "name": "Ana Torres",
+  "email": "ana@example.com",
+  "password": "12345678"
 }
 ```
 
-Si no se valida:
+El cliente no debería enviar:
 
-1. El servicio recibe datos inválidos
-2. La entidad se construye mal
-3. Hibernate intenta guardar algo inválido
-4. La BD rechaza o, peor, acepta valores inconsistentes
-5. La API expone información errónea
-
-Por eso se debe validar **antes de ejecutar la lógica del servicio**.
-
-
-# **4. Validación: Reglas universales**
-
-Independientemente del framework, toda API debe validar:
-
-### **4.1. Validaciones comunes en strings**
-
-* no vacío (`not empty`)
-* longitud mínima/máxima (`minLength`, `maxLength`)
-* formato (`email`, `uuid`, `regex`)
-* contenido permitido
-
-### **4.2. Validaciones numéricas**
-
-* `min`
-* `max`
-* valores negativos prohibidos
-* rango permitido
-  EJ: `0 ≤ price ≤ 10000`
-
-### **4.3. Validaciones lógicas del dominio**
-
-Ejemplos:
-
-* un usuario no puede cambiar email a uno ya existente
-* no se puede dejar stock en negativo
-* un producto sin nombre no existe
-* la actualización parcial NO debe borrar valores si no se envían
-
-### **4.4. Validaciones de seguridad**
-
-* no aceptar campos que el cliente no debería modificar (ej. `id`, `createdAt`, `deleted`)
-* no dejar que el cliente defina permisos o roles arbitrarios
-
-
-# **5. Responsabilidad de cada capa**
-
-| Capa                  | Qué valida                                                   |
-| --------------------- | ------------------------------------------------------------ |
-| **DTO**               | Estructura básica: formato, tipos, restricciones sintácticas |
-| **Modelo de dominio** | Reglas de negocio                                            |
-| **Servicio**          | Consistencia del uso: duplicados, relaciones, dependencias   |
-| **Repositorio / BD**  | Reglas estructurales (únicos, relaciones, constraints)       |
-
-### **La validación NUNCA debe hacerse solo en la base de datos.**
-
-
-# **6. Ciclo completo de validación**
-
-```
-Cliente
-  ↓
-DTO de Entrada (validación sintáctica)
-  ↓
-Modelo de Dominio (validación de negocio)
-  ↓
-Entidad persistente (estructura compatible con la BD)
-  ↓
-Repositorio (validación por constraints)
-  ↓
-BD
-  ↓
-Entidad persistente
-  ↓
-Modelo de Dominio
-  ↓
-DTO de Respuesta
-  ↓
-Cliente
+```txt
+id
+createdAt
+updatedAt
+passwordHash
 ```
 
+Porque esos datos deben ser generados por el backend o por la base de datos.
 
-# **7. Diseño del Modelo de Dominio con invariantes**
+---
 
-Un buen modelo debe garantizar que **no existan estados inválidos**.
+## 3.3 DTO de actualización
 
-Ejemplo: dominio `Product`
+Un DTO de actualización define qué datos pueden modificarse.
 
-```java
-class Product {
-    private String name;
-    private BigDecimal price;
-    private int stock;
+Ejemplo:
 
-    public Product(String name, BigDecimal price, int stock) {
-        if (name == null || name.isBlank())
-            throw new IllegalArgumentException("Name required");
+```txt
+UpdateUserDto
+```
 
-        if (price.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException("Price must be >= 0");
+Campos permitidos:
 
-        if (stock < 0)
-            throw new IllegalArgumentException("Stock must be >= 0");
+```txt
+name
+email
+password
+```
 
-        this.name = name;
-        this.price = price;
-        this.stock = stock;
-    }
+En una actualización parcial, algunos campos pueden ser opcionales.
+
+Ejemplo JSON:
+
+```json
+{
+  "name": "Ana María Torres"
 }
 ```
 
-**El dominio te protege incluso si el DTO falla**.
+---
 
+## 3.4 DTO de salida
 
-# **8. Validación en DTOs (concepto general)**
+Un DTO de salida define qué datos se devuelven al cliente.
 
-Un DTO debe tener reglas claras como:
+Ejemplo:
 
-* obligatorio
-* tamaño
-* formato
-* unicidad (no en el DTO, pero sí en el servicio)
-* tipo correcto
+```txt
+UserResponseDto
+```
+
+Campos permitidos:
+
+```txt
+id
+name
+email
+status
+```
+
+Ejemplo JSON:
+
+```json
+{
+  "id": 1,
+  "name": "Ana Torres",
+  "email": "ana@example.com",
+  "status": "ACTIVE"
+}
+```
+
+El DTO de salida evita exponer datos sensibles.
+
+No debería devolver:
+
+```txt
+password
+passwordHash
+tokens internos
+deletedAt
+```
+
+---
+
+## 3.5 Ubicación del DTO
+
+El DTO pertenece principalmente a la capa de presentación o capa API.
+
+Se usa cerca del controlador porque representa lo que entra y sale por HTTP.
+
+Ubicación conceptual:
+
+```txt
+Cliente
+  ↓
+DTO
+  ↓
+Controller
+```
+
+En una estructura modular, los DTOs del recurso `users` deberían estar dentro del módulo `users`.
+
+Ejemplo:
+
+```txt
+users/
+└── dto/
+    ├── CreateUserDto
+    ├── UpdateUserDto
+    └── UserResponseDto
+```
+
+---
+
+# 4. Modelo de dominio
+
+## 4.1 ¿Qué es un modelo?
+
+Un modelo de dominio representa un concepto del negocio dentro de la aplicación.
+
+No representa directamente la petición HTTP.
+
+No representa directamente una tabla de base de datos.
+
+Su función es permitir que el servicio trabaje con un objeto propio de la lógica de negocio.
+
+Ejemplo:
+
+```txt
+UserModel
+```
+
+El `UserModel` puede representar al usuario dentro del sistema, independientemente de cómo llegó desde la API o cómo será guardado en la base de datos.
+
+---
+
+## 4.2 Por qué usar modelos
+
+El modelo permite desacoplar la lógica de negocio de:
+
+* el formato de la API
+* la estructura de la base de datos
+* las anotaciones del ORM
+* las reglas de serialización
+* los campos internos de persistencia
+
+Esto permite que el servicio trabaje con objetos más limpios.
 
 Ejemplo conceptual:
 
-```
-CreateUserDto:
-  - name: obligatorio, min 3, max 150
-  - email: obligatorio, formato email
-  - password: obligatorio, min 8
-
-UpdateUserDto:
-  - igual que create pero sin cambiar email (según reglas)
-
-PartialUpdateUserDto:
-  - todo opcional pero sin permitir nulos inválidos
+```txt
+CreateUserDto -> UserModel -> UserEntity
 ```
 
+El servicio debería razonar sobre usuarios, no sobre JSON ni columnas de base de datos.
 
-# **9. Validación en el Servicio**
+---
 
-El servicio valida reglas como:
+## 4.3 Qué contiene un modelo
 
-* email ya existe
-* un producto con stock negativo no se puede vender
-* no se puede actualizar un usuario eliminado
-* no se puede eliminar un producto con órdenes activas
-* integridad en relaciones (User → Orders)
+Un modelo puede contener:
 
-El servicio coordina:
+* identificador
+* datos principales del recurso
+* estado de negocio
+* valores calculados
+* datos necesarios para reglas internas
 
-```
-Validar → Convertir → Persistir → Retornar
-```
+Ejemplo conceptual:
 
-
-# **10. Validación en la Base de Datos**
-
-Se logra mediante:
-
-* `NOT NULL`
-* `UNIQUE`
-* `CHECK (price >= 0)`
-* `FOREIGN KEY`
-* `ON DELETE CASCADE | RESTRICT`
-
-La BD sirve como **última barrera de seguridad**, no como la principal.
-
-
-# **11. Patrones de Validación Modernos**
-
-### **11.1. Patrón “Fail Fast”**
-
-Si un dato es inválido, se aborta inmediatamente.
-
-### **11.2. Patrón “Value Object”**
-
-En lugar de strings sueltos, encapsular valores importantes:
-
-```
-Email → value object
-Money → value object
-Phone → value object
+```txt
+UserModel
+  - id
+  - name
+  - email
+  - password
+  - passwordHash
+  - status
 ```
 
-### **11.3. Patrón “Domain Guard”**
+El modelo puede tener datos temporales usados durante el flujo de negocio.
 
-Métodos estáticos que validan invariantes:
+Ejemplo:
 
-```
-Guard.notEmpty(name, "Name required")
-Guard.range(price, 0, 10000)
-```
-
-
-# **12. Relación entre Modelo, DTO y Entidad**
-
-```
-DTO  → Validación sintáctica
-Modelo de Dominio → Validación de reglas
-Entidad JPA/TypeORM → Persistencia
+```txt
+password
 ```
 
-Ejemplo de flujo:
+Puede existir en el modelo antes de generar:
 
-```
-POST /products
-   ↓
-CreateProductDto (validaciones básicas)
-   ↓
-Product.fromDto(dto)  // reglas de negocio
-   ↓
-product.toEntity()    // conversión a tabla
-   ↓
-repository.save()
-   ↓
-Product.fromEntity()  // dominio nuevamente
-   ↓
-product.toResponseDto()
-   ↓
-Cliente
+```txt
+passwordHash
 ```
 
+Luego el mapper puede convertir el modelo hacia la entidad persistente.
 
-# **13. Actividad práctica**
+---
 
-Cada estudiante debe:
+## 4.4 Ubicación del modelo
 
-### **13.1. Crear DTOs completos para products/**
+El modelo pertenece a la capa de negocio o dominio.
 
-* `CreateProductDto`
-* `UpdateProductDto`
-* `PartialUpdateProductDto`
-* `ProductResponseDto`
+En una estructura modular:
 
-Con reglas claras:
+```txt
+users/
+└── model/
+    └── UserModel
+```
 
-* name → obligatorio
-* price → >= 0
-* stock → >= 0
+También puede llamarse:
 
-### **13.2. Crear modelo de dominio Product**
+```txt
+users/
+└── models/
+    └── UserModel
+```
 
-Con métodos:
+La decisión depende de la convención del proyecto.
 
-* `Product.fromDto()`
-* `Product.fromEntity()`
-* `product.toEntity()`
-* `product.toResponseDto()`
-* `product.update()`
-* `product.partialUpdate()`
+Para este curso se recomienda usar singular:
 
-### **13.3. Agregar validaciones lógicas**
+```txt
+model/
+```
+
+---
+
+# 5. Entidad persistente
+
+## 5.1 ¿Qué es una entidad?
+
+Una entidad persistente representa la estructura que será guardada en la base de datos.
+
+A diferencia del modelo, la entidad sí está relacionada directamente con la persistencia.
+
+Una entidad puede representar:
+
+* una tabla
+* una colección
+* columnas
+* relaciones
+* claves primarias
+* restricciones
+* metadatos del ORM
+
+Ejemplo:
+
+```txt
+UserEntity
+```
+
+Tabla asociada:
+
+```txt
+users
+```
+
+Columnas:
+
+```txt
+id
+name
+email
+password_hash
+status
+created_at
+updated_at
+```
+
+---
+
+
+## 5.2 Ubicación de la entidad
+
+La entidad pertenece a la capa de persistencia.
+
+En una estructura modular:
+
+```txt
+users/
+└── entity/
+    └── UserEntity
+```
+
+También puede usarse:
+
+```txt
+users/
+└── entities/
+    └── UserEntity
+```
+
+Para este curso se recomienda usar singular:
+
+```txt
+entity/
+```
+
+---
+
+# 6. Mapper
+
+## 6.1 ¿Qué es un mapper?
+
+Un mapper es un componente encargado de transformar objetos entre capas.
+
+Convierte:
+
+```txt
+DTO -> Model
+Model -> Entity
+Entity -> Model
+Model -> DTO
+```
+
+Su objetivo es evitar que el controlador o el servicio tengan muchas conversiones manuales.
+
+---
+
+## 6.2 Por qué usar mappers
+
+Los mappers ayudan a:
+
+* centralizar conversiones
+* evitar duplicación de código
+* proteger datos sensibles
+* separar API, negocio y persistencia
+* mantener servicios más limpios
+* facilitar cambios futuros
+
+Sin mapper, el servicio puede llenarse de código repetitivo como:
+
+```txt
+crear objeto
+copiar campo por campo
+ocultar password
+renombrar propiedades
+adaptar nombres entre DTO y Entity
+```
+
+Con mapper, esa lógica queda aislada.
+
+---
+# 7. Validaciones
+
+## 7.1 ¿Qué es validar?
+
+Validar significa comprobar que los datos recibidos cumplen las reglas esperadas antes de procesarlos.
+
+Una validación evita que datos incorrectos, incompletos o inseguros lleguen a la lógica de negocio o a la base de datos.
+
+Ejemplo:
+
+```txt
+El email no puede estar vacío.
+El password debe tener mínimo 8 caracteres.
+El nombre no puede superar 80 caracteres.
+```
+
+---
+
+## 7.2 Validaciones de formato
+
+Las validaciones de formato revisan que un dato tenga la estructura correcta.
 
 Ejemplos:
 
-* precio no puede ser negativo
-* stock no puede ser negativo
+```txt
+email válido
+longitud mínima
+longitud máxima
+campo obligatorio
+número positivo
+fecha válida
+```
 
-### **13.4. Integrar validaciones con el servicio**
+Ejemplo:
 
-El servicio debe:
+```json
+{
+  "name": "",
+  "email": "correo-invalido",
+  "password": "123"
+}
+```
 
-1. validar que el nombre no esté en blanco
-2. validar que el email (si existiera) sea único
-3. validar reglas del dominio
-4. validar referencia a entidades relacionadas (si existieran)
+Errores esperados:
 
-### **13.5. Probar fallos esperados**
+```txt
+name es obligatorio
+email debe tener formato válido
+password debe tener mínimo 8 caracteres
+```
 
-El estudiante debe demostrar que la API rechaza:
+Estas validaciones suelen ubicarse en los DTOs.
 
-* precio negativo
-* stock negativo
-* campos vacíos
-* emails inválidos
+---
 
+## 7.3 Validaciones de negocio
 
+Las validaciones de negocio dependen de las reglas del sistema.
 
-Estos conceptos se aplicarán directamente en:
+Ejemplos:
 
-* [`spring-boot/06_modelos_dtos_validacion.md`](../spring-boot/06_modelos_dtos_validacion.md)
-* [`nest/06_modelos_dtos_validacion.md`](../nest/06_modelos_dtos_validacion.md)
+```txt
+El correo no debe estar registrado previamente.
+El usuario debe estar activo para iniciar sesión.
+El stock debe ser mayor que la cantidad solicitada.
+Un estudiante no puede matricularse dos veces en el mismo curso.
+```
 
+Estas validaciones no deberían estar en el DTO.
+
+Deben ubicarse en el servicio.
+
+---
+
+## 7.4 Diferencia entre validación de formato y validación de negocio
+
+| Tipo de validación | Ubicación recomendada | Ejemplo                                          |
+| ------------------ | --------------------- | ------------------------------------------------ |
+| Formato            | DTO                   | Email válido, campo obligatorio, longitud mínima |
+| Negocio            | Service               | Email único, stock suficiente, usuario activo    |
+| Persistencia       | Entity / Database     | Clave única, relación obligatoria, foreign key   |
+
+---
+
+## 7.5 Validaciones de persistencia
+
+Las validaciones de persistencia son reglas relacionadas con la base de datos.
+
+Ejemplos:
+
+```txt
+email único
+id obligatorio
+relación obligatoria
+campo no nulo
+restricción de longitud
+clave foránea válida
+```
+
+Estas reglas pueden definirse en:
+
+* entidad
+* migraciones
+* base de datos
+* ORM
+
+No reemplazan las validaciones del DTO ni del servicio.
+
+Sirven como una última barrera de consistencia.
+
+---
+
+# 8. Validación por capas
+
+Cada capa valida un tipo diferente de regla.
+
+```txt
+DTO
+  ↓ valida formato
+Controller
+  ↓ recibe datos válidos
+Service
+  ↓ valida reglas de negocio
+Repository
+  ↓ envía entidad
+Database
+  ↓ valida restricciones
+```
+
+Ejemplo para crear usuario:
+
+```txt
+CreateUserDto:
+- name obligatorio
+- email válido
+- password mínimo 8 caracteres
+
+UserService:
+- verificar que email no exista
+- generar passwordHash
+- asignar estado ACTIVE
+
+UserEntity / Database:
+- email único
+- passwordHash no nulo
+- createdAt automático
+```
+
+---
+
+# 9. Nombres recomendados para el recurso users
+
+Para el recurso `users`, se recomienda usar los siguientes nombres:
+
+| Tipo                 | Nombre            |
+| -------------------- | ----------------- |
+| DTO de creación      | `CreateUserDto`   |
+| DTO de actualización | `UpdateUserDto`   |
+| DTO de respuesta     | `UserResponseDto` |
+| Modelo               | `UserModel`       |
+| Entidad              | `UserEntity`      |
+| Mapper               | `UserMapper`      |
+| Repositorio          | `UserRepository`  |
+| Servicio             | `UserService`     |
+| Controlador          | `UserController`  |
+
+En NestJS, los archivos pueden nombrarse así:
+
+```txt
+create-user.dto.ts
+update-user.dto.ts
+user-response.dto.ts
+user.model.ts
+user.entity.ts
+user.mapper.ts
+users.repository.ts
+users.service.ts
+users.controller.ts
+users.module.ts
+```
+
+En Spring Boot:
+
+```txt
+CreateUserDto.java
+UpdateUserDto.java
+UserResponseDto.java
+UserModel.java
+UserEntity.java
+UserMapper.java
+UserRepository.java
+UserService.java
+UserServiceImpl.java
+UserController.java
+```
+
+---
+
+# 10. Ejemplo conceptual de creación de usuario
+
+## 10.1 Entrada
+
+```json
+{
+  "name": "Ana Torres",
+  "email": "ana@example.com",
+  "password": "12345678"
+}
+```
+
+---
+
+## 10.2 DTO de entrada
+
+```txt
+CreateUserDto
+  - name
+  - email
+  - password
+```
+
+Responsabilidad:
+
+```txt
+Definir qué datos acepta la API.
+```
+
+---
+
+## 10.3 Modelo
+
+```txt
+UserModel
+  - id
+  - name
+  - email
+  - password
+  - passwordHash
+  - status
+```
+
+Responsabilidad:
+
+```txt
+Representar al usuario dentro de la lógica de negocio.
+```
+
+---
+
+## 10.4 Entidad
+
+```txt
+UserEntity
+  - id
+  - name
+  - email
+  - passwordHash
+  - status
+  - createdAt
+  - updatedAt
+```
+
+Responsabilidad:
+
+```txt
+Representar cómo se guarda el usuario en la base de datos.
+```
+
+---
+
+## 10.5 DTO de salida
+
+```txt
+UserResponseDto
+  - id
+  - name
+  - email
+  - status
+```
+
+Responsabilidad:
+
+```txt
+Definir qué datos se devuelven al cliente.
+```
 
