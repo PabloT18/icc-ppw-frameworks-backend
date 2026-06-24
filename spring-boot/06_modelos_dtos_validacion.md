@@ -1,191 +1,269 @@
-
 # Programación y Plataformas Web
 
-# **Spring Boot – Modelos de Dominio, DTOs y Validación con Jakarta Validation**
+# Frameworks Backend: Spring Boot – DTOs, Validación y Reglas de Entrada
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="95">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" width="95">
 </div>
 
-## **Práctica 6 (Spring Boot): Diseño de Modelos, DTOs y Validación Profesional**
+---
 
-### **Autor**
+# Práctica 6 (Spring Boot): Validación de DTOs y Control de Datos de Entrada
+
+### Autores
 
 **Pablo Torres**
 
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
 GitHub: PabloT18
 
 ---
 
-# **1. Introducción**
+# 1. Introducción
 
 En las prácticas anteriores se implementó:
 
-* Controladores
-* Servicios
-* Entidades persistentes
-* Repositorios JPA
-* Conexión a PostgreSQL
+* controladores
+* servicios
+* modelos
+* entidades persistentes
+* mappers
+* repositorios JPA
+* conexión a PostgreSQL
 
-Sin embargo, aún falta un componente esencial de toda API profesional:
+Hasta este punto, la API ya puede recibir datos, procesarlos y guardarlos en base de datos.
 
-## **Validar correctamente los datos que entran y salen del sistema.**
+Sin embargo, todavía falta un componente esencial: validar correctamente los datos que entran al sistema.
 
-A partir de este tema aprenderás:
+Sin validación, la API podría recibir:
 
-1. Cómo diseñar **DTOs con validación**
-2. Cómo crear **modelos de dominio** que apliquen reglas de negocio
-3. Cómo evitar que entren datos inválidos a la capa de persistencia
-4. Cómo integrar validación automática en controladores y servicios
-5. Cómo mantener separadas las capas DTO → Dominio → Entidad
+* nombres vacíos
+* correos inválidos
+* contraseñas débiles
+* precios negativos
+* stock negativo
+* campos obligatorios incompletos
 
-Esta estructura es obligatoria en APIs bien diseñadas.
+En esta práctica se introduce la validación de DTOs usando Jakarta Validation.
+
+El objetivo es validar los datos antes de que lleguen al servicio y antes de que se guarden en PostgreSQL.
+
+En esta práctica se trabajará con:
+
+* DTOs con anotaciones de validación
+* `@Valid` en controladores
+* reglas básicas de entrada
+* validaciones en servicios
+* validaciones reforzadas por base de datos
+
+Todavía no se implementa:
+
+* manejo centralizado de errores
+* handlers globales
+* respuestas de error personalizadas
+
+Eso se trabajará en una práctica posterior.
+
+---
+
+# 2. Flujo después de aplicar validación
+
+Ahora el flujo será:
+
+```txt
+Cliente
+  ↓
+UsersController
+  ↓
+@Valid
+  ↓
+CreateUserDto / UpdateUserDto / PartialUpdateUserDto
+  ↓
+UserService
+  ↓
+UserServiceImpl
+  ↓
+UserRepository
+  ↓
+PostgreSQL
+  ↓
+UserEntity
+  ↓
+UserMapper
+  ↓
+UserModel
+  ↓
+UserResponseDto
+  ↓
+Cliente
+```
+
+La validación ocurre antes de ejecutar la lógica del servicio.
+
+Si los datos no cumplen las reglas del DTO, Spring Boot detiene la petición y devuelve un error `400 Bad Request`.
+
+---
 
 
-# **2. Instalación: Dependencias necesarias**
+# 3. Instalación y configuración de dependencias
 
-Spring Boot utiliza **Jakarta Validation (Bean Validation)** para validar DTOs.
+Spring Boot utiliza Jakarta Validation para validar DTOs.
 
-En `build.gradle.kts` agrega:
+---
 
-```kts
+## 3.1. Dependencia necesaria en `build.gradle.kts`
+
+Agregar la dependencia:
+
+```gradle
 dependencies {
+    // Dependencias existentes
+
     implementation("org.springframework.boot:spring-boot-starter-validation")
 }
 ```
 
-Spring Boot activará automáticamente el validador.
 
 
-# **3. Diferencia entre: DTO – Modelo – Entidad**
+# 4. Diseño de DTOs con validación
 
-| Capa                  | Propósito                                              |
-| --------------------- | ------------------------------------------------------ |
-| **DTO**               | Lo que entra y sale por la API. Validación sintáctica. |
-| **Modelo de Dominio** | Reglas de negocio, invariantes, comportamiento.        |
-| **Entidad JPA**       | Representa una tabla de base de datos. Persistencia.   |
+Los DTOs se validan antes de llegar al servicio.
 
-### **Nunca deben mezclarse.**
+Esto evita que datos incorrectos entren a la lógica de negocio.
 
+---
 
-# **4. Diseño de DTOs con Validación**
+## 4.1. CreateUserDto
 
-Los DTOs se validan **antes de llegar al servicio**, evitando lógica innecesaria.
+Archivo:
 
-## **4.1 CreateUserDto**
-
-Sin validaciones nos permite ingresar datos inválidos, usuarios con emails erróneos, contraseñas débiles, etc.
-
-![alt text](assets/01-modelos_dtos_validacion-06.png)
-
-se ingreslo un usuario inválido:
-
-```json
-{
-  "name": "",
-  "email": "correo-invalido",
-  "password": "123"
-}
+```txt
+users/dtos/CreateUserDto.java
 ```
 
-Para evitar esto, agregamos validaciones con anotaciones de Jakarta Validation.
-
-Archivo: `users/dtos/CreateUserDto.java`
+Código:
 
 ```java
+/*
+ * DTO utilizado para recibir los datos necesarios
+ * para crear un nuevo usuario desde una petición HTTP.
+ *
+ * No incluye id porque el backend lo genera.
+ * No incluye createdAt porque el backend asigna la fecha de creación.
+ */
 public class CreateUserDto {
 
     @NotBlank(message = "El nombre es obligatorio")
     @Size(min = 3, max = 150, message = "El nombre debe tener entre 3 y 150 caracteres")
-    public String name;
+    private String name;
 
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "Debe ingresar un email válido")
-    @Size(max = 150)
-    public String email;
+    @Size(max = 150, message = "El email no debe superar los 150 caracteres")
+    private String email;
 
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
-    public String password;
+    private String password;
+
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
 }
 ```
 
+---
 
-## **4.2 UpdateUserDto**
+## 4.2. UpdateUserDto
 
-Archivo: `users/dtos/UpdateUserDto.java`
+Archivo:
+
+```txt
+users/dtos/UpdateUserDto.java
+```
+
+Código:
 
 ```java
+/*
+ * DTO utilizado para recibir los datos necesarios
+ * para actualizar completamente un usuario existente.
+ *
+ * No incluye id porque el id llega por la URL.
+ * No incluye createdAt porque la fecha de creación no debe modificarse.
+ */
 public class UpdateUserDto {
 
-    @NotBlank
-    @Size(min = 3, max = 150)
-    public String name;
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(min = 3, max = 150, message = "El nombre debe tener entre 3 y 150 caracteres")
+    private String name;
 
-    @NotBlank
-    @Email
-    @Size(max = 150)
-    public String email;
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "Debe ingresar un email válido")
+    @Size(max = 150, message = "El email no debe superar los 150 caracteres")
+    private String email;
 
-    @NotBlank
-    @Size(min = 8)
-    public String password;
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
 }
 ```
 
+---
 
-## **4.3 PartialUpdateUserDto (PATCH)**
+## 4.3. PartialUpdateUserDto
 
-Archivo: `users/dtos/PartialUpdateUserDto.java`
+Archivo:
+
+```txt
+users/dtos/PartialUpdateUserDto.java
+```
+
+Código:
 
 ```java
+/*
+ * DTO utilizado para recibir los datos que se desean
+ * actualizar parcialmente en un usuario existente.
+ *
+ * Los campos pueden venir nulos cuando no se desean actualizar.
+ * Solo se validan los campos enviados.
+ */
 public class PartialUpdateUserDto {
 
-    @Size(min = 3, max = 150)
-    public String name;
+    @Size(min = 3, max = 150, message = "El nombre debe tener entre 3 y 150 caracteres")
+    private String name;
 
-    @Email
-    @Size(max = 150)
-    public String email;
+    @Email(message = "Debe ingresar un email válido")
+    @Size(max = 150, message = "El email no debe superar los 150 caracteres")
+    private String email;
 
-    @Size(min = 8)
-    public String password;
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
 }
 ```
 
-### Reglas:
+---
 
-* **Todos los campos son opcionales**
-* Solo se validan si se envían
+# 5. Activar validación en UsersController
 
+Para que Spring Boot valide los DTOs, se debe agregar `@Valid` antes de `@RequestBody`.
 
-## **4.4 UserResponseDto**
+Archivo:
 
-```java
-public class UserResponseDto {
-    public int id;
-    public String name;
-    public String email;
-    public String createdAt;
-}
+```txt
+users/controllers/UsersController.java
 ```
 
-### Nunca exponer:
-
-* password
-* deleted
-* updatedAt
-
-
-# **5. Activar Validación en Controladores**
-
-Spring Boot valida automáticamente si:
-
-1. Se usa `@Valid` o `@Validated`
-2. Se recibe un DTO en el controlador
 
 Ejemplo:
 
@@ -195,76 +273,170 @@ public UserResponseDto create(@Valid @RequestBody CreateUserDto dto) {
     return service.create(dto);
 }
 ```
+---
 
-Si la validación falla, Spring genera automáticamente:
+## 5.1. ¿Qué hace `@Valid`?
+
+`@Valid` indica que el objeto recibido debe evaluarse con las anotaciones de Jakarta Validation.
+
+
+
+
+Si el cliente envía un nombre vacío, un email inválido o una contraseña corta, Spring Boot detiene la ejecución antes de entrar al servicio.
+
+---
+
+# 6. Ejemplo de petición inválida
+
+Endpoint:
+
+```txt
+POST /api/users
+```
+
+Body inválido:
 
 ```json
 {
-  "errors": [
-    "El nombre es obligatorio",
-    "El email es inválido"
-  ]
+  "name": "",
+  "email": "correo-invalido",
+  "password": "123"
 }
 ```
 
-> Respuesta HTTP: `400 Bad Request` que deberemos capturar y manejar antes de enviar ya que no es amigable para el cliente.
+El DTO tiene estas reglas:
 
-> No incluye stack trace real, ni que campo falló.
+```java
+@NotBlank
+@Email
+@Size
+```
+
+Por tanto, la petición no debe llegar al servicio.
+
+---
+
+## 6.1. Respuesta generada por Spring Boot
+
+En esta práctica todavía no se implementa un handler global.
+
+Por eso Spring Boot puede devolver una respuesta técnica parecida a:
 
 ```json
 {
   "timestamp": "2025-12-26T17:36:43.035Z",
   "status": 400,
   "error": "Bad Request",
-  "trace": "org.springframework.web....."
+  "path": "/api/users"
+}
+```
+
+El manejo amigable de errores se trabajará después.
+
+> Respuesta HTTP: `400 Bad Request` que deberemos capturar y manejar antes de enviar ya que no es amigable para el cliente.
+
+> No incluye stack trace real, ni que campo falló.
+
+---
+
+# 7. Validación en el servicio
+
+Los DTOs validan reglas de formato.
+
+El servicio puede validar reglas de negocio.
+
+Ejemplos de reglas de negocio:
+
+* no registrar dos usuarios con el mismo email
+* no actualizar un usuario eliminado
+* no buscar registros eliminados lógicamente
+
+---
+
+## 7.1. Validar email duplicado
+
+Como el repositorio ya tiene:
+
+```java
+Optional<UserEntity> findByEmail(String email);
+```
+
+se puede validar antes de guardar.
+
+Archivo:
+
+```txt
+users/services/UserServiceImpl.java
+```
+
+Método `create` actualizado:
+
+```java
+/*
+ * Crea un nuevo usuario.
+ *
+ * Valida que el email no esté registrado.
+ * Convierte DTO a Model.
+ * Convierte Model a Entity.
+ * Guarda Entity en PostgreSQL.
+ * Convierte Entity guardada a Model.
+ * Devuelve Response DTO.
+ */
+@Override
+public UserResponseDto create(CreateUserDto dto) {
+
+    if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+        throw new IllegalStateException("Email already registered");
+    }
+
+   // Resto del método...
 }
 ```
 
 
+# 8. Validación en la entidad y base de datos
 
-# **6. Diseño de Modelo de Dominio**
+La validación del DTO protege la entrada desde la API.
 
-El **modelo de dominio** aplica reglas de negocio que NO pertenecen a DTOs ni entidades.
+La base de datos también refuerza reglas mediante la entidad JPA.
 
-Archivo: `users/models/User.java`
+Ejemplo:
 
 ```java
-public class User {
+@Entity
+@Table(name = "users")
+public class UserEntity extends BaseEntity {
 
-    private int id;
+    @Column(nullable = false, length = 150)
     private String name;
+
+    @Column(nullable = false, unique = true, length = 150)
     private String email;
-    private String password;
-    private LocalDateTime createdAt;
 
-    public User(int id, String name, String email, String password) {
-        if (name == null || name.isBlank())
-            throw new IllegalArgumentException("Nombre inválido");
+    @Column(nullable = false)
+    private String passwordHash;
 
-        if (email == null || !email.contains("@"))
-            throw new IllegalArgumentException("Email inválido");
+    // Constructor vacío
 
-        if (password == null || password.length() < 8)
-            throw new IllegalArgumentException("Password inválido");
+    // Constructor lleno
 
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.password = password;
-        this.createdAt = LocalDateTime.now();
-    }
-
-    // Factory methods...
+    // Getters y setters
+}
 ```
 
-### Propósito del dominio:
+Estas restricciones generan reglas en PostgreSQL:
 
-* Garantizar estados válidos
-* Ser independiente de la BD
-* Permitir agregación de reglas de negocio
+```txt
+name no puede ser null
+email no puede ser null
+email debe ser único
+passwordHash no puede ser null
+```
+
+---
 
 
-# **7. Factory Methods para conversión**
+# 9. Factory Methods para conversión
 
 El dominio debe saber construirse desde:
 
@@ -300,99 +472,200 @@ public UserEntity toEntity() {
 }
 ```
 
+> Actualmente esto lo hace el mapper, pero en proyectos grandes es mejor que el dominio sepa cómo construirse y convertirse a entidad.
 
-# **8. Validación en el Servicio**
 
-El servicio valida:
+# 11. Pruebas sugeridas en Postman / Bruno
 
-* duplicados
-* existencia de registros
-* integridad del negocio
+## Crear usuario inválido
 
-Ejemplo:
+Método:
 
-```java
-@Override
-public UserResponseDto create(CreateUserDto dto) {
+```txt
+POST
+```
 
-    // Regla: email único
-    if (userRepo.findByEmail(dto.email).isPresent()) {
-        throw new IllegalStateException("El email ya está registrado");
-    }
+Ruta:
 
-    User user = User.fromDto(dto);
+```txt
+/api/users
+```
 
-    UserEntity saved = userRepo.save(user.toEntity());
+Body:
 
-    return UserMapper.toResponse(User.fromEntity(saved));
+```json
+{
+  "name": "",
+  "email": "correo-invalido",
+  "password": "123"
 }
 ```
 
-Aunque en el stack trace se vea `IllegalStateException`, este error debe ser capturado y manejado para enviar una respuesta amigable al cliente.
+Resultado esperado:
 
-![alt text](assets/02-modelos_dtos_validacion-06.png)
-
-en trace esta un mensaje no amigable para el cliente.
-
-
-# **9. Validación en Repositorio / BD**
-
-Hibernate + PostgreSQL refuerzan:
-
-* UNIQUE email
-* NOT NULL
-* longitud máxima
-* tipos correctos
-
-Esto garantiza datos consistentes aunque falle el servicio.
-
-
-# **10. Flujo completo de validación**
-
-```
-Cliente
-   ↓
-DTO con @Valid  (validación sintáctica)
-   ↓
-Modelo de Dominio (reglas de negocio)
-   ↓
-toEntity()
-   ↓
-Repositorio (constraints de BD)
-   ↓
-UserEntity persistido
-   ↓
-fromEntity()
-   ↓
-toResponseDto()
-   ↓
-Cliente
+```txt
+400 Bad Request
 ```
 
+---
 
-# **11. Actividad práctica**
+## Crear usuario válido
 
-El estudiante debe implementar lo siguiente para el módulo:
+Método:
 
+```txt
+POST
 ```
+
+Ruta:
+
+```txt
+/api/users
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Pérez",
+  "email": "juan@ups.edu.ec",
+  "password": "12345678"
+}
+```
+
+Resultado esperado:
+
+```txt
+Usuario creado correctamente
+```
+
+---
+
+## Crear usuario con email repetido
+
+Método:
+
+```txt
+POST
+```
+
+Ruta:
+
+```txt
+/api/users
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Repetido",
+  "email": "juan@ups.edu.ec",
+  "password": "12345678"
+}
+```
+
+Resultado esperado:
+
+```txt
+Error por email ya registrado
+```
+
+---
+
+## Actualizar usuario con email inválido
+
+Método:
+
+```txt
+PUT
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+Body:
+
+```json
+{
+  "name": "Juan Actualizado",
+  "email": "correo-invalido"
+}
+```
+
+Resultado esperado:
+
+```txt
+400 Bad Request
+```
+
+---
+
+## Actualizar parcialmente con nombre inválido
+
+Método:
+
+```txt
+PATCH
+```
+
+Ruta:
+
+```txt
+/api/users/1
+```
+
+Body:
+
+```json
+{
+  "name": "A"
+}
+```
+
+Resultado esperado:
+
+```txt
+400 Bad Request
+```
+
+---
+
+# 12. Actividad práctica
+
+Se debe implementar validación en el módulo:
+
+```txt
 products/
 ```
 
-## **11.1 Crear DTOs con validación**
+---
 
-* CreateProductDto
-* UpdateProductDto
-* PartialUpdateProductDto
-* ProductResponseDto
+## 12.1. Actualizar DTOs con validación
+
+Aplicar validaciones a:
+
+```txt
+CreateProductDto
+UpdateProductDto
+PartialUpdateProductDto
+```
 
 Reglas mínimas:
 
-* `name` → obligatorio, min 3
-* `price` → mínimo 0
-* `stock` → mínimo 0
+| Campo   | Regla                             |
+| ------- | --------------------------------- |
+| `name`  | obligatorio, mínimo 3, máximo 150 |
+| `price` | obligatorio, mínimo 0             |
+| `stock` | obligatorio, mínimo 0             |
 
+---
 
-## **11.2 Crear modelo de dominio Product**
+## 12.2. Crear modelo de dominio Product
+
 
 Con métodos:
 
@@ -403,41 +676,58 @@ Con métodos:
 * `product.update()`
 * `product.partialUpdate()`
 
+> Productos ya no usara el mapper, sino que el dominio sabrá cómo construirse y convertirse a entidad.
 
-## **11.3 Integrar validación en ProductController**
+## 12.3. Activar `@Valid` en ProductsController
 
-Usar:
+Usar `@Valid` en cada endpoint que reciba un DTO.
 
-```java
-@PostMapping
-public ProductResponseDto create(@Valid @RequestBody CreateProductDto dto)
-```
+---
 
+## 12.4. Validar reglas de negocio en ProductServiceImpl
 
-## **11.4 Validar reglas de dominio**
+Validar:
 
-Ejemplo:
+* no actualizar productos eliminados
+* no devolver productos eliminados en findAll
+* no eliminar dos veces el mismo producto
 
-* no stock negativo
-* no precio negativo
+---
 
+## 12.5. Validar casos erróneos desde Postman / Bruno
 
-## **11.5 Validar casos erróneos desde Postman**
-
-Debe generar errores automáticos al enviar:
+Probar:
 
 * `price: -5`
 * `stock: -1`
-* `""` como nombre
-* email inválido
+* `name: ""`
+* `name: "A"`
 
+---
 
-# **12. Resultados y evidencias**
+# 13. Resultados y evidencias
 
-El estudiante entrega:
+En la nueva entrada del README, se debe agregar:
 
-1. Captura de DTOs con validaciones
-2. Captura del modelo de dominio completo
-3. Captura de la respuesta de error al enviar un POST inválido
-4. Captura del CRUD de productos validado correctamente
+## Captura de respuesta de error al enviar un POST inválido
+
+Ejemplo:
+
+```json
+{
+  "name": "",
+  "price": -5,
+  "stock": -1
+}
+```
+
+---
+
+## Captura de CRUD de productos validado correctamente
+
+Debe evidenciarse:
+
+* error al crear producto con precio negativo
+* error al actualizar producto eliminado
+* findAll no devuelve productos eliminados
 

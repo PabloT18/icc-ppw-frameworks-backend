@@ -1,55 +1,156 @@
 # Programación y Plataformas Web
 
-# **Spring Boot – Control Global de Errores y Excepciones**
+# Frameworks Backend: Spring Boot – Control Global de Errores y Excepciones
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="95">
 </div>
 
-## Práctica 7 (Spring Boot): Manejo Global de Errores y Excepciones
+---
+
+# Práctica 7 (Spring Boot): Manejo Global de Errores y Excepciones
 
 ### Autores
 
 **Pablo Torres**
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+
 GitHub: PabloT18
 
+---
 
-# Introducción
+# 1. Introducción
 
-En los temas anteriores, el backend ya cuenta con:
+En las prácticas anteriores se implementó:
 
-* controladores limpios
-* servicios con lógica de negocio
-* DTOs validados
-* persistencia real con JPA
-* arquitectura MVCS
+* controladores
+* servicios
+* DTOs con validación
+* modelos de dominio
+* entidades persistentes
+* mappers
+* repositorios JPA
+* conexión a PostgreSQL
+* eliminado lógico mediante `deleted`
 
-Sin embargo, **un backend no es profesional** si:
+Hasta este punto, la API ya puede recibir datos, validarlos, procesarlos y guardarlos en base de datos.
 
-* cada error se maneja distinto
-* se devuelve texto plano
-* se exponen mensajes internos
-* se usan `try/catch` en cada método
+Sin embargo, todavía existe un problema importante: los errores no se manejan de forma centralizada.
 
-En este tema se implementa un **sistema global de manejo de errores**, usando los mecanismos nativos de Spring Boot, manteniendo:
+Actualmente pueden existir errores como:
 
-* coherencia
-* extensibilidad
-* separación de responsabilidades
-* un único formato de respuesta
-
-
-# 1. Estructura del paquete `exception`
-
-Se utilizará una estructura clara y escalable:
-
+```java
+throw new IllegalStateException("User not found");
 ```
-src/main/java/ec/edu/ups/app/
-└── exception/
+
+o respuestas manuales como:
+
+```java
+return new ErrorResponseDto("User not found");
+```
+
+Este enfoque funciona para prácticas iniciales, pero no es adecuado para una API más organizada.
+
+Un backend no debe manejar errores de forma distinta en cada controlador o servicio.
+
+En esta práctica se implementa un sistema global de manejo de errores usando:
+
+* excepciones propias de la aplicación
+* excepciones de dominio
+* un DTO único de error
+* `@RestControllerAdvice`
+* `@ExceptionHandler`
+
+El objetivo es que todos los errores de la API tengan un formato uniforme y que los servicios solo expresen el error, sin construir respuestas HTTP manualmente.
+
+---
+
+# 2. Problema actual
+
+Antes de esta práctica, cuando un usuario no existía, el servicio podía tener algo como:
+
+```java
+@Override
+public UserResponseDto findOne(Long id) {
+
+    return userRepository.findById(id)
+            .map(UserMapper::toModelFromEntity)
+            .map(UserMapper::toResponse)
+            .orElseThrow(() -> new IllegalStateException("User not found"));
+}
+```
+
+Esto genera una excepción genérica.
+
+El problema es que `IllegalStateException` no indica claramente qué tipo de error HTTP debe devolver la API.
+
+El cliente podría recibir una respuesta técnica o inconsistente:
+
+```json
+{
+  "timestamp": "2025-12-26T20:02:02.067Z",
+  "status": 500,
+  "error": "Internal Server Error",
+  "trace": "java.lang.IllegalStateException: User not found..."
+}
+```
+
+Ese resultado no es correcto porque un recurso inexistente no debe responder como error interno del servidor.
+
+Debe responder como:
+
+```txt
+404 Not Found
+```
+
+---
+
+# 3. Flujo después de aplicar manejo global de errores
+
+El flujo será:
+
+```txt
+Cliente
+  ↓
+UsersController
+  ↓
+UserService
+  ↓
+UserServiceImpl
+  ↓
+lanza NotFoundException / ConflictException / BadRequestException
+  ↓
+GlobalExceptionHandler
+  ↓
+ErrorResponse
+  ↓
+Cliente
+```
+
+El servicio ya no construye respuestas de error.
+
+El controlador ya no usa `try/catch`.
+
+El handler global se encarga de convertir excepciones en respuestas HTTP.
+
+---
+
+# 4. Estructura del paquete de excepciones
+
+Se creará una estructura global para errores dentro de:
+
+```txt
+src/main/java/ec/edu/ups/icc/fundamentos01/core/exceptions/
+```
+
+Estructura recomendada:
+
+```txt
+core/
+└── exceptions/
     ├── base/
-    │   ├── ApplicationException.java
-    │   └── ErrorCode.java
+    │   └── ApplicationException.java
     │
     ├── domain/
     │   ├── NotFoundException.java
@@ -63,21 +164,34 @@ src/main/java/ec/edu/ups/app/
         └── ErrorResponse.java
 ```
 
-Esta estructura:
+Esta estructura permite separar:
 
-* evita clases genéricas mal definidas
-* permite crecer sin romper código
-* separa dominio, infraestructura y transporte
+```txt
+base      → excepción raíz de la aplicación
+domain    → errores del negocio
+handler   → conversión global de excepciones a HTTP
+response  → formato único de respuesta de error
+```
 
+---
 
-# 2. Excepción base de la aplicación
-
-## `ApplicationException`
+# 5. Excepción base de la aplicación
 
 Archivo:
-`exception/base/ApplicationException.java`
+
+```txt
+core/exceptions/base/ApplicationException.java
+```
+
+Código:
 
 ```java
+/*
+ * Excepción base de la aplicación.
+ *
+ * Todas las excepciones propias del sistema deben extender de esta clase.
+ * Permite asociar cada error con un HttpStatus específico.
+ */
 public abstract class ApplicationException extends RuntimeException {
 
     private final HttpStatus status;
@@ -93,45 +207,59 @@ public abstract class ApplicationException extends RuntimeException {
 }
 ```
 
-Características:
+---
 
-* es la raíz de todas las excepciones del sistema
-* obliga a definir un `HttpStatus`
-* evita el uso de `RuntimeException` genérica
-* no genera respuesta HTTP directamente
+## 5.1. Explicación
 
+`ApplicationException` es la clase padre de las excepciones propias del sistema.
 
-# 3. Excepciones de dominio
+Permite que cada error tenga asociado un estado HTTP.
 
-Las excepciones de dominio **representan errores del negocio**, no técnicos.
+Ejemplo:
 
-## 3.1 Recurso no encontrado
-
-**Descripción:**  
-Se lanza cuando se intenta acceder a un recurso que no existe en la base de datos o en el sistema.
-
-**Cuándo usarla:**
-- Al buscar una entidad por ID y no se encuentra
-- Al intentar actualizar o eliminar un recurso inexistente
-- En operaciones que requieren que el recurso exista previamente
-
-**Dónde se usa:**
-- En servicios, dentro de métodos como `findById()`, `update()`, `delete()`
-- Después de consultas a repositorios que retornan `Optional.empty()`
-
-**Ejemplo de uso:**
-```java
-// En un servicio
-public Product findById(Long id) {
-    return productRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("Producto no encontrado con ID: " + id));
-}
+```txt
+NotFoundException  → 404 Not Found
+ConflictException  → 409 Conflict
+BadRequestException → 400 Bad Request
 ```
 
-Archivo:
-`exception/domain/NotFoundException.java`
+Esto evita lanzar excepciones genéricas como:
 
 ```java
+IllegalStateException
+RuntimeException
+Exception
+```
+
+---
+
+# 6. Excepciones de dominio
+
+Las excepciones de dominio representan errores propios de la lógica de negocio.
+
+No construyen respuestas HTTP.
+
+Solo expresan qué error ocurrió.
+
+---
+
+## 6.1. NotFoundException
+
+Se utiliza cuando un recurso no existe o está eliminado lógicamente.
+
+Archivo:
+
+```txt
+core/exceptions/domain/NotFoundException.java
+```
+
+Código:
+
+```java
+/*
+ * Excepción usada cuando un recurso no existe
+ * o no está disponible para la operación solicitada.
+ */
 public class NotFoundException extends ApplicationException {
 
     public NotFoundException(String message) {
@@ -140,37 +268,40 @@ public class NotFoundException extends ApplicationException {
 }
 ```
 
+### Cuándo usarla
 
-## 3.2 Conflicto de estado
+Usar `NotFoundException` cuando:
 
-**Descripción:**  
-Se lanza cuando existe un conflicto con el estado actual del recurso, generalmente por duplicación de datos únicos o violación de restricciones de integridad.
+* se busca un usuario inexistente
+* se intenta actualizar un producto inexistente
+* se intenta eliminar un registro ya eliminado
+* el recurso existe en base de datos pero tiene `deleted = true`
 
-**Cuándo usarla:**
-- Al intentar crear un recurso con un identificador único ya existente (email, username, código)
-- Cuando se intenta realizar una operación que violaría una restricción de unicidad
-- Al detectar conflictos de concurrencia o versiones
+Ejemplo:
 
-**Dónde se usa:**
-- En servicios, dentro de métodos `create()` o `register()`
-- Antes de persistir datos, validando unicidad
-- En operaciones de registro de usuarios o creación de entidades con campos únicos
-
-**Ejemplo de uso:**
 ```java
-// En un servicio
-public User register(UserDto userDto) {
-    if (userRepository.existsByEmail(userDto.getEmail())) {
-        throw new ConflictException("El email " + userDto.getEmail() + " ya está registrado");
-    }
-    return userRepository.save(new User(userDto));
-}
+throw new NotFoundException("User not found");
 ```
 
+---
+
+## 6.2. ConflictException
+
+Se utiliza cuando existe un conflicto con el estado actual del sistema.
+
 Archivo:
-`exception/domain/ConflictException.java`
+
+```txt
+core/exceptions/domain/ConflictException.java
+```
+
+Código:
 
 ```java
+/*
+ * Excepción usada cuando existe un conflicto
+ * con el estado actual del recurso.
+ */
 public class ConflictException extends ApplicationException {
 
     public ConflictException(String message) {
@@ -179,50 +310,40 @@ public class ConflictException extends ApplicationException {
 }
 ```
 
+### Cuándo usarla
 
-## 3.3 Solicitud inválida (Bad Request)
+Usar `ConflictException` cuando:
 
-**Descripción:**  
-Se lanza cuando la solicitud del cliente no puede ser procesada debido a datos inválidos, malformados o que no cumplen con las expectativas del servidor. Es la excepción general para errores de validación de negocio y datos.
+* se intenta crear un usuario con email duplicado
+* se intenta crear un producto con nombre duplicado
+* se viola una regla de unicidad
+* existe un conflicto lógico con datos ya registrados
 
-**Cuándo usarla:**
-- Cuando los datos son técnicamente válidos pero violan reglas de negocio
-- Al detectar operaciones no permitidas según el estado actual del sistema
-- Cuando se incumplen condiciones del dominio (stock insuficiente, saldo negativo, edad mínima)
-- Para errores de validación que no son capturados por anotaciones de Bean Validation
-- Cuando la estructura de los datos es correcta pero los valores no son aceptables
+Ejemplo:
 
-**Dónde se usa:**
-- En servicios, dentro de la lógica de negocio y validaciones
-- Después de validaciones específicas del dominio o del sistema
-- En operaciones complejas que requieren verificar múltiples condiciones
-- Como alternativa general a errores de validación no cubiertos por `@Valid`
-
-**Ejemplo de uso:**
 ```java
-// En un servicio
-public Order createOrder(OrderDto orderDto) {
-    Product product = findProductById(orderDto.getProductId());
-    
-    if (product.getStock() < orderDto.getQuantity()) {
-        throw new BadRequestException(
-            "Stock insuficiente. Disponible: " + product.getStock() + 
-            ", solicitado: " + orderDto.getQuantity()
-        );
-    }
-    
-    if (orderDto.getQuantity() < 1) {
-        throw new BadRequestException("La cantidad debe ser al menos 1");
-    }
-    
-    return orderRepository.save(new Order(orderDto));
-}
+throw new ConflictException("Email already registered");
 ```
 
+---
+
+## 6.3. BadRequestException
+
+Se utiliza cuando la solicitud tiene datos que no pueden procesarse por reglas de negocio.
+
 Archivo:
-`exception/domain/BadRequestException.java`
+
+```txt
+core/exceptions/domain/BadRequestException.java
+```
+
+Código:
 
 ```java
+/*
+ * Excepción usada cuando la solicitud es inválida
+ * según reglas de negocio.
+ */
 public class BadRequestException extends ApplicationException {
 
     public BadRequestException(String message) {
@@ -231,29 +352,52 @@ public class BadRequestException extends ApplicationException {
 }
 ```
 
-Estas excepciones:
+### Cuándo usarla
 
-* se lanzan desde **services**
-* no conocen controladores
-* no construyen respuestas
+Usar `BadRequestException` cuando:
 
+* los datos son válidos sintácticamente, pero inválidos para el negocio
+* se intenta realizar una operación no permitida
+* se incumple una regla que no puede validarse solo con anotaciones
 
-# 4. Contrato de respuesta de error
-
-## `ErrorResponse`
-
-Archivo:
-`exception/response/ErrorResponse.java`
+Ejemplo:
 
 ```java
+throw new BadRequestException("Stock insufficient");
+```
+
+---
+
+# 7. Contrato único de respuesta de error
+
+Archivo:
+
+```txt
+core/exceptions/response/ErrorResponse.java
+```
+
+Código:
+
+```java
+/*
+ * DTO estándar para devolver errores al cliente.
+ *
+ * Define un formato único para errores de dominio,
+ * errores de validación y errores inesperados.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ErrorResponse implements Serializable {
+public class ErrorResponse {
 
     private LocalDateTime timestamp;
+
     private int status;
+
     private String error;
+
     private String message;
+
     private String path;
+
     private Map<String, String> details;
 
     public ErrorResponse(
@@ -274,30 +418,31 @@ public class ErrorResponse implements Serializable {
         this(status, message, path, null);
     }
 
-    // getters
+    // Getters y setters
 }
 ```
 
-### ¿Por qué dos constructores?
+---
 
-La clase `ErrorResponse` tiene dos constructores que responden a dos escenarios distintos:
+## 7.1. Explicación de campos
 
-#### Constructor completo (con `details`)
-```java
-public ErrorResponse(
-        HttpStatus status,
-        String message,
-        String path,
-        Map<String, String> details
-)
-```
+| Campo       | Función                       |
+| ----------- | ----------------------------- |
+| `timestamp` | Fecha y hora del error        |
+| `status`    | Código HTTP                   |
+| `error`     | Nombre del error HTTP         |
+| `message`   | Mensaje general del error     |
+| `path`      | Ruta donde ocurrió el error   |
+| `details`   | Errores específicos por campo |
 
-**Se usa para:**
-- Errores de validación con múltiples campos inválidos
-- Cuando se necesita detallar qué campos específicos fallaron y por qué
-- Permite al cliente saber exactamente qué debe corregir
+---
 
-**Ejemplo de respuesta:**
+## 7.2. Uso de `details`
+
+El campo `details` se usa principalmente para errores de validación.
+
+Ejemplo:
+
 ```json
 {
   "timestamp": "2025-12-26T15:12:42.301031",
@@ -307,58 +452,50 @@ public ErrorResponse(
   "path": "/api/users",
   "details": {
     "name": "El nombre es obligatorio",
-    "email": "El email es obligatorio"
+    "email": "Debe ingresar un email válido"
   }
 }
 ```
 
-#### Constructor simplificado (sin `details`)
-```java
-public ErrorResponse(HttpStatus status, String message, String path) {
-    this(status, message, path, null);
-}
-```
+Cuando no existen detalles, el campo no se muestra gracias a:
 
-**Se usa para:**
-- Errores de dominio simples (recurso no encontrado, conflicto)
-- Excepciones generales del sistema
-- Cuando no hay campos específicos que reportar
-
-**Ejemplo de respuesta:**
-```json
-{
-  "timestamp": "2025-12-26T15:07:20.967935",
-  "status": 404,
-  "error": "Not Found",
-  "message": "Usuario no encontrado",
-  "path": "/api/users/10"
-}
-```
-
-Note que el campo `details` no aparece cuando es `null` gracias a:
 ```java
 @JsonInclude(JsonInclude.Include.NON_NULL)
 ```
 
-Este objeto:
+---
 
-* define el **único formato de error**
-* soporta errores simples y de validación
-* no expone información interna
-* es reutilizable en todo el sistema
-
-
-# 5. Handler global de excepciones
-
-## `GlobalExceptionHandler`
+# 8. Handler global de excepciones
 
 Archivo:
-`exception/handler/GlobalExceptionHandler.java`
+
+```txt
+core/exceptions/handler/GlobalExceptionHandler.java
+```
+
+Código:
 
 ```java
+/*
+ * Handler global de excepciones.
+ *
+ * Captura las excepciones lanzadas desde cualquier controlador o servicio
+ * y las convierte en una respuesta HTTP uniforme.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+```
 
+`handleApplicationException` maneja las excepciones propias de la aplicación, como `NotFoundException`, `ConflictException` y `BadRequestException`.
+
+```java
+    /*
+     * Maneja excepciones propias de la aplicación.
+     *
+     * Captura NotFoundException, ConflictException,
+     * BadRequestException y cualquier excepción que extienda
+     * de ApplicationException.
+     */
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<ErrorResponse> handleApplicationException(
             ApplicationException ex,
@@ -374,7 +511,15 @@ public class GlobalExceptionHandler {
                 .status(ex.getStatus())
                 .body(response);
     }
+```
 
+`handleValidationException` maneja errores de validación de DTOs, como cuando `@Valid` falla en un `@RequestBody`.
+```java
+    /*
+     * Maneja errores de validación de DTOs.
+     *
+     * Se ejecuta cuando falla @Valid en un @RequestBody.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
             MethodArgumentNotValidException ex,
@@ -383,10 +528,10 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = new HashMap<>();
 
         ex.getBindingResult()
-          .getFieldErrors()
-          .forEach(error ->
-              errors.put(error.getField(), error.getDefaultMessage())
-          );
+                .getFieldErrors()
+                .forEach(error ->
+                        errors.put(error.getField(), error.getDefaultMessage())
+                );
 
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.BAD_REQUEST,
@@ -399,7 +544,17 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .body(response);
     }
+```
 
+`handleUnexpectedException` maneja cualquier excepción inesperada que no haya sido capturada por los handlers anteriores. Esto evita exponer detalles técnicos al cliente y devuelve un error genérico de servidor.
+
+
+```java
+    /*
+     * Maneja errores inesperados.
+     *
+     * Evita exponer stack traces o mensajes técnicos al cliente.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpectedException(
             Exception ex,
@@ -415,165 +570,208 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(response);
     }
-}
 ```
 
+---
 
-# 6. Uso desde los servicios
+# 9. Reemplazo de errores en UserServiceImpl
 
-
-Antes de aplicar el manejo global, lanzabamos una excepcion generica no controlado con 
+En la práctica anterior se usaba:
 
 ```java
- @Override
-    public UserResponseDto findOne(int id) {
-        return userRepo.findById((long) id)
-                .map(User::fromEntity)
-                .map(UserMapper::toResponse)
-                .orElseThrow(() -> new IllegalStateException("Usuario no encontrado"));
-    }
-```
-Lo que nos daba una respuesta de error inconsistente como:
-
-```
-{
-  "timestamp": "2025-12-26T20:02:02.067Z",
-  "status": 500,
-  "error": "Internal Server Error",
-  "trace": "java.lang.IllegalStateException: Usuario no encontrado...."
-}
+throw new IllegalStateException("User not found");
 ```
 
-Genera un `500 Internal Server Error` con un stack trace expuesto al cliente. Incluso el error no es correcto ya que el recurso no fue encontrado, por lo cual debió ser un `404 Not Found`. No seria error del servidor, sino del cliente al solicitar un recurso inexistente.
+Ahora se reemplaza por excepciones de dominio.
 
-Que pudiera estar bien para desarrollo, pero no es profesional para un API REST. Ni tampoco es escalable ni mantenible y su el logging es deficiente ya que modificar un logger en cada servicio es tedioso.
+---
 
-Por lo cual aplicamos el manejo global de errores y excepciones, lanzando excepciones de dominio específicas como `NotFoundException`, `ConflictException` o `BadRequestException`.
+## 9.1. findOne con NotFoundException
 
-Ejemplo real en un servicio:
+Antes:
 
 ```java
 @Override
-public UserResponseDto findOne(int id) {
-    return userRepository.findById((long) id)
-            .map(User::fromEntity)
+public UserResponseDto findOne(Long id) {
+
+    return userRepository.findById(id)
+            .map(UserMapper::toModelFromEntity)
             .map(UserMapper::toResponse)
-            .orElseThrow(() ->
-                new NotFoundException("Usuario no encontrado")
-            );
+            .orElseThrow(() -> new IllegalStateException("User not found"));
 }
 ```
 
-Lo que nos da una respuesta de error consistente como:
-
-```
-{
-  "error": "Not Found",
-  "message": "Usuario no encontrado",
-  "path": "/api/users/10",
-  "status": 404,
-  "timestamp": "2025-12-26T15:07:20.967935"
-}
-```
-
-Aqui se genera un `404 Not Found` con un mensaje claro y sin exponer detalles internos. Dando a entender al cliente que el recurso no existe y que pide algo incorrecto.
-
-El atributo `path` en situaciones reales es muy útil para debugging en el cliente. Pero dependiendo del caso de uso, se puede omitir si no es necesario y no mostrar información extra.
-
-El servicio:
-
-* **no captura**
-* **no construye ResponseEntity**
-* **solo expresa el error**
-
-
-# 6.2. Validación automática de DTOs
-
-## ¿Cómo funciona la validación de DTOs?
-
-Cuando se envía una petición POST con datos mal formados:
-
-**Request:**
-```http
-POST /api/users
-Content-Type: application/json
-
-{
-  "name": "",
-  "email": null,
-  "password": "********"
-}
-```
-
-El proceso automático es:
-
-### 1. Las anotaciones de validación en el DTO
+Ahora:
 
 ```java
-    @NotBlank(message = "El nombre es obligatorio")
-    private String name;
-    
-    @NotNull(message = "El email es obligatorio")
-    @Email(message = "El email debe ser válido")
-    private String email;
-    // mas campos
+/*
+ * Busca un usuario activo por id.
+ *
+ * Si no existe o está eliminado, lanza NotFoundException.
+ */
+@Override
+public UserResponseDto findOne(Long id) {
+
+    UserEntity entity = userRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+    if (entity.isDeleted()) {
+        throw new NotFoundException("User not found");
+    }
+
+    UserModel model = UserMapper.toModelFromEntity(entity);
+
+    return UserMapper.toResponse(model);
 }
 ```
 
-### 2. El controlador usa `@Valid`
+---
+
+## 9.2. create con ConflictException
+
+Antes:
+
+```java
+if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+    throw new IllegalStateException("Email already registered");
+}
+```
+
+Ahora:
+
+```java
+/*
+ * Crea un nuevo usuario.
+ *
+ * Valida que el email no esté registrado.
+ * Si ya existe, lanza ConflictException.
+ */
+@Override
+public UserResponseDto create(CreateUserDto dto) {
+
+    if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+        throw new ConflictException("Email already registered");
+    }
+
+    // Resto del código de creación de usuario
+}
+```
+
+---
+
+## 9.3. update con NotFoundException
+
+```java
+/*
+ * Actualiza completamente un usuario activo.
+ *
+ * Si no existe o está eliminado, lanza NotFoundException.
+ */
+@Override
+public UserResponseDto update(Long id, UpdateUserDto dto) {
+
+    UserEntity entity = userRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+    if (entity.isDeleted()) {
+        throw new NotFoundException("User not found");
+    }
+
+  // Resto del código de actualización de usuario
+}
+```
+
+---
+
+## 9.4. partialUpdate con NotFoundException
+
+```java
+/*
+ * Actualiza parcialmente un usuario activo.
+ *
+ * Si no existe o está eliminado, lanza NotFoundException.
+ */
+@Override
+public UserResponseDto partialUpdate(Long id, PartialUpdateUserDto dto) {
+
+    UserEntity entity = userRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+    if (entity.isDeleted()) {
+        throw new NotFoundException("User not found");
+    }
+
+  // Resto del código de actualización parcial de usuario
+}
+```
+
+---
+
+## 9.5. delete con NotFoundException
+
+```java
+/*
+ * Elimina lógicamente un usuario por id.
+ *
+ * Si no existe o ya está eliminado, lanza NotFoundException.
+ */
+@Override
+public void delete(Long id) {
+
+    UserEntity entity = userRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+    if (entity.isDeleted()) {
+        throw new NotFoundException("User not found");
+    }
+
+// Resto del código de eliminación lógica de usuario
+}
+```
+
+---
+
+# 10. Validación automática de DTOs
+
+En la práctica anterior ya se agregó `@Valid`.
+
+Ejemplo:
 
 ```java
 @PostMapping
-public ResponseEntity<UserResponseDto> create(
-        @Valid @RequestBody UserDto userDto
-) {
-    UserResponseDto created = userService.create(userDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(created);
+public UserResponseDto create(@Valid @RequestBody CreateUserDto dto) {
+    return service.create(dto);
 }
 ```
 
-Al usar `@Valid`, Spring Boot automáticamente:
+Cuando se envía una petición inválida:
 
-1. Valida cada campo del DTO según sus anotaciones
-2. Si hay errores, **NO llama al servicio**
-3. Lanza una excepción: `MethodArgumentNotValidException`
-4. Esta excepción es capturada por el `GlobalExceptionHandler`
+```json
+{
+  "name": "",
+  "email": "correo-invalido",
+  "password": "123"
+}
+```
 
-### 3. El handler procesa los errores de validación
-
-En el `GlobalExceptionHandler` existe un método específico:
+Spring Boot lanza automáticamente:
 
 ```java
-@ExceptionHandler(MethodArgumentNotValidException.class)
-public ResponseEntity<ErrorResponse> handleValidationException(
-        MethodArgumentNotValidException ex,
-        HttpServletRequest request
-) {
-    Map<String, String> errors = new HashMap<>();
-
-    // Extrae cada error de validación
-    ex.getBindingResult()
-      .getFieldErrors()
-      .forEach(error ->
-          errors.put(error.getField(), error.getDefaultMessage())
-      );
-
-    ErrorResponse response = new ErrorResponse(
-            HttpStatus.BAD_REQUEST,
-            "Datos de entrada inválidos",
-            request.getRequestURI(),
-            errors  // ← Aquí van los detalles campo por campo
-    );
-
-    return ResponseEntity
-            .badRequest()
-            .body(response);
-}
+MethodArgumentNotValidException
 ```
 
-### 4. La respuesta mejora automáticamente
+Esta excepción es capturada por:
 
-**Response:**
+```java
+handleValidationException()
+```
+
+y devuelve una respuesta uniforme.
+
+---
+
+## 10.1. Respuesta de validación esperada
+
 ```json
 {
   "timestamp": "2025-12-26T15:12:42.301031",
@@ -583,241 +781,327 @@ public ResponseEntity<ErrorResponse> handleValidationException(
   "path": "/api/users",
   "details": {
     "name": "El nombre es obligatorio",
-    "email": "El email es obligatorio"
+    "email": "Debe ingresar un email válido",
+    "password": "La contraseña debe tener al menos 8 caracteres"
   }
 }
 ```
 
-## ¿Por qué aparece el campo `details`?
+---
 
-El campo `details` aparece porque:
+# 11. Flujo completo en ejecución
 
-1. **Hay múltiples errores de validación**: Los campos `name` y `email` fallaron
-2. **El handler los recopila**: El método `handleValidationException` extrae cada `FieldError`
-3. **Se usa el constructor completo**: Se invoca el constructor de `ErrorResponse` que acepta el parámetro `details`
-4. **El cliente recibe toda la información**: Puede mostrar errores específicos por campo en su interfaz
+## Escenario 1: Error de validación
 
-## Flujo completo de validación
+Request:
 
-```
-Request con datos inválidos
- ↓
-Controller con @Valid
- ↓
-Spring valida automáticamente
- ↓
-¿Hay errores?
- ↓ (Sí)
-MethodArgumentNotValidException
- ↓
-GlobalExceptionHandler
- ↓
-handleValidationException
- ↓
-Extrae FieldErrors → Map<String, String>
- ↓
-ErrorResponse con details
- ↓
-Cliente recibe JSON estructurado
-```
-
-### Ventajas de este enfoque
-
-**Cero código de validación en servicios**
-- Los servicios asumen que los datos ya están validados
-- No hay `if (name.isEmpty())` en cada método
-
-**Respuestas consistentes**
-- Todos los errores de validación usan el mismo formato
-- El frontend sabe exactamente cómo interpretar errores
-
-**Mensajes personalizados**
-- Cada anotación define su propio mensaje
-- No hay mensajes técnicos genéricos
-
-**Escalable**
-- Agregar nuevas validaciones solo requiere agregar anotaciones
-- No hay que modificar handlers ni servicios
-
-**Separación de responsabilidades**
-- Validación estructural → anotaciones en DTOs
-- Validación de negocio → servicios con excepciones de dominio
-- Formato de respuesta → GlobalExceptionHandler
-
-
-# 7. Flujo completo en ejecución
-
-Ahora que se ha explicado cómo funciona la validación automática de DTOs, se puede visualizar el flujo completo del sistema de manejo de errores en dos escenarios:
-
-## Escenario 1: Error de validación (datos mal formados)
-
-**Request:**
 ```http
 POST /api/users
 Content-Type: application/json
 
 {
   "name": "",
-  "email": null,
-  "password": "********"
+  "email": "correo-invalido",
+  "password": "123"
 }
 ```
 
-**Flujo:**
-```
+Flujo:
+
+```txt
 Request HTTP con datos inválidos
  ↓
-Controller (@Valid detecta errores)
+Controller con @Valid
  ↓
 MethodArgumentNotValidException
  ↓
 GlobalExceptionHandler.handleValidationException()
  ↓
-Extrae cada FieldError → Map<campo, mensaje>
+Extrae errores de campos
  ↓
-ErrorResponse (constructor con details)
+ErrorResponse con details
  ↓
 Response HTTP 400
 ```
 
-**Response:**
-```json
-{
-  "timestamp": "2025-12-26T15:12:42.301031",
-  "status": 400,
-  "error": "Bad Request",
-  "message": "Datos de entrada inválidos",
-  "path": "/api/users",
-  "details": {
-    "name": "El nombre es obligatorio",
-    "email": "El email es obligatorio"
-  }
-}
-```
+---
 
-**¿Por qué sale así?**
+## Escenario 2: Recurso no encontrado
 
-1. **El campo `details` aparece**: Porque hay múltiples errores de validación y se usa el constructor completo de `ErrorResponse`
-2. **Los mensajes son personalizados**: Provienen de las anotaciones en el DTO (`@NotBlank(message = "...")`)
-3. **Status 400**: Indica que el cliente envió datos inválidos
-4. **El servicio nunca se ejecutó**: La validación ocurre ANTES de llegar al servicio
+Request:
 
-## Escenario 2: Error de dominio (recurso no encontrado)
-
-**Request:**
 ```http
 GET /api/users/999
 ```
 
-**Flujo:**
-```
+Flujo:
+
+```txt
 Request HTTP
  ↓
 Controller
  ↓
 Service.findOne(999)
  ↓
-Repository.findById(999) → Optional.empty()
+Repository.findById(999)
  ↓
-NotFoundException("Usuario no encontrado")
+NotFoundException("User not found")
  ↓
 GlobalExceptionHandler.handleApplicationException()
  ↓
-ErrorResponse (constructor sin details)
+ErrorResponse sin details
  ↓
 Response HTTP 404
 ```
 
-**Response:**
+Respuesta:
+
 ```json
 {
   "timestamp": "2025-12-26T15:07:20.967935",
   "status": 404,
   "error": "Not Found",
-  "message": "Usuario no encontrado",
+  "message": "User not found",
   "path": "/api/users/999"
 }
 ```
 
-**¿Por qué sale así?**
+---
 
-1. **No hay campo `details`**: Es un error simple, no de validación de múltiples campos
-2. **Status 404**: La excepción `NotFoundException` define este status
-3. **Mensaje claro**: El servicio lanza la excepción con un mensaje específico
-4. **Sin stack trace**: Solo información necesaria para el cliente
+## Escenario 3: Conflicto por email duplicado
 
-## Comparación de ambos escenarios
+Request:
 
-| Aspecto | Validación de DTOs | Excepción de Dominio |
-|---------|-------------------|---------------------|
-| **Cuándo ocurre** | Antes del servicio | Dentro del servicio |
-| **Tipo de excepción** | `MethodArgumentNotValidException` | `NotFoundException`, `ConflictException`, etc. |
-| **Handler que responde** | `handleValidationException()` | `handleApplicationException()` |
-| **Constructor usado** | Con `details` | Sin `details` |
-| **Campo details** | Presente (Map de errores) | Ausente (null) |
-| **Ejemplo de status** | 400 Bad Request | 404 Not Found, 409 Conflict |
+```http
+POST /api/users
+Content-Type: application/json
 
-## Ventajas del flujo unificado
-
-Este flujo es:
-
-* **Limpio**: Los controladores y servicios no manejan errores manualmente
-* **Mantenible**: Agregar nuevos tipos de error solo requiere una nueva excepción
-* **Escalable**: El formato de respuesta es consistente sin importar el tipo de error
-* **Reutilizable**: El mismo handler funciona para toda la aplicación
-* **Profesional**: Las respuestas están estandarizadas y son predecibles para el cliente
-
-## Código del controlador (sin manejo de errores)
-
-Gracias a este sistema, los controladores quedan extremadamente simples:
-
-```java
-@PostMapping
-public ResponseEntity<UserResponseDto> create(
-        @Valid @RequestBody UserDto userDto  // ← Validación automática
-) {
-    UserResponseDto created = userService.create(userDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    // ← Sin try/catch, sin manejo manual
-}
-
-@GetMapping("/{id}")
-public ResponseEntity<UserResponseDto> findOne(@PathVariable int id) {
-    return ResponseEntity.ok(userService.findOne(id));
-    // ← Si no existe, el servicio lanza NotFoundException
-    // ← El handler se encarga del resto
+{
+  "name": "Juan Pérez",
+  "email": "juan@ups.edu.ec",
+  "password": "12345678"
 }
 ```
 
-El controlador solo:
-- Define rutas
-- Delega al servicio
-- Retorna respuestas exitosas
+Si el email ya existe, el servicio lanza:
 
-Todos los errores se manejan globalmente de forma automática.
+```java
+throw new ConflictException("Email already registered");
+```
+
+Respuesta:
+
+```json
+{
+  "timestamp": "2025-12-26T15:07:20.967935",
+  "status": 409,
+  "error": "Conflict",
+  "message": "Email already registered",
+  "path": "/api/users"
+}
+```
+
+---
+
+# 12. Comparación de escenarios
+
+| Aspecto             | Validación de DTOs                | Excepción de dominio                                            |
+| ------------------- | --------------------------------- | --------------------------------------------------------------- |
+| Cuándo ocurre       | Antes del servicio                | Dentro del servicio                                             |
+| Excepción           | `MethodArgumentNotValidException` | `NotFoundException`, `ConflictException`, `BadRequestException` |
+| Handler             | `handleValidationException()`     | `handleApplicationException()`                                  |
+| Código HTTP         | 400                               | 400, 404, 409                                                   |
+| Campo `details`     | Sí                                | No                                                              |
+| Servicio se ejecuta | No                                | Sí                                                              |
+
+---
 
 
-# 8. Buenas prácticas reforzadas
+# 13. Buenas prácticas reforzadas
 
-* Un solo formato de error
-* Sin `try/catch` en controladores
-* Excepciones semánticas
-* Separación dominio / transporte
-* Validación estructurada
-* Preparado para frontend real
+Con esta práctica se refuerza:
 
+* un solo formato de error
+* sin `try/catch` en controladores
+* servicios sin `ResponseEntity`
+* excepciones semánticas
+* separación entre lógica de negocio y respuesta HTTP
+* validación estructurada
+* errores útiles para frontend
+* no exposición de stack trace al cliente
 
-# 9. Actividad práctica
+---
 
-El estudiante debe:
+# 15. Actividad práctica
 
-1. Implementar el sistema de manejo global de errores
-2. Usarlas desde servicios reales de **`Productos`**
-3. Probar:
-   * producto inexistente
-   * conflicto lógico (Crear una regla de negocio como: "No se puede crear un producto con nombre duplicado" Crear otra no nombre duplicado)
-   * error de validación (enviar datos mal formados)
-4. Verificar que **todas** las respuestas cumplen el mismo formato
-5. Capturar evidencias desde Bruno para cada caso de prueba.
+Se debe implementar el sistema global de errores en el módulo:
 
-**3 Capturas en total:**
+```txt
+products/
+```
+
+---
+
+## 15.1. Reemplazar errores genéricos
+
+Cambiar en `ProductServiceImpl`:
+
+```java
+throw new IllegalStateException(...)
+```
+
+por:
+
+```java
+throw new NotFoundException(...)
+throw new ConflictException(...)
+throw new BadRequestException(...)
+```
+
+---
+
+## 15.2. Validar producto inexistente
+
+En métodos como:
+
+```txt
+findOne()
+update()
+partialUpdate()
+delete()
+```
+
+si el producto no existe o tiene `deleted = true`, lanzar:
+
+```java
+throw new NotFoundException("Product not found");
+```
+
+---
+
+## 15.3. Validar conflicto lógico
+
+Agregar una regla de negocio:
+
+```txt
+No se puede crear un producto con nombre duplicado.
+```
+
+Para eso, el repositorio de productos puede tener un método como:
+
+```java
+Optional<ProductEntity> findByName(String name);
+```
+
+Si ya existe un producto activo con el mismo nombre:
+
+```java
+throw new ConflictException("Product name already registered");
+```
+
+---
+
+## 15.4. Validar error de datos
+
+Enviar datos inválidos desde Bruno o Postman:
+
+```json
+{
+  "name": "",
+  "price": -5,
+  "stock": -1
+}
+```
+
+Debe responder con:
+
+```txt
+400 Bad Request
+```
+
+y el formato estándar de `ErrorResponse`.
+
+---
+
+## 15.5. Verificar eliminado lógico
+
+Después de eliminar un producto:
+
+```txt
+DELETE /api/products/{id}
+```
+
+Probar nuevamente:
+
+```txt
+GET /api/products/{id}
+```
+
+Debe responder:
+
+```txt
+404 Not Found
+```
+
+---
+
+# 16. Resultados y evidencias
+
+En la nueva entrada del README, se debe agregar:
+
+## Captura de error por producto inexistente
+
+Ejemplo:
+
+```txt
+GET /api/products/999
+```
+
+Debe evidenciar respuesta:
+
+```txt
+404 Not Found
+```
+
+---
+
+## Captura de error por producto duplicado
+
+Ejemplo:
+
+```txt
+POST /api/products
+```
+
+con un nombre ya registrado.
+
+Debe evidenciar respuesta:
+
+```txt
+409 Conflict
+```
+
+---
+
+## Captura de error por validación de DTO
+
+Ejemplo:
+
+```json
+{
+  "name": "",
+  "price": -5,
+  "stock": -1
+}
+```
+
+Debe evidenciar respuesta:
+
+```txt
+400 Bad Request
+```
+
+con campo `details`.
+
+---
+
