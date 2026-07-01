@@ -1,113 +1,276 @@
 # Programación y Plataformas Web
 
-# **Spring Boot – Relaciones entre Entidades JPA: Mapeo de Asociaciones 1:N y N:N**
+# Frameworks Backend: Spring Boot – Relaciones entre Entidades JPA
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="95">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="95">
 </div>
 
-## **Práctica 8 (Spring Boot): Relaciones JPA, Estrategias de Carga y Mapeo Objeto-Relacional**
+---
 
-### **Autores**
+# Práctica 8 (Spring Boot): Relaciones ManyToOne, Foreign Keys y Consultas Relacionales
+
+### Autores
 
 **Pablo Torres**
 
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
 GitHub: PabloT18
 
-# **1. Introducción a las Relaciones en JPA**
+---
 
-En aplicaciones reales, las entidades **NO** son independientes. Existe información relacionada que debe ser mapeada correctamente entre el modelo orientado a objetos y el modelo relacional.
+# 1. Introducción
 
-## **1.1. ¿Por qué son importantes las relaciones?**
+En las prácticas anteriores se implementó:
 
-* **Normalización**: Evita duplicación de datos
-* **Integridad referencial**: Mantiene consistencia entre tablas
-* **Consultas eficientes**: Permite JOINs optimizados
-* **Dominio expresivo**: El código refleja la realidad del negocio
+* controladores
+* servicios
+* DTOs con validación
+* modelos de dominio
+* entidades persistentes
+* repositorios JPA
+* conexión a PostgreSQL
+* eliminado lógico mediante `deleted`
+* manejo global de errores y excepciones
 
-## **1.2. Tipos de relaciones en JPA**
+Hasta este punto, las entidades principales funcionan de manera independiente.
 
-| Tipo | Descripción | Ejemplo |
-|------|-------------|---------|
-| `@OneToOne` | 1 entidad → 1 entidad | Usuario ↔ Perfil |
-| `@OneToMany` | 1 entidad → N entidades | Usuario → Productos |
-| `@ManyToOne` | N entidades → 1 entidad | Productos → Usuario |
-| `@ManyToMany` | N entidades ↔ N entidades | Productos ↔ Categorías |
+Sin embargo, en una aplicación real los datos suelen estar relacionados.
 
-## **1.3. Escenario de este tema**
+Un producto no debería existir aislado. Puede estar asociado a:
 
-Trabajaremos con un dominio de **e-commerce básico**:
+* un usuario que lo registra
+* una categoría a la que pertenece
 
-### **Fase 1: Relaciones 1:N (One-to-Many)**
+En esta práctica se implementan relaciones entre entidades usando JPA.
+
+Se trabajará con relaciones:
+
+```txt
+User 1 ──── N Product
+Category 1 ──── N Product
 ```
-User 1 ──── N Product    (Un usuario puede crear muchos productos)
-Category 1 ──── N Product (Una categoría puede tener muchos productos)
+
+Esto significa:
+
+```txt
+Un usuario puede registrar muchos productos.
+Una categoría puede tener muchos productos.
+Un producto pertenece a un usuario.
+Un producto pertenece a una categoría.
 ```
 
-### **Fase 2: Relaciones N:N (Many-to-Many)**
+En esta práctica se trabajará con:
+
+* `@ManyToOne`
+* `@JoinColumn`
+* claves foráneas
+* consultas relacionales desde repositorios
+* DTOs con IDs de relaciones
+* respuestas anidadas
+* validación de existencia de relaciones
+* eliminado lógico en entidades relacionadas
+
+Todavía no se implementa:
+
+* relación `ManyToMany`
+* tabla intermedia
+* productos con múltiples categorías
+
+Eso se trabajará en la práctica 9.
+
+---
+
+# 2. Flujo después de aplicar relaciones
+
+Ahora el flujo será:
+
+```txt
+Cliente
+  ↓
+ProductsController
+  ↓
+CreateProductDto
+  ↓
+ProductService
+  ↓
+ProductServiceImpl
+  ↓
+valida UserEntity
+  ↓
+valida CategoryEntity
+  ↓
+ProductEntity
+  ↓
+ProductRepository
+  ↓
+PostgreSQL
+  ↓
+ProductResponseDto con datos anidados
+  ↓
+Cliente
 ```
-Product N ──── N Category (Un producto puede tener múltiples categorías)
-```
 
-### **Evolución del dominio**
+El producto ya no se crea únicamente con sus datos propios.
 
-1. **Fase inicial**: Producto con una sola categoría
-2. **Fase dos**: Producto con múltiples categorías (tags, clasificaciones)
+Ahora se debe validar que existan las entidades relacionadas antes de guardar.
 
-# **2. Preparación: Entidades Base Actualizadas**
+---
 
-Antes de implementar relaciones, necesitamos actualizar nuestras entidades base.
+## 2.1. Responsabilidad de cada clase
 
-## **2.1. Entidad UserEntity (sin relación bidireccional)**
+| Clase                | Responsabilidad                                    |
+| -------------------- | -------------------------------------------------- |
+| `ProductEntity`      | Representar la tabla `products` y sus relaciones   |
+| `UserEntity`         | Representar la tabla `users`                       |
+| `CategoryEntity`     | Representar la tabla `categories`                  |
+| `ProductRepository`  | Consultar productos y sus relaciones               |
+| `UserRepository`     | Validar existencia del usuario                     |
+| `CategoryRepository` | Validar existencia de la categoría                 |
+| `ProductServiceImpl` | Orquestar la creación y consulta con relaciones    |
+| `CreateProductDto`   | Recibir datos del producto y los IDs relacionados  |
+| `ProductResponseDto` | Devolver producto con usuario y categoría anidados |
+| `NotFoundException`  | Reportar relaciones inexistentes                   |
+| `ConflictException`  | Reportar conflictos de negocio                     |
 
-Archivo: `users/entities/UserEntity.java`
+---
+
+# 3. Tipos de relaciones en JPA
+
+JPA permite representar asociaciones entre entidades.
+
+| Relación        | Anotación     | Ejemplo                      |
+| --------------- | ------------- | ---------------------------- |
+| Uno a uno       | `@OneToOne`   | Usuario - Perfil             |
+| Uno a muchos    | `@OneToMany`  | Categoría - Productos        |
+| Muchos a uno    | `@ManyToOne`  | Producto - Categoría         |
+| Muchos a muchos | `@ManyToMany` | Producto - Varias categorías |
+
+En esta práctica se usará principalmente:
 
 ```java
-@Entity
-@Table(name = "users")
-public class UserEntity extends BaseModel {
-
-    @Column(nullable = false, length = 150)
-    private String name;
-
-    @Column(nullable = false, unique = true, length = 150)
-    private String email;
-
-    @Column(nullable = false)
-    private String password;
-
-    // Getters y setters (ya implementados anteriormente)
-}
+@ManyToOne
 ```
 
-### **¿Por qué NO se agrega `@OneToMany` en UserEntity?**
+Porque desde `ProductEntity` se referencian entidades padre:
 
-**Decisión de diseño**: Mantenemos la entidad `User` simple sin conocer directamente sus productos.
-
-**Ventajas**:
-* **Menor acoplamiento**: User no depende de Product
-* **Rendimiento**: Se evita carga de colecciones innecesarias
-* **Simplicidad**: Menos complejidad en la entidad
-* **Consultas específicas**: Se consultan productos por user_id cuando sea necesario
-
-**Alternativa bidireccional** (no recomendada para este caso):
-```java
-// NO implementar aun - solo ejemplo 
-@OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
-private List<ProductEntity> products = new ArrayList<>();
+```txt
+Muchos productos → un usuario
+Muchos productos → una categoría
 ```
 
-## **2.2. Entidad CategoryEntity (preparada para escalarla)**
+---
 
-Archivo: `categories/entities/CategoryEntity.java`
+# 4. Estructura de carpetas requerida
+
+Se trabajará con tres módulos:
+
+```txt
+users/
+products/
+categories/
+```
+
+Estructura general:
+
+```txt
+src/main/java/ec/edu/ups/icc/fundamentos01/
+├── core/
+│   ├── entities/
+│   │   └── BaseEntity.java
+│   └── exceptions/
+│
+├── users/
+│   ├── entities/
+│   │   └── UserEntity.java
+│   └── repositories/
+│       └── UserRepository.java
+│
+├── categories/
+│   ├── controllers/
+│   │   └── CategoriesController.java
+│   ├── dtos/
+│   │   ├── CreateCategoryDto.java
+│   │   ├── UpdateCategoryDto.java
+│   │   └── CategoryResponseDto.java
+│   ├── entities/
+│   │   └── CategoryEntity.java
+│   ├── repositories/
+│   │   └── CategoryRepository.java
+│   └── services/
+│       ├── CategoryService.java
+│       └── CategoryServiceImpl.java
+│
+└── products/
+    ├── controllers/
+    │   └── ProductsController.java
+    ├── dtos/
+    │   ├── CreateProductDto.java
+    │   ├── UpdateProductDto.java
+    │   ├── PartialUpdateProductDto.java
+    │   └── ProductResponseDto.java
+    ├── entities/
+    │   └── ProductEntity.java
+    ├── model/
+    │   └── ProductModel.java
+    ├── repositories/
+    │   └── ProductRepository.java
+    └── services/
+        ├── ProductService.java
+        └── ProductServiceImpl.java
+```
+
+---
+
+# 5. Entidad base `BaseEntity`
+
+Todas las entidades deben seguir heredando de `BaseEntity`.
+
+Archivo:
+
+```txt
+core/entities/BaseEntity.java
+```
+
+---
+
+# 6. Entidad UserEntity
+
+La entidad `UserEntity` ya existe desde prácticas anteriores.
+
+---
+
+# 7. Nueva entidad CategoryEntity
+
+Se crea un nuevo módulo llamado:
+
+```txt
+categories/
+```
+
+La categoría permitirá clasificar productos.
+
+Archivo:
+
+```txt
+categories/entities/CategoryEntity.java
+```
+
+Código:
 
 ```java
+/*
+ * Entidad JPA del recurso categories.
+ *
+ * Representa la tabla categories en PostgreSQL.
+ * Una categoría puede estar asociada a muchos productos,
+ * pero en esta práctica la relación se define desde ProductEntity.
+ */
 @Entity
 @Table(name = "categories")
-public class CategoryEntity extends BaseModel {
+public class CategoryEntity extends BaseEntity {
 
     @Column(nullable = false, unique = true, length = 120)
     private String name;
@@ -115,37 +278,57 @@ public class CategoryEntity extends BaseModel {
     @Column(length = 500)
     private String description;
 
+    // Constructor vacío
+
+    // Constructor lleno
+
     // Getters y setters
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
 }
 ```
 
-**Nota**: Esta entidad se mantendrá simple inicialmente, pero evolucionará para soportar relaciones N:N más adelante.
+---
 
-# **3. FASE 1: Relaciones 1:N - ProductEntity con Asociaciones**
+## 7.1. Explicación
 
-La entidad `ProductEntity` es el **propietario** de las relaciones. Aquí se define cómo se conecta con `User` y `Category`.
+La categoría tiene:
 
-Archivo: `products/entities/ProductEntity.java`
+| Campo         | Función                      |
+| ------------- | ---------------------------- |
+| `id`          | Heredado de `BaseEntity`     |
+| `name`        | Nombre único de la categoría |
+| `description` | Descripción opcional         |
+| `createdAt`   | Heredado de `BaseEntity`     |
+| `updatedAt`   | Heredado de `BaseEntity`     |
+| `deleted`     | Eliminado lógico heredado    |
+
+No se agregará todavía relación bidireccional.
+
+La relación se manejará desde `ProductEntity` usando `@ManyToOne`.
+
+---
+
+# 8. ProductEntity con relaciones ManyToOne
+
+La entidad `ProductEntity` se actualiza para tener relación con usuario y categoría.
+
+Archivo:
+
+```txt
+products/entities/ProductEntity.java
+```
+
+Código:
 
 ```java
+/*
+ * Entidad JPA del recurso products.
+ *
+ * Representa la tabla products en PostgreSQL.
+ * Cada producto pertenece a un usuario y a una categoría.
+ */
 @Entity
 @Table(name = "products")
-public class ProductEntity extends BaseModel {
+public class ProductEntity extends BaseEntity {
 
     @Column(nullable = false, length = 150)
     private String name;
@@ -153,1423 +336,1574 @@ public class ProductEntity extends BaseModel {
     @Column(nullable = false)
     private Double price;
 
-    @Column(length = 500)
-    private String description;
+    @Column(nullable = false)
+    private Integer stock;
 
-    // ================== RELACIONES 1:N ==================
-
-    /**
-     * Relación Many-to-One con User
-     * Muchos productos pertenecen a un usuario (owner/creator)
+    /*
+     * Relación muchos a uno con UserEntity.
+     *
+     * Muchos productos pueden pertenecer a un usuario.
+     * La columna user_id se crea en la tabla products.
      */
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity owner;
 
-    /**
-     * Relación Many-to-One con Category  
-     * Muchos productos pertenecen a una categoría
+    /*
+     * Relación muchos a uno con CategoryEntity.
+     *
+     * Muchos productos pueden pertenecer a una categoría.
+     * La columna category_id se crea en la tabla products.
      */
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private CategoryEntity category;
 
-    // Constructores
-    public ProductEntity() {
-    }
+    // Constructor vacío
 
-    // Getters y setter....
+    // Constructor lleno
+
+    // Getters y setters
 }
 ```
 
-## **3.1. Explicación detallada de las anotaciones**
+Al crear estas realciones en la tabla de base de datos, se crean los campos `user_id` y `category_id` como claves foráneas. 
 
-### **@ManyToOne**
+![alt text](assets/08-realcionproductos-1.png)
+---
+
+## 8.1. Explicación de `@ManyToOne`
+
 ```java
 @ManyToOne(optional = false, fetch = FetchType.LAZY)
 ```
 
-**Parámetros**:
-* **optional = false**: La relación es **obligatoria**. No puede existir un producto sin user y sin category
-* **fetch = FetchType.LAZY**: La entidad relacionada se carga **bajo demanda**, no automáticamente
+Indica que muchos productos pueden estar asociados a una misma entidad relacionada.
 
-### **@JoinColumn**
+En este caso:
+
+```txt
+Muchos productos → un usuario
+Muchos productos → una categoría
+```
+
+`optional = false` indica que el producto no puede existir sin esa relación.
+
+`fetch = FetchType.LAZY` indica que la entidad relacionada se carga solo cuando se accede a ella.
+
+---
+
+## 8.2. Explicación de `@JoinColumn`
+
 ```java
 @JoinColumn(name = "user_id", nullable = false)
 ```
 
-**Función**: Define la **Foreign Key** en la tabla `products`
-* **name = "user_id"**: Nombre de la columna FK en PostgreSQL
-* **nullable = false**: La FK no puede ser NULL (refuerza optional = false)
+Define la columna de clave foránea en la tabla `products`.
 
-### **Resultado en PostgreSQL**
+Resultado conceptual:
+
+```txt
+products.user_id     → users.id
+products.category_id → categories.id
+```
+
+---
+
+## 8.3. Resultado esperado en PostgreSQL
+
+Hibernate generará una estructura similar a:
 
 ```sql
 CREATE TABLE products (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
     price DOUBLE PRECISION NOT NULL,
-    description VARCHAR(500),
+    stock INTEGER NOT NULL,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted BOOLEAN DEFAULT FALSE,
-    
-    -- Foreign Keys generadas por JPA
-    user_id BIGINT NOT NULL REFERENCES users(id),
-    category_id BIGINT NOT NULL REFERENCES categories(id)
+    user_id BIGINT NOT NULL,
+    category_id BIGINT NOT NULL,
+    CONSTRAINT fk_products_users FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_products_categories FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 ```
 
-# **4. Estrategias de Carga: LAZY vs EAGER**
+El nombre real de las restricciones puede variar porque Hibernate puede generarlas automáticamente.
 
-## **4.1. ¿Qué es el Fetch Strategy?**
+---
 
-Determina **cuándo** se cargan las entidades relacionadas desde la base de datos.
+# 9. Estrategias de carga: LAZY y EAGER
 
-### **FetchType.LAZY (Carga Perezosa) - RECOMENDADO**
+Las relaciones pueden cargarse de dos formas:
+
+```txt
+LAZY
+EAGER
+```
+
+---
+
+## 9.1. FetchType.LAZY
 
 ```java
 @ManyToOne(fetch = FetchType.LAZY)
 private UserEntity owner;
 ```
 
-**Comportamiento**:
-* La entidad `UserEntity` **NO** se carga automáticamente
-* Se carga solo cuando se accede a `product.getOwner().getName()`
-* Genera consulta SQL adicional en ese momento
+Con `LAZY`, la entidad relacionada no se carga automáticamente.
 
-**Ventajas**:
-* **Performance inicial**: Consulta más rápida
-* **Memoria eficiente**: No carga datos innecesarios
-* **Escalabilidad**: Funciona bien con grandes volúmenes
+Se carga cuando se accede a ella:
 
-### **FetchType.EAGER (Carga Inmediata) - USAR CON CUIDADO**
+```java
+entity.getOwner().getName();
+```
+
+Ventajas:
+
+* evita cargar datos innecesarios
+* mejora rendimiento en listados grandes
+* reduce consumo de memoria
+* es recomendable para APIs REST
+
+---
+
+## 9.2. FetchType.EAGER
 
 ```java
 @ManyToOne(fetch = FetchType.EAGER)
 private UserEntity owner;
 ```
 
-**Comportamiento**:
-* `UserEntity` se carga automáticamente con `ProductEntity`
-* Una sola consulta con JOIN
-* Datos disponibles inmediatamente
+Con `EAGER`, la entidad relacionada se carga automáticamente junto con el producto.
 
-**Desventajas**:
-* **N+1 Problem**: Puede generar muchas consultas innecesarias
-* **Memoria**: Carga datos que tal vez no se usen
-* **Performance**: Consultas más pesadas
+Puede ser útil en casos específicos, pero debe usarse con cuidado porque puede generar consultas pesadas o carga innecesaria.
 
-## **4.2. Ejemplo práctico de carga LAZY**
+---
+
+## 9.3. Recomendación
+
+Para esta práctica se usará:
 
 ```java
-@Service
-public class ProductServiceImpl {
+FetchType.LAZY
+```
 
-    public ProductResponseDto findById(Long id) {
-        ProductEntity product = productRepo.findById(id)
-            .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+Porque permite controlar cuándo se accede a los datos relacionados.
 
-        // AQUÍ: product.owner NO está cargado aún (proxy)
-        
-        // Esta línea DISPARA una consulta SQL adicional
-        String ownerName = product.getOwner().getName();
-        
-        // Hibernate ejecuta: SELECT * FROM users WHERE id = ?
-        
-        return toResponseDto(product);
-    }
+---
+
+# 10. DTOs para categorías
+
+## 10.1. CreateCategoryDto
+
+Archivo:
+
+```txt
+categories/dtos/CreateCategoryDto.java
+```
+
+Código:
+
+```java
+/*
+ * DTO utilizado para recibir los datos necesarios
+ * para crear una categoría.
+ */
+public class CreateCategoryDto {
+
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(min = 3, max = 120, message = "El nombre debe tener entre 3 y 120 caracteres")
+    private String name;
+
+    @Size(max = 500, message = "La descripción no debe superar los 500 caracteres")
+    private String description;
+
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
 }
 ```
 
-## **4.3. ¿Cuándo usar cada estrategia?**
+---
 
-| Escenario | Usar LAZY | Usar EAGER |
-|-----------|-----------|------------|
-| Relación siempre necesaria | ❌ | ✅ Considerar |
-| Relación opcional en uso | ✅ SÍ | ❌ |
-| Listados con muchos elementos | ✅ SÍ | ❌ |
-| Operaciones batch/masivas | ✅ SÍ | ❌ |
-| APIs REST (DTOs) | ✅ SÍ | ❌ |
+## 10.2. UpdateCategoryDto
 
-**Recomendación general**: Usar **LAZY por defecto** y optimizar casos específicos con consultas personalizadas.
+Archivo:
 
-# **5. Repositorios con Consultas Relacionales**
+```txt
+categories/dtos/UpdateCategoryDto.java
+```
 
-Los repositorios deben incluir consultas que aprovechen las relaciones definidas.
-
-## **5.1. UserRepository (sin cambios)**
-
-Archivo: `users/repositories/UserRepository.java`
+Código:
 
 ```java
-@Repository
-public interface UserRepository extends JpaRepository<UserEntity, Long> {
+/*
+ * DTO utilizado para actualizar completamente una categoría.
+ */
+public class UpdateCategoryDto {
 
-    Optional<UserEntity> findByEmail(String email);
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(min = 3, max = 120, message = "El nombre debe tener entre 3 y 120 caracteres")
+    private String name;
+
+    @Size(max = 500, message = "La descripción no debe superar los 500 caracteres")
+    private String description;
+
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
 }
 ```
 
-## **5.2. CategoryRepository**
+---
 
-Archivo: `categories/repositories/CategoryRepository.java`
+## 10.3. CategoryResponseDto
+
+Archivo:
+
+```txt
+categories/dtos/CategoryResponseDto.java
+```
+
+Código:
 
 ```java
-@Repository
-public interface CategoryRepository extends JpaRepository<CategoryEntity, Long> {
+/*
+ * DTO utilizado para devolver los datos públicos
+ * de una categoría.
+ */
+public class CategoryResponseDto {
 
-    /**
-     * Verifica si ya existe una categoría con ese nombre
-     * Útil para validaciones de unicidad
-     */
-    boolean existsByName(String name);
+    private Long id;
 
-    /**
-     * Busca categoría por nombre (case insensitive)
-     */
-    Optional<CategoryEntity> findByNameIgnoreCase(String name);
+    private String name;
+
+    private String description;
+
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
 }
 ```
 
-## **5.3. ProductRepository - Consultas con Relaciones**
+---
 
-Archivo: `products/repositories/ProductRepository.java`
+# 11. DTOs de productos con relaciones
 
-```java
-@Repository
-public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
+## 11.1. CreateProductDto
 
-    /**
-     * Encuentra todos los productos de un usuario específico
-     * Spring Data JPA genera: SELECT * FROM products WHERE user_id = ?
-     */
-    List<ProductEntity> findByOwnerId(Long userId);
+Archivo:
 
-    /**
-     * Encuentra todos los productos de una categoría específica
-     * Spring Data JPA genera: SELECT * FROM products WHERE category_id = ?
-     */
-    List<ProductEntity> findByCategoryId(Long categoryId);
-
-    /**
-     * Encuentra productos por nombre de usuario
-     * Genera JOIN automáticamente: 
-     * SELECT p.* FROM products p JOIN users u ON p.user_id = u.id WHERE u.name = ?
-     */
-    List<ProductEntity> findByOwnerName(String ownerName);
-
-    /**
-     * Encuentra productos por nombre de categoría
-     * Genera JOIN automáticamente:
-     * SELECT p.* FROM products p JOIN categories c ON p.category_id = c.id WHERE c.name = ?
-     */
-    List<ProductEntity> findByCategoryName(String categoryName);
-
-    /**
-     * Encuentra productos con precio mayor a X de una categoría específica
-     * Consulta con múltiples condiciones
-     * Genera:
-     * SELECT p.* FROM products p WHERE p.category_id = ? AND p.price > ?
-     */
-    List<ProductEntity> findByCategoryIdAndPriceGreaterThan(Long categoryId, Double price);
-}
+```txt
+products/dtos/CreateProductDto.java
 ```
 
-### **Ventajas de Spring Data JPA Query Methods**
-
-* **Automático**: No se escribe SQL manualmente
-* **Type-safe**: Verificación en tiempo de compilación
-* **Legible**: El nombre del método describe la consulta
-* **Optimizado**: Hibernate genera SQL eficiente
-
-# **6. DTOs Actualizados para Relaciones**
-
-Los DTOs deben incluir información de las entidades relacionadas.
-
-## **6.1. CreateProductDto**
-
-Archivo: `products/dtos/CreateProductDto.java`
+Código:
 
 ```java
+/*
+ * DTO utilizado para recibir los datos necesarios
+ * para crear un producto.
+ *
+ * Incluye userId y categoryId porque el producto
+ * debe relacionarse con un usuario y una categoría existentes.
+ */
 public class CreateProductDto {
 
     @NotBlank(message = "El nombre es obligatorio")
     @Size(min = 3, max = 150, message = "El nombre debe tener entre 3 y 150 caracteres")
-    public String name;
+    private String name;
 
     @NotNull(message = "El precio es obligatorio")
-    @DecimalMin(value = "0.0", inclusive = false, message = "El precio debe ser mayor a 0")
-    public Double price;
+    @DecimalMin(value = "0.0", inclusive = true, message = "El precio no puede ser negativo")
+    private Double price;
 
-    @Size(max = 500, message = "La descripción no puede superar 500 caracteres")
-    public String description;
-
-    // ============== RELACIONES ==============
+    @NotNull(message = "El stock es obligatorio")
+    @Min(value = 0, message = "El stock no puede ser negativo")
+    private Integer stock;
 
     @NotNull(message = "El ID del usuario es obligatorio")
-    public Long userId;
+    private Long userId;
 
     @NotNull(message = "El ID de la categoría es obligatorio")
-    public Long categoryId;
+    private Long categoryId;
+
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
 }
 ```
 
-## **6.2. ProductResponseDto - Estructura Anidada vs Plana**
+---
 
+## 11.2. UpdateProductDto
 
+Archivo:
 
-### **Opción 1: Estructura Anidada (RECOMENDADA)**
+```txt
+products/dtos/UpdateProductDto.java
+```
 
-En esta opción se pueden crear Dtos especificos para los modelos relacionadas, o se peude usar los DTOS de cada modelo especifico, 
-es decir, `UserResponseDto` y `CategoryResponseDto`, pero para simplicidad se crean Dtos internos simples como `UserSummaryDto` y `CategorySummaryDto`.
-
-Archivo: `products/dtos/ProductResponseDto.java`
+Código:
 
 ```java
-public class ProductResponseDto {
-
-    public Long id;
-    public String name;
-    public Double price;
-    public String description;
-
-    // ============== OBJETOS ANIDADOS ==============
-    
-    public UserSummaryDto user;
-    public CategoryResponseDto category;
-
-    // ============== AUDITORÍA ==============
-    
-    public LocalDateTime createdAt;
-    public LocalDateTime updatedAt;
-
-    // ============== DTOs INTERNOS ==============
-    
-    public static class UserSummaryDto {
-        public Long id;
-        public String name;
-        public String email;
-    }
-
-    public static class CategoryResponseDto {
-        public Long id;
-        public String name;
-        public String description;
-    }
-}
-```
-
-**Respuesta JSON resultante:**
-```json
-{
-    "id": 1,
-    "name": "Laptop Gaming",
-    "price": 1200.00,
-    "description": "Laptop de alto rendimiento",
-    "user": {
-        "id": 1,
-        "name": "Juan Pérez",
-        "email": "juan@email.com"
-    },
-    "category": {
-        "id": 2,
-        "name": "Electrónicos",
-        "description": "Dispositivos electrónicos"
-    },
-    "createdAt": "2024-01-15T10:30:00",
-    "updatedAt": "2024-01-15T10:30:00"
-}
-```
-
-### **Opción 2: Estructura Plana (alternativa)**
-
-```java
-public class ProductResponseDto {
-
-    public Long id;
-    public String name;
-    public Double price;
-    public String description;
-
-    // ============== INFORMACIÓN PLANA ==============
-    
-    public Long userId;
-    public String userName;
-    public String userEmail;
-    
-    public Long categoryId;
-    public String categoryName;
-    public String categoryDescription;
-
-    public LocalDateTime createdAt;
-    public LocalDateTime updatedAt;
-}
-```
-
-**Respuesta JSON resultante:**
-```json
-{
-    "id": 1,
-    "name": "Laptop Gaming",
-    "price": 1200.00,
-    "description": "Laptop de alto rendimiento",
-    "userId": 1,
-    "userName": "Juan Pérez",
-    "userEmail": "juan@email.com",
-    "categoryId": 2,
-    "categoryName": "Electrónicos",
-    "categoryDescription": "Dispositivos electrónicos",
-    "createdAt": "2024-01-15T10:30:00",
-    "updatedAt": "2024-01-15T10:30:00"
-}
-```
-
-### **Comparación de enfoques**
-
-| Aspecto | Estructura Anidada | Estructura Plana |
-|---------|-------------------|------------------|
-| **Semántica** | ✅ Clara y expresiva | ⚠️ Confusa con muchos campos |
-| **Legibilidad** | ✅ Fácil de entender | ❌ Difícil con muchas relaciones |
-| **Frontend** | ✅ `product.user.name` | ❌ `product.userName` |
-| **Reutilización** | ✅ DTOs internos reutilizables | ❌ Duplicación |
-| **Escalabilidad** | ✅ Fácil agregar campos | ⚠️ Contamina DTO principal |
-| **Tipado** | ✅ Fuertemente tipado | ⚠️ Propenso a errores |
-
-### **¿Cuándo usar cada enfoque?**
-
-**Usar estructura ANIDADA cuando:**
-* Las relaciones son **complejas** o tienen múltiples campos
-* El frontend necesita **acceso frecuente** a datos relacionados
-* Se busca **claridad semántica** en la API
-* Hay **múltiples niveles** de relaciones
-
-**Usar estructura PLANA cuando:**
-* Las relaciones son **simples** (solo ID + nombre)
-* Se requiere **máxima performance** (menos objetos)
-* La **compatibilidad** con sistemas legacy es importante
-
-### **Recomendación: Estructura Anidada**
-
-Para este tema usaremos la **estructura anidada** porque:
-* Es más **expresiva** del dominio
-* Facilita el trabajo del **frontend**
-* Es una **mejor práctica** en APIs modernas
-* Prepara para **futuras extensiones**
-
-## **6.3. UpdateProductDto**
-
-Archivo: `products/dtos/UpdateProductDto.java`
-
-```java
+/*
+ * DTO utilizado para actualizar completamente un producto.
+ *
+ * Permite actualizar los datos editables del producto
+ * y cambiar la categoría asociada.
+ *
+ * No permite cambiar el usuario propietario.
+ */
 public class UpdateProductDto {
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(min = 3, max = 150)
-    public String name;
+    @Size(min = 3, max = 150, message = "El nombre debe tener entre 3 y 150 caracteres")
+    private String name;
 
     @NotNull(message = "El precio es obligatorio")
-    @DecimalMin(value = "0.0", inclusive = false)
-    public Double price;
+    @DecimalMin(value = "0.0", inclusive = true, message = "El precio no puede ser negativo")
+    private Double price;
 
-    @Size(max = 500)
-    public String description;
-
-    // ============== ACTUALIZACIÓN DE RELACIONES ==============
+    @NotNull(message = "El stock es obligatorio")
+    @Min(value = 0, message = "El stock no puede ser negativo")
+    private Integer stock;
 
     @NotNull(message = "El ID de la categoría es obligatorio")
-    public Long categoryId;
+    private Long categoryId;
 
-    // Nota: No se permite cambiar el owner de un producto una vez creado
-    // Si fuera necesario, sería una operación de negocio especial
-}
-```
+    // Constructor vacío
 
-# **7. Modelo de Dominio Product con Factory Methods**
-
-El modelo de dominio se mantiene limpio, sin conocer JPA directamente.
-
-Archivo: `products/models/Product.java`
-
-```java
-public class Product {
-
-    private Long id;
-    private String name;
-    private Double price;
-    private String description;
-
-    // Constructores
-    public Product() {
-    }
-
-    public Product(String name, Double price, String description) {
-        this.validateBusinessRules(name, price, description);
-        this.name = name;
-        this.price = price;
-        this.description = description;
-    }
-
-    private void validateBusinessRules(String name, Double price, String description) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre del producto es obligatorio");
-        }
-        if (price == null || price <= 0) {
-            throw new IllegalArgumentException("El precio debe ser mayor a 0");
-        }
-        if (description != null && description.length() > 500) {
-            throw new IllegalArgumentException("La descripción no puede superar 500 caracteres");
-        }
-    }
-
-    // ==================== FACTORY METHODS ====================
-
-    /**
-     * Crea un Product desde un DTO de creación
-     */
-    public static Product fromDto(CreateProductDto dto) {
-        return new Product(dto.name, dto.price, dto.description);
-    }
-
-    /**
-     * Crea un Product desde una entidad persistente
-     */
-    public static Product fromEntity(ProductEntity entity) {
-        Product product = new Product(
-            entity.getName(), 
-            entity.getPrice(), 
-            entity.getDescription()
-        );
-        product.id = entity.getId();
-        return product;
-    }
-
-    // ==================== CONVERSION METHODS ====================
-
-    /**
-     * Convierte este Product a una entidad persistente
-     * REQUIERE las entidades relacionadas como parámetros
-     */
-    public ProductEntity toEntity(UserEntity owner, CategoryEntity category) {
-        ProductEntity entity = new ProductEntity();
-        
-        if (this.id != null && this.id > 0) {
-            entity.setId(this.id);
-        }
-        
-        entity.setName(this.name);
-        entity.setPrice(this.price);
-        entity.setDescription(this.description);
-        
-        // Asignar relaciones
-        entity.setOwner(owner);
-        entity.setCategory(category);
-        
-        return entity;
-    }
-
-    /**
-     * Actualiza los campos modificables de este Product
-     */
-    public Product update(UpdateProductDto dto) {
-        this.validateBusinessRules(dto.name, dto.price, dto.description);
-        this.name = dto.name;
-        this.price = dto.price;
-        this.description = dto.description;
-        return this;
-    }
+    // Constructor lleno
 
     // Getters y setters
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public Double getPrice() { return price; }
-    public String getDescription() { return description; }
-
-    public void setId(Long id) { this.id = id; }
-    public void setName(String name) { this.name = name; }
-    public void setPrice(Double price) { this.price = price; }
-    public void setDescription(String description) { this.description = description; }
 }
 ```
 
-### **¿Por qué el dominio NO conoce las entidades relacionadas?**
+---
 
-* **Separación de responsabilidades**: Product se enfoca en sus reglas de negocio
-* **Testing**: Es fácil probar Product sin dependencias JPA
-* **Flexibilidad**: Product puede usarse en contextos que no requieren persistencia
-* **Claridad**: El servicio es responsable de manejar las relaciones
-# **8. Servicio ProductServiceImpl - Orquestación de Relaciones**
+## 11.3. PartialUpdateProductDto
 
-El servicio es responsable de validar y gestionar las relaciones entre entidades.
+Archivo:
 
-Archivo: `products/services/ProductServiceImpl.java`
+```txt
+products/dtos/PartialUpdateProductDto.java
+```
 
-ProductServiceImpl conoce todos los repositorios necesarios para validar y gestionar las relaciones.
-La clase `ProductServiceImpl` es la que orquestiona la creación, actualización y consulta de productos con sus relaciones, por eso 
-no debe tener los otros servicios inyectados, sino solo los repositorios.
-
-Ya que un servicio que depender de otro servicio puede generar:
-* acoplamiento horizontal entre servicios
-
-* dependencia circular potencial
-
-* dificultad para testear
-
-* propagación de lógica que no le corresponde al caso de uso actual
-
-En clean architecture, los servicios deben ser lo más independientes posibles entre sí y no llamarse entre estos.
-
+Código:
 
 ```java
+/*
+ * DTO utilizado para actualizar parcialmente un producto.
+ *
+ * Solo se actualizan los campos enviados.
+ */
+public class PartialUpdateProductDto {
+
+    @Size(min = 3, max = 150, message = "El nombre debe tener entre 3 y 150 caracteres")
+    private String name;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "El precio no puede ser negativo")
+    private Double price;
+
+    @Min(value = 0, message = "El stock no puede ser negativo")
+    private Integer stock;
+
+    private Long categoryId;
+
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
+}
+```
+
+---
+
+## 11.4. ProductResponseDto
+
+Archivo:
+
+```txt
+products/dtos/ProductResponseDto.java
+```
+
+Código:
+
+```java
+/*
+ * DTO utilizado para devolver al cliente los datos públicos
+ * de un producto, incluyendo información resumida
+ * del usuario propietario y de la categoría.
+ */
+public class ProductResponseDto {
+
+    private Long id;
+
+    private String name;
+
+    private Double price;
+
+    private Integer stock;
+
+    private UserResponseDto owner;
+
+    private CategoryResponseDto category;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+    
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
+}
+```
+
+---
+
+## 11.5. Respuesta JSON esperada
+
+```json
+{
+  "id": 1,
+  "name": "Laptop Gaming",
+  "price": 1200.0,
+  "stock": 10,
+  "owner": {
+    "id": 1,
+    "name": "Juan Pérez",
+    "email": "juan@ups.edu.ec"
+  },
+  "category": {
+    "id": 2,
+    "name": "Electrónicos",
+    "description": "Dispositivos electrónicos"
+  },
+  "createdAt": "2026-01-15T10:30:00",
+  "updatedAt": "2026-01-15T10:30:00"
+}
+```
+
+---
+
+# 12. Repositorios actualizados
+
+## 12.1. UserRepository
+
+Archivo:
+
+```txt
+users/repositories/UserRepository.java
+```
+
+Código:
+
+```java
+/*
+ * Repositorio encargado de gestionar la persistencia
+ * de usuarios usando Spring Data JPA.
+ */
+@Repository
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
+
+    // otros metodos ...
+
+
+
+    boolean existsByIdAndDeletedFalse(Long id);
+
+}
+```
+
+---
+
+## 12.2. CategoryRepository
+
+Archivo:
+
+```txt
+categories/repositories/CategoryRepository.java
+```
+
+Código:
+
+```java
+/*
+ * Repositorio encargado de gestionar la persistencia
+ * de categorías usando Spring Data JPA.
+ */
+@Repository
+public interface CategoryRepository extends JpaRepository<CategoryEntity, Long> {
+
+    Optional<CategoryEntity> findByNameIgnoreCaseAndDeletedFalse(String name);
+
+    boolean existsByNameIgnoreCaseAndDeletedFalse(String name);
+
+    boolean existsByIdAndDeletedFalse(Long id);
+
+    List<CategoryEntity> findByDeletedFalse();
+}
+```
+
+---
+
+## 12.3. ProductRepository
+
+Archivo:
+
+```txt
+products/repositories/ProductRepository.java
+```
+
+Código:
+
+```java
+/*
+ * Repositorio encargado de gestionar la persistencia
+ * de productos usando Spring Data JPA.
+ *
+ * Incluye consultas usando relaciones con UserEntity y CategoryEntity.
+ */
+@Repository
+public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
+
+    Optional<ProductEntity> findByNameIgnoreCaseAndDeletedFalse(String name);
+
+    List<ProductEntity> findByDeletedFalse();
+
+    Optional<ProductEntity> findByIdAndDeletedFalse(Long id);
+
+    List<ProductEntity> findByOwner_IdAndDeletedFalse(Long ownerId);
+
+    List<ProductEntity> findByCategory_IdAndDeletedFalse(Long categoryId);
+
+    List<ProductEntity> findByCategory_NameIgnoreCaseAndDeletedFalse(String categoryName);
+}
+```
+
+---
+
+## 12.4. Explicación de consultas relacionales
+
+Este método:
+
+```java
+List<ProductEntity> findByOwner_IdAndDeletedFalse(Long ownerId);
+```
+
+indica:
+
+```txt
+Buscar productos cuyo owner.id sea igual al valor recibido
+y cuyo deleted sea false.
+```
+
+Este método:
+
+```java
+List<ProductEntity> findByCategory_IdAndDeletedFalse(Long categoryId);
+```
+
+indica:
+
+```txt
+Buscar productos cuya category.id sea igual al valor recibido
+y cuyo deleted sea false.
+```
+
+Spring Data JPA genera las consultas automáticamente usando los nombres de los atributos.
+
+---
+
+# 13. Servicio de categorías
+
+## 13.1. CategoryService
+
+Archivo:
+
+```txt
+categories/services/CategoryService.java
+```
+
+Código:
+
+```java
+/*
+ * Servicio que define las operaciones disponibles
+ * para la gestión de categorías.
+ */
+public interface CategoryService {
+
+    List<CategoryResponseDto> findAll();
+
+    CategoryResponseDto findOne(Long id);
+
+    CategoryResponseDto create(CreateCategoryDto dto);
+
+    CategoryResponseDto update(Long id, UpdateCategoryDto dto);
+
+    void delete(Long id);
+}
+```
+
+---
+
+## 13.2. CategoryServiceImpl
+
+Archivo:
+
+```txt
+categories/services/CategoryServiceImpl.java
+```
+
+Código base:
+
+```java
+/*
+ * Implementación del servicio de categorías.
+ *
+ * Usa CategoryRepository para persistir datos en PostgreSQL.
+ */
 @Service
-public class ProductServiceImpl implements ProductService {
+public class CategoryServiceImpl implements CategoryService {
 
-    private final ProductRepository productRepo;
-    private final UserRepository userRepo;
-    private final CategoryRepository categoryRepo;
+    private final CategoryRepository categoryRepository;
 
-    public ProductServiceImpl(
-            ProductRepository productRepo,
-            UserRepository userRepo,
-            CategoryRepository categoryRepo
-    ) {
-        this.productRepo = productRepo;
-        this.userRepo = userRepo;
-        this.categoryRepo = categoryRepo;
+    public CategoryServiceImpl(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
     }
-```
 
-
-## Creación de un Producto con relaciones
-
-Para crear un producto, se deben validar las entidades relacionadas (usuario y categoría) antes de persistir.
-Si estos no existen, se lanza una excepción `NotFoundException`.
-
-
-
-  ```java
     @Override
-    public ProductResponseDto create(CreateProductDto dto) {
-        
-        // 1. VALIDAR EXISTENCIA DE RELACIONES
-        UserEntity owner = userRepo.findById(dto.userId)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado con ID: " + dto.userId));
+    public List<CategoryResponseDto> findAll() {
+        return categoryRepository.findByDeletedFalse()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
-        CategoryEntity category = categoryRepo.findById(dto.categoryId)
-                .orElseThrow(() -> new NotFoundException("Categoría no encontrada con ID: " + dto.categoryId));
+    @Override
+    public CategoryResponseDto findOne(Long id) {
+        CategoryEntity entity = categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Category not found"));
 
-
-        // Regla: nombre único
-        if (productRepo.findByName(dto.name).isPresent()) {
-            throw new IllegalStateException("El nombre del producto ya está registrado");
+        if (entity.isDeleted()) {
+            throw new NotFoundException("Category not found");
         }
 
-        // 2. CREAR MODELO DE DOMINIO
-        Product product = Product.fromDto(dto);
-
-        // 3. CONVERTIR A ENTIDAD CON RELACIONES
-        ProductEntity entity = product.toEntity(owner, category);
-
-        // 4. PERSISTIR
-        ProductEntity saved = productRepo.save(entity);
-
-        // 5. CONVERTIR A DTO DE RESPUESTA
-        return toResponseDto(saved);
-    }
-
-```
-
-## Métodos de consulta, actualización y eliminación
-
-`.map(this::toResponseDto)` Para cada instancial de ProductEntity obtenida del repositorio, se llama al método `toResponseDto` para convertirla en un `ProductResponseDto`.
-
-```java
-
-    @Override
-    public List<ProductResponseDto> findAll() {
-        return productRepo.findAll()
-                .stream()
-                .map(this::toResponseDto)
-                .toList();
-    }
-```
-
-Si se peude realizamos un mapeo directo entre Entidad -> DTO, esto se puede aplicar  
-* Operaciones de solo lectura (como findAll, findById)
-* No hay lógica de negocio que aplicar
-* Performance crítica (menos objetos intermedios)
-* Consultas simples sin validacione
-
-Ventajas:
-
-Más eficiente en memoria
-Menos objetos temporales
-Código más directo para consultas
-
-Caso contrario se puede realizar la forma que se trabajó
-
-
-```java
-
-    @Override
-    public List<ProductResponseDto> findAll() {
-        return productRepo.findAll()
-                .stream()
-                .map(Product::fromEntity)        // ProductEntity → Product
-                .map(Product::toResponseDto)     // Product → ProductResponseDto  
-                .toList();
-    }
-```
-
-El mapeo por cada calse se puede implementar cuadno:
-
-* Operaciones que modifican estado (create, update)
-* Hay reglas de negocio que aplicar
-* Necesitas validaciones de dominio
-* Consistencia arquitectural es prioritaria
-
-Ventajas:
-
-Mantiene separación de capas
-Permite aplicar reglas de negocio
-Código más consistente y predecible
-Facilita testing del dominio
-
-```java
-
-    @Override
-    public ProductResponseDto findById(Long id) {
-        return productRepo.findById(id)
-                .map(this::toResponseDto)
-                .orElseThrow(() -> new NotFoundException("Producto no encontrado con ID: " + id));
+        return toResponse(entity);
     }
 
     @Override
-    public List<ProductResponseDto> findByUserId(Long userId) {
-        
-        // Validar que el usuario existe
-        if (!userRepo.existsById(userId)) {
-            throw new NotFoundException("Usuario no encontrado con ID: " + userId);
+    public CategoryResponseDto create(CreateCategoryDto dto) {
+
+        if (categoryRepository.existsByNameIgnoreCaseAndDeletedFalse(dto.getName())) {
+            throw new ConflictException("Category name already registered");
         }
 
-        return productRepo.findByOwnerId(userId)
-                .stream()
-                .map(this::toResponseDto)
-                .toList();
+        CategoryEntity entity = new CategoryEntity();
+
+        entity.setName(dto.getName());
+        entity.setDescription(dto.getDescription());
+
+        CategoryEntity saved = categoryRepository.save(entity);
+
+        return toResponse(saved);
     }
 
     @Override
-    public List<ProductResponseDto> findByCategoryId(Long categoryId) {
-        
-        // Validar que la categoría existe
-        if (!categoryRepo.existsById(categoryId)) {
-            throw new NotFoundException("Categoría no encontrada con ID: " + categoryId);
+    public CategoryResponseDto update(Long id, UpdateCategoryDto dto) {
+        CategoryEntity entity = categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Category not found"));
+
+        if (entity.isDeleted()) {
+            throw new NotFoundException("Category not found");
         }
 
-        return productRepo.findByCategoryId(categoryId)
-                .stream()
-                .map(this::toResponseDto)
-                .toList();
-    }
+        entity.setName(dto.getName());
+        entity.setDescription(dto.getDescription());
 
-    @Override
-    public ProductResponseDto update(Long id, UpdateProductDto dto) {
-        
-        // 1. BUSCAR PRODUCTO EXISTENTE
-        ProductEntity existing = productRepo.findById(id)
-                .orElseThrow(() -> new NotFoundException("Producto no encontrado con ID: " + id));
+        CategoryEntity saved = categoryRepository.save(entity);
 
-        // 2. VALIDAR NUEVA CATEGORÍA (si cambió)
-        CategoryEntity newCategory = categoryRepo.findById(dto.categoryId)
-                .orElseThrow(() -> new NotFoundException("Categoría no encontrada con ID: " + dto.categoryId));
-
-        // 3. ACTUALIZAR USANDO DOMINIO
-        Product product = Product.fromEntity(existing);
-        product.update(dto);
-
-        // 4. CONVERTIR A ENTIDAD MANTENIENDO OWNER ORIGINAL
-        ProductEntity updated = product.toEntity(existing.getOwner(), newCategory);
-        updated.setId(id); // Asegurar que mantiene el ID
-
-        // 5. PERSISTIR Y RESPONDER
-        ProductEntity saved = productRepo.save(updated);
-        return toResponseDto(saved);
+        return toResponse(saved);
     }
 
     @Override
     public void delete(Long id) {
-        
-        ProductEntity product = productRepo.findById(id)
-                .orElseThrow(() -> new NotFoundException("Producto no encontrado con ID: " + id));
+        CategoryEntity entity = categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Category not found"));
 
-        // Eliminación física (también se puede implementar lógica)
-        productRepo.delete(product);
+        if (entity.isDeleted()) {
+            throw new NotFoundException("Category not found");
+        }
+
+        entity.setDeleted(true);
+
+        categoryRepository.save(entity);
     }
 
-```
 
-## MÉTODO HELPER 
+    /// Este método es privado porque solo se utiliza dentro de esta clase
+    //  para convertir una entidad de categoría en un DTO de respuesta. 
+    //  Puede estar en una clase Mapper
+    private CategoryResponseDto toResponse(CategoryEntity entity) {
+        CategoryResponseDto dto = new CategoryResponseDto();
 
-Tipo mapper, para convertir entidad a DTO con relaciones cargadas
+        dto.setId(entity.getId());
+        dto.setName(entity.getName());
+        dto.setDescription(entity.getDescription());
 
-```java
-
-    /**
-     * Convierte ProductEntity a ProductResponseDto
-     * Usa estructura anidada para mejor organización semántica
-     */
-    private ProductResponseDto toResponseDto(ProductEntity entity) {
-        ProductResponseDto dto = new ProductResponseDto();
-        
-        // Campos básicos del producto
-        dto.id = entity.getId();
-        dto.name = entity.getName();
-        dto.price = entity.getPrice();
-        dto.description = entity.getDescription();
-        
-        // Crear objeto User anidado (se carga LAZY)
-        ProductResponseDto.UserSummaryDto userDto = new ProductResponseDto.UserSummaryDto();
-        userDto.id = entity.getOwner().getId();
-        userDto.name = entity.getOwner().getName();
-        userDto.email = entity.getOwner().getEmail();
-        dto.user = userDto;
-        
-        // Crear objeto Category anidado (se carga LAZY)
-        CategoryResponseDto categoryDto = new CategoryResponseDto();
-        categoryDto.id = entity.getCategory().getId();
-        categoryDto.name = entity.getCategory().getName();
-        categoryDto.description = entity.getCategory().getDescription();
-        dto.category = categoryDto;
-        
-        // Auditoría
-        dto.createdAt = entity.getCreatedAt();
-        dto.updatedAt = entity.getUpdatedAt();
-        
         return dto;
     }
 }
 ```
 
-### **Aspectos clave del servicio**
+---
 
-1. **Validación proactiva**: Se valida que las entidades relacionadas existan antes de crear/actualizar
-2. **Manejo de errores**: Se lanzan excepciones específicas que serán capturadas por el GlobalExceptionHandler
-3. **Carga LAZY controlada**: En `toResponseDto()` se accede a las propiedades relacionadas, provocando las consultas adicionales necesarias
-4. **Separación de responsabilidades**: El servicio orquesta, el dominio valida reglas de negocio, el repositorio persiste
+# 14. ProductService actualizado
 
-# **9. Controlador ProductController**
+## 14.1. ProductService
 
-Archivo: `products/controllers/ProductController.java`
+Archivo:
 
-Actualizado para manejar las relaciones en las operaciones CRUD. Quitamos otros endpoints que no son necesarios para este tema, o que se vieron en temas anteriores.
+```txt
+products/services/ProductService.java
+```
+
+Código:
 
 ```java
-@RestController
-@RequestMapping("/api/products")
-public class ProductController {
-
-    private final ProductService productService;
-
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
-
-    @PostMapping
-    public ResponseEntity<ProductResponseDto> create(@Valid @RequestBody CreateProductDto dto) {
-        ProductResponseDto created = productService.create(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<ProductResponseDto>> findAll() {
-        List<ProductResponseDto> products = productService.findAll();
-        return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductResponseDto> findById(@PathVariable Long id) {
-        ProductResponseDto product = productService.findById(id);
-        return ResponseEntity.ok(product);
-    }
-
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ProductResponseDto>> findByUserId(@PathVariable Long userId) {
-        List<ProductResponseDto> products = productService.findByUserId(userId);
-        return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<ProductResponseDto>> findByCategoryId(@PathVariable Long categoryId) {
-        List<ProductResponseDto> products = productService.findByCategoryId(categoryId);
-        return ResponseEntity.ok(products);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductResponseDto> update(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateProductDto dto
-    ) {
-        ProductResponseDto updated = productService.update(id, dto);
-        return ResponseEntity.ok(updated);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        productService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
-}
-```
-
-# **10. FASE 2: Evolución a Relaciones Many-to-Many (N:N)**
-
-### **¿Cuándo necesitamos relaciones N:N?**
-
-**Escenario**: Un producto puede pertenecer a múltiples categorías simultáneamente.
-
-**Ejemplos**:
-* Laptop → ["Electrónicos", "Oficina", "Gaming"]
-* Manual de Laptio → ["Libros", "Oficina", "Electrónicos"]
-* Teclado → ["Electrónicos", "Gaming"] 
-
-### **Evolución del esquema**
-
-```
-ANTES (1:N):
-Product N ──── 1 Category
-
-DESPUÉS (N:N):
-Product N ──── N Category
-```
-
-## **10.1. Nueva entidad ProductEntity con relación N:N**
-
-```java
-@Entity
-@Table(name = "products")
-public class ProductEntity extends BaseModel {
-
-    @Column(nullable = false, length = 150)
-    private String name;
-
-    @Column(nullable = false)
-    private Double price;
-
-    @Column(length = 500)
-    private String description;
-
-    // ============== RELACIÓN 1:N (se mantiene) ==============
-    
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity owner;
-
-    // ============== NUEVA RELACIÓN N:N ==============
-    
-    /**
-     * Relación Many-to-Many con Category
-     * Un producto puede tener múltiples categorías
-     * Una categoría puede estar en múltiples productos
-     */
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "product_categories",                    // Tabla intermedia
-        joinColumns = @JoinColumn(name = "product_id"), // FK hacia products
-        inverseJoinColumns = @JoinColumn(name = "category_id") // FK hacia categories
-    )
-    private Set<CategoryEntity> categories = new HashSet<>();
-
-    // Constructores
-    public ProductEntity() {
-    }
-
-    // Getters y setters
-    public Set<CategoryEntity> getCategories() {
-        return categories;
-    }
-
-    public void setCategories(Set<CategoryEntity> categories) {
-        this.categories = categories != null ? categories : new HashSet<>();
-    }
-```
-
-Para manejar la relación N:N de manera más sencilla, se agregan métodos de conveniencia:
-que deberan actualizar la colección de categorías asociadas al producto.
-
-
-
-```java
-    // ============== MÉTODOS DE CONVENIENCIA ==============
-  /**
- * Agrega una categoría al producto y sincroniza la relación bidireccional
+/*
+ * Servicio que define las operaciones disponibles
+ * para la gestión de productos.
  */
-public void addCategory(CategoryEntity category) {
-    this.categories.add(category);
-}
+public interface ProductService {
 
-/**
- * Remueve una categoría del producto y sincroniza la relación bidireccional
+    // Otras operaciones ...
+
+    List<ProductResponseDto> findByUserId(Long userId);
+
+    List<ProductResponseDto> findByCategoryId(Long categoryId);
+
+}
+```
+
+---
+
+## 14.2. ProductServiceImpl
+
+Archivo:
+
+```txt
+products/services/ProductServiceImpl.java
+```
+
+Código inicial:
+
+```java
+/*
+ * Implementación del servicio de productos.
+ *
+ * Gestiona productos con relaciones hacia usuarios y categorías.
  */
-public void removeCategory(CategoryEntity category) {
-    this.categories.remove(category);
-}
-
-/**
- * Limpia todas las categorías y sincroniza las relaciones
- */
-public void clearCategories() {
-  
-    this.categories.clear();
-}
-    // ... resto de getters y setters
-}
-```
-
-## **10.2. Explicación de @ManyToMany**
-
-### **@ManyToMany**
-```java
-@ManyToMany(fetch = FetchType.LAZY)
-```
-* Configura una relación bidireccional N:N
-* `fetch = LAZY`: Las categorías se cargan bajo demanda
-
-### **@JoinTable**
-```java
-@JoinTable(
-    name = "product_categories",
-    joinColumns = @JoinColumn(name = "product_id"),
-    inverseJoinColumns = @JoinColumn(name = "category_id")
-)
-```
-
-**Función**: Define la **tabla intermedia** que almacena la relación
-
-**Resultado en PostgreSQL**:
-```sql
-CREATE TABLE product_categories (
-    product_id BIGINT NOT NULL REFERENCES products(id),
-    category_id BIGINT NOT NULL REFERENCES categories(id),
-    PRIMARY KEY (product_id, category_id)
-);
-```
-
-### **¿Por qué Set<CategoryEntity> y no List<CategoryEntity>?**
-
-* **Set**: No permite duplicados, ideal para relaciones N:N
-* **List**: Permite duplicados, puede causar problemas de consistencia
-* **HashSet**: Implementación eficiente para búsquedas y operaciones de conjunto
-
-## **10.3. CategoryEntity actualizada (lado inverso)**
-
-```java
-@Entity
-@Table(name = "categories")
-public class CategoryEntity extends BaseModel {
-
-    @Column(nullable = false, unique = true, length = 120)
-    private String name;
-
-    @Column(length = 500)
-    private String description;
-
-    // ============== RELACIÓN BIDIRECCIONAL N:N ==============
-    
-    /**
-     * Relación inversa con Product
-     * mappedBy = "categories" hace referencia al atributo en ProductEntity
-     */
-    @ManyToMany(mappedBy = "categories", fetch = FetchType.LAZY)
-    private Set<ProductEntity> products = new HashSet<>();
-
-    // Constructores y getters/setters
-    
-    public Set<ProductEntity> getProducts() {
-        return products;
-    }
-
-    public void setProducts(Set<ProductEntity> products) {
-        this.products = products != null ? products : new HashSet<>();
-    }
-
-    // ============== MÉTODOS DE CONVENIENCIA ==============
-    
-    public void addProduct(ProductEntity product) {
-        this.products.add(product);    }
-
-    public void removeProduct(ProductEntity product) {
-        this.products.remove(product);
-
-    }
-}
-```
-
-### **Parámetro mappedBy**
-
-```java
-@ManyToMany(mappedBy = "categories")
-```
-
-* **mappedBy = "categories"**: Indica que esta es la relación "inversa"
-* La tabla intermedia se define solo en `ProductEntity`
-* `CategoryEntity` no genera tabla adicional
-* Mantiene sincronización bidireccional.
-
-
-
-## **10.4. DTOs actualizados para relación N:N**
-
-### **CreateProductDto con múltiples categorías**
-
-```java
-public class CreateProductDto {
-
-    // Campos básicos
-    // ============== RELACIONES ==============
-
-    /// campo relacion USER se mantiene igual
-
-    @NotNull(message = "Debe especificar al menos una categoría")
-    @Size(min = 1, message = "El producto debe tener al menos una categoría")
-    public Set<Long> categoryIds; // Múltiples categorías
-}
-```
-
-### **ProductResponseDto con lista de categorías (N:N)**
-
-Actualizamos el DTO de respuesta para incluir una lista de categorías.
-
-```java
-public class ProductResponseDto {
-
-    // Campos básicos
-    // ============== OBJETOS ANIDADOS ==============
-    // campo relacion USER se mantiene igual
-
-    // ============== CATEGORÍAS (N:N) - Lista de objetos ==============
-    public List<CategoryResponseDto> categories;
-
- 
-}
-```
-
-**Respuesta JSON con múltiples categorías:**
-```json
-{
-    "id": 1,
-    "name": "Laptop Gaming",
-    "price": 1200.00,
-    "description": "Laptop de alto rendimiento",
-    "user": {
-        "id": 1,
-        "name": "Juan Pérez", 
-        "email": "juan@email.com"
-    },
-    "categories": [
-        {
-            "id": 2,
-            "name": "Electrónicos",
-            "description": "Dispositivos electrónicos"
-        },
-        {
-            "id": 5,
-            "name": "Gaming",
-            "description": "Productos para gamers"
-        },
-        {
-            "id": 8,
-            "name": "Oficina",
-            "description": "Equipos de oficina"
-        }
-    ],
-    "createdAt": "2024-01-15T10:30:00",
-    "updatedAt": "2024-01-15T10:30:00"
-}
-```
-
-
-## **10.5. ProductRepository actualizado para N:N**
-
-Modficamos el repositorio para consultas basadas en categorías múltiples.
-
-Elimanar los métodos antiguos que asumen relación 1:N.
-
-
-```java
-@Repository
-public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
-
-    // otros métodos... 
-
-    /**
-     * Encuentra productos que tienen UNA categoría específica
-     * Útil para filtros de categoría
-     */
-    List<ProductEntity> findByCategoriesId(Long categoryId);
-
-    /**
-     * Encuentra productos que tienen una categoría con nombre específico
-     */
-    List<ProductEntity> findByCategoriesName(String categoryName);
-
-    /**
-     * Consulta personalizada: productos con TODAS las categorías especificadas
-     */
-    @Query("SELECT p FROM ProductEntity p " +
-           "WHERE SIZE(p.categories) >= :categoryCount " +
-           "AND :categoryCount = " +
-           "(SELECT COUNT(c) FROM p.categories c WHERE c.id IN :categoryIds)")
-    List<ProductEntity> findByAllCategories(@Param("categoryIds") List<Long> categoryIds,
-                                          @Param("categoryCount") long categoryCount);
-}
-```
-
-## **10.6. Servicio actualizado para manejar N:N**
-
-> **NOTA:** Deberan actualizar los demás métodos del servicio y controlador para manejar la relación N:N según sea necesario.
-
-
-```java
 @Service
 public class ProductServiceImpl implements ProductService {
 
-    // ... repositorios inyectados
+    private final ProductRepository productRepository;
 
-    @Override
-    public ProductResponseDto create(CreateProductDto dto) {
-        
-        // 1. VALIDAR USER
-        UserEntity owner = userRepo.findById(dto.userId)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+    private final UserRepository userRepository;
 
-        // 2. VALIDAR Y OBTENER CATEGORÍAS
-        Set<CategoryEntity> categories = validateAndGetCategories(dto.categoryIds);
+    private final CategoryRepository categoryRepository;
 
-        // 3. CREAR DOMINIO
-        Product product = Product.fromDto(dto);
-
-        // 4. CREAR ENTIDAD CON RELACIONES N:N
-        ProductEntity entity = product.toEntity(owner);
-        entity.setCategories(categories);
-
-        // 5. PERSISTIR
-        ProductEntity saved = productRepo.save(entity);
-
-        return toResponseDto(saved);
+    public ProductServiceImpl(
+            ProductRepository productRepository,
+            UserRepository userRepository,
+            CategoryRepository categoryRepository
+    ) {
+        this.productRepository = productRepository;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
     }
+```
 
-    @Override
-    public ProductResponseDto update(Long id, UpdateProductDto dto) {
-        
-        ProductEntity existing = productRepo.findById(id)
-                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+---
 
-        // Validar nuevas categorías
-        Set<CategoryEntity> newCategories = validateAndGetCategories(dto.categoryIds);
 
-        // Actualizar usando dominio
-        Product product = Product.fromEntity(existing);
-        product.update(dto);
+## 14.3. findByUserId
 
-      // 3. ACTUALIZAR USANDO Instancia de entidad
-        existing.setDescription(dto.description != null ? dto.description : existing.getDescription());
-        existing.setName(dto.name != null ? dto.name : existing.getName());
-        existing.setPrice(dto.price != null ? dto.price : existing.getPrice());
-        
-        // IMPORTANTE: Limpiar categorías existentes y asignar nuevas
-        existing.clearCategories();
-        existing.setCategories(newCategories);
+```java
+/*
+ * Retorna los productos activos creados por un usuario.
+ *
+ * Primero valida que el usuario exista y no esté eliminado.
+ */
+@Override
+public List<ProductResponseDto> findByUserId(Long userId) {
+        if (!userRepository.existsByIdAndDeletedFalse(userId)) {
+            throw new NotFoundException("User not found");
+        }
 
-        ProductEntity saved = productRepo.save(existing);
-        return toResponseDto(saved);
-    }
+        List<ProductEntity> list = productRepository.findByOwner_IdAndDeletedFalse(userId);
 
-    // ============== MÉTODOS HELPER ==============
-
-      /**
-     * Convierte ProductEntity a DTO incluyendo categorías (N:N)
-     * Usa estructura anidada para mejor semántica
-     */
-    private ProductResponseDto toResponseDto(ProductEntity entity) {
-        ProductResponseDto dto = new ProductResponseDto();
-        
-        // Campos básicos
-        dto.id = entity.getId();
-        dto.name = entity.getName();
-        dto.price = entity.getPrice();
-        dto.description = entity.getDescription();
-        
-        // Crear objeto User anidado
-        ProductResponseDto.UserSummaryDto userDto = new ProductResponseDto.UserSummaryDto();
-        userDto.id = entity.getOwner().getId();
-        userDto.name = entity.getOwner().getName();
-        userDto.email = entity.getOwner().getEmail();
-        dto.user = userDto;
-        
-        // Convertir Set<CategoryEntity> a List<CategorySummaryDto>
-        dto.categories = entity.getCategories().stream()
-                .map(this::toCategorySummary)
-                .sorted((c1, c2) -> c1.name.compareTo(c2.name)) // Ordenar por nombre
+        return list
+                .stream()
+                .map(ProductMapper::toModelFromEntity)
+                .map(ProductMapper::toResponse)
                 .toList();
-        
-        dto.createdAt = entity.getCreatedAt();
-        dto.updatedAt = entity.getUpdatedAt();
-        
-        return dto;
+}
+```
+
+---
+
+## 14.4. findByCategoryId
+
+```java
+/*
+ * Retorna los productos activos asociados a una categoría.
+ *
+ * Primero valida que la categoría exista y no esté eliminada.
+ */
+@Override
+public List<ProductResponseDto> findByCategoryId(Long categoryId) {
+
+    if (!categoryRepository.existsByIdAndDeletedFalse(categoryId)) {
+        throw new NotFoundException("Category not found");
     }
 
-    private ProductResponseDto.CategorySummaryDto toCategorySummary(CategoryEntity category) {
-        ProductResponseDto.CategorySummaryDto summary = new ProductResponseDto.CategorySummaryDto();
-        summary.id = category.getId();
-        summary.name = category.getName();
-        summary.description = category.getDescription();
-        return summary;
+    return productRepository.findByCategory_IdAndDeletedFalse(categoryId)
+            .stream()
+            .map(this::toResponse)
+            .toList();
+}
+```
+
+---
+
+## 14.5. create
+
+```java
+/*
+ * Crea un producto asociado a un usuario y a una categoría.
+ *
+ * Valida:
+ * - que el usuario exista
+ * - que la categoría exista
+ * - que no exista un producto activo con el mismo nombre
+ */
+@Override
+public ProductResponseDto create(CreateProductDto dto) {
+
+        // 1 Encontramos el user
+    UserEntity owner = userRepository.findById(dto.getUserId())
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+    if (owner.isDeleted()) {
+        throw new NotFoundException("User not found");
+    }
+
+        // 2 Encontramos la categoria
+    CategoryEntity category = categoryRepository.findById(dto.getCategoryId())
+            .orElseThrow(() -> new NotFoundException("Category not found"));
+
+    if (category.isDeleted()) {
+        throw new NotFoundException("Category not found");
+    }
+
+// validadacion de negocio, por ejemplo que no exista un producto  con el mismo nombre
+    if (productRepository.findByNameIgnoreCaseAndDeletedFalse(dto.getName()).isPresent()) {
+        throw new ConflictException("Product name already registered");
+    }
+
+
+        // Genereamos la entidad a partir del DTO
+
+    ProductEntity entity = new ProductEntity();
+
+    entity.setName(dto.getName());
+    entity.setPrice(dto.getPrice());
+    entity.setStock(dto.getStock());
+    entity.setOwner(owner);
+    entity.setCategory(category);
+
+ ProductEntity savedEntity = productRepository.save(entity);
+
+        ProductModel savedModel = ProductMapper.toModelFromEntity(savedEntity);
+
+        return ProductMapper.toResponse(savedModel);
+}
+```
+
+---
+
+## 14.6. update
+
+```java
+/*
+ * Actualiza completamente un producto activo.
+ *
+ * No permite cambiar el usuario propietario.
+ * Sí permite cambiar la categoría.
+ */
+@Override
+public ProductResponseDto update(Long id, UpdateProductDto dto) {
+
+    ProductEntity entity = productRepository.findByIdAndDeletedFalse(id)
+            .orElseThrow(() -> new NotFoundException("Product not found"));
+
+    CategoryEntity category = categoryRepository.findById(dto.getCategoryId())
+            .orElseThrow(() -> new NotFoundException("Category not found"));
+
+    if (category.isDeleted()) {
+        throw new NotFoundException("Category not found");
+    }
+
+    entity.setName(dto.getName());
+    entity.setPrice(dto.getPrice());
+    entity.setStock(dto.getStock());
+    entity.setCategory(category);
+
+        ProductEntity savedEntity = productRepository.save(entity);
+
+        ProductModel model = ProductMapper.toModelFromEntity(savedEntity);
+
+        return ProductMapper.toResponse(model);
+}
+```
+
+---
+
+## 14.7. partialUpdate
+
+```java
+/*
+ * Actualiza parcialmente un producto activo.
+ *
+ * Solo modifica los campos enviados en el DTO.
+ */
+@Override
+public ProductResponseDto partialUpdate(Long id, PartialUpdateProductDto dto) {
+
+    ProductEntity entity = productRepository.findByIdAndDeletedFalse(id)
+            .orElseThrow(() -> new NotFoundException("Product not found"));
+
+    if (dto.getName() != null) {
+        entity.setName(dto.getName());
+    }
+
+    if (dto.getPrice() != null) {
+        entity.setPrice(dto.getPrice());
+    }
+
+    if (dto.getStock() != null) {
+        entity.setStock(dto.getStock());
+    }
+
+    if (dto.getCategoryId() != null) {
+        CategoryEntity category = categoryRepository.findById(dto.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("Category not found"));
+
+        if (category.isDeleted()) {
+            throw new NotFoundException("Category not found");
+        }
+
+        entity.setCategory(category);
+    }
+
+       ProductEntity savedEntity = productRepository.save(entity);
+
+        ProductModel model = ProductMapper.toModelFromEntity(savedEntity);
+
+        return ProductMapper.toResponse(model);
+}
+```
+
+---
+
+```
+
+---
+
+## 14.11. Método helper `toResponse`
+
+```java
+/*
+ * Convierte ProductEntity a ProductResponseDto.
+ *
+ * Incluye datos anidados del usuario propietario y de la categoría.
+ */
+private ProductResponseDto toResponse(ProductEntity entity) {
+
+    ProductResponseDto dto = new ProductResponseDto();
+
+    dto.setId(entity.getId());
+    dto.setName(entity.getName());
+    dto.setPrice(entity.getPrice());
+    dto.setStock(entity.getStock());
+    dto.setCreatedAt(entity.getCreatedAt());
+    dto.setUpdatedAt(entity.getUpdatedAt());
+
+    ProductResponseDto.UserSummaryDto ownerDto = new ProductResponseDto.UserSummaryDto();
+
+    ownerDto.setId(entity.getOwner().getId());
+    ownerDto.setName(entity.getOwner().getName());
+    ownerDto.setEmail(entity.getOwner().getEmail());
+
+    dto.setOwner(ownerDto);
+
+    ProductResponseDto.CategorySummaryDto categoryDto = new ProductResponseDto.CategorySummaryDto();
+
+    categoryDto.setId(entity.getCategory().getId());
+    categoryDto.setName(entity.getCategory().getName());
+    categoryDto.setDescription(entity.getCategory().getDescription());
+
+    dto.setCategory(categoryDto);
+
+    return dto;
+}
+```
+
+---
+
+# 15. Controladores
+
+## 15.1. CategoriesController
+
+Archivo:
+
+```txt
+categories/controllers/CategoriesController.java
+```
+
+Código:
+
+```java
+/*
+ * Controlador REST encargado de exponer los endpoints HTTP
+ * para la gestión de categorías.
+ */
+@RestController
+@RequestMapping("/categories")
+public class CategoriesController {
+
+    private final CategoryService service;
+
+    public CategoriesController(CategoryService service) {
+        this.service = service;
+    }
+
+    @GetMapping
+    public List<CategoryResponseDto> findAll() {
+        return service.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public CategoryResponseDto findOne(@PathVariable Long id) {
+        return service.findOne(id);
+    }
+
+    @PostMapping
+    public CategoryResponseDto create(@Valid @RequestBody CreateCategoryDto dto) {
+        return service.create(dto);
+    }
+
+    @PutMapping("/{id}")
+    public CategoryResponseDto update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCategoryDto dto
+    ) {
+        return service.update(id, dto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
     }
 }
 ```
 
-### Creamos un validador de categorias
+---
 
-Para todas las categorías recibidas en el DTO pueder ser un servicio aparte si se desea reutilizar en otros casos de uso.
+## 15.2. ProductsController
+
+Archivo:
+
+```txt
+products/controllers/ProductsController.java
+```
+
+Código:
 
 ```java
-    // ============== MÉTODOS HELPER ==============
+/*
+ * Controlador REST encargado de exponer los endpoints HTTP
+ * para la gestión de productos.
+ *
+ * El context-path global es /api.
+ * Por eso aquí no se coloca /api en el RequestMapping.
+ */
+@RestController
+@RequestMapping("/products")
+public class ProductsController {
 
-private Set<CategoryEntity> validateAndGetCategories(Set<Long> categoryIds) {
-    Set<CategoryEntity> categories = new HashSet<>();
-    
-    for (Long categoryId : categoryIds) {
-        CategoryEntity category = categoryRepo.findById(categoryId)
-                .orElseThrow(() -> new NotFoundException("Categoría no encontrada: " + categoryId));
-        categories.add(category);
+    // Otros endpoints ...
+
+     /*
+     * Endpoint para buscar productos por id de usuario.
+     *
+     * GET /products/user/{userId}
+     */
+    @GetMapping("/user/{userId}")
+    public List<ProductResponseDto> findByUserId(@PathVariable Long userId) {
+        return service.findByUserId(userId);
     }
-    
-    return categories;
+
+    /*
+     * Endpoint para buscar productos por id de categoría.
+     *
+     * GET /products/category/{categoryId}
+     */
+    @GetMapping("/category/{categoryId}")
+    public List<ProductResponseDto> findByCategoryId(@PathVariable Long categoryId) {
+        return service.findByCategoryId(categoryId);
+    }
 }
-
 ```
 
-> **NOTA:** Deberan actualizar los demás métodos del servicio y controlador para manejar la relación N:N según sea necesario.
->
-> **NOTA** : Recuerden actualizar los DTOs, repositorios y controladores para reflejar la nueva relación N:N. El metodo `toResponseDto` deberia ser acutalizado para mapear la colección de categorías.
+---
 
+# 16. Endpoints disponibles
 
-# **11. Flujo de Consultas SQL Generadas**
+Como el context-path global es:
 
-## **11.1. Crear producto con múltiples categorías**
-
-```java
-// Al ejecutar productService.create(dto)
+```txt
+/api
 ```
 
-**SQL generado por Hibernate**:
+las rutas finales son:
+
+## Categorías
+
+| Método | Ruta                   | Descripción                       |
+| ------ | ---------------------- | --------------------------------- |
+| GET    | `/api/categories`      | Lista categorías                  |
+| GET    | `/api/categories/{id}` | Obtiene una categoría             |
+| POST   | `/api/categories`      | Crea una categoría                |
+| PUT    | `/api/categories/{id}` | Actualiza una categoría           |
+| DELETE | `/api/categories/{id}` | Elimina lógicamente una categoría |
+
+## Productos
+
+| Método | Ruta                                  | Descripción                      |
+| ------ | ------------------------------------- | -------------------------------- |
+| GET    | `/api/products`                       | Lista productos activos          |
+| GET    | `/api/products/{id}`                  | Obtiene un producto              |
+| GET    | `/api/products/user/{userId}`         | Lista productos de un usuario    |
+| GET    | `/api/products/category/{categoryId}` | Lista productos de una categoría |
+| POST   | `/api/products`                       | Crea producto con relaciones     |
+| PUT    | `/api/products/{id}`                  | Actualiza producto completo      |
+| PATCH  | `/api/products/{id}`                  | Actualiza producto parcialmente  |
+| DELETE | `/api/products/{id}`                  | Elimina lógicamente un producto  |
+
+---
+
+# 17. Pruebas sugeridas en Postman / Bruno
+
+## Crear categoría
+
+Método:
+
+```txt
+POST
+```
+
+Ruta:
+
+```txt
+/api/categories
+```
+
+Body:
+
+```json
+{
+  "name": "Electrónicos",
+  "description": "Dispositivos electrónicos"
+}
+```
+
+---
+
+## Crear producto con relaciones
+
+Método:
+
+```txt
+POST
+```
+
+Ruta:
+
+```txt
+/api/products
+```
+
+Body:
+
+```json
+{
+  "name": "Laptop Gaming",
+  "price": 1200.0,
+  "stock": 10,
+  "userId": 1,
+  "categoryId": 1
+}
+```
+
+Si la respuesta sale con campos en null 
+
+![alt text](assets/08-realcionproductos-2.png)
+
+deberan agregan en el mapper de ProductResponseDto los objetos anidados owner y category.
+---
+
+## Listar productos
+
+Método:
+
+```txt
+GET
+```
+
+Ruta:
+
+```txt
+/api/products
+```
+
+---
+
+## Consultar productos por usuario
+
+Método:
+
+```txt
+GET
+```
+
+Ruta:
+
+```txt
+/api/products/user/1
+```
+
+---
+
+## Consultar productos por categoría
+
+Método:
+
+```txt
+GET
+```
+
+Ruta:
+
+```txt
+/api/products/category/1
+```
+
+---
+
+## Crear producto con usuario inexistente
+
+Método:
+
+```txt
+POST
+```
+
+Ruta:
+
+```txt
+/api/products
+```
+
+Body:
+
+```json
+{
+  "name": "Monitor 4K",
+  "price": 500.0,
+  "stock": 5,
+  "userId": 999,
+  "categoryId": 1
+}
+```
+
+Resultado esperado:
+
+```txt
+404 Not Found
+```
+
+---
+
+## Crear producto con categoría inexistente
+
+Método:
+
+```txt
+POST
+```
+
+Ruta:
+
+```txt
+/api/products
+```
+
+Body:
+
+```json
+{
+  "name": "Monitor 4K",
+  "price": 500.0,
+  "stock": 5,
+  "userId": 1,
+  "categoryId": 999
+}
+```
+
+Resultado esperado:
+
+```txt
+404 Not Found
+```
+![alt text](assets/08-realcionproductos-3.png)
+
+---
+
+# 18. Consultas SQL esperadas
+
+Al crear un producto con usuario y categoría, Hibernate generará consultas similares a:
 
 ```sql
--- 1. Insertar producto
-INSERT INTO products (name, price, description, user_id, created_at, deleted) 
-VALUES ('Laptop Gaming', 1200.00, 'Alta performance', 1, NOW(), false);
-
--- 2. Insertar relaciones en tabla intermedia
-INSERT INTO product_categories (product_id, category_id) VALUES (1, 2); -- Electrónicos
-INSERT INTO product_categories (product_id, category_id) VALUES (1, 5); -- Gaming  
-INSERT INTO product_categories (product_id, category_id) VALUES (1, 8); -- Oficina
+SELECT * FROM users WHERE id = ?;
+SELECT * FROM categories WHERE id = ?;
+INSERT INTO products (
+    name,
+    price,
+    stock,
+    user_id,
+    category_id,
+    created_at,
+    deleted
+) VALUES (?, ?, ?, ?, ?, ?, ?);
 ```
 
-## **11.2. Consultar producto con categorías**
-
-```java
-// Al ejecutar productService.findById(1L)
-```
-
-**SQL generado**:
+Al consultar un producto y acceder a sus relaciones, se pueden generar consultas adicionales por `LAZY loading`:
 
 ```sql
--- 1. Consulta principal (LAZY loading)
-SELECT p.* FROM products p WHERE p.id = 1;
-
--- 2. Consulta de categorías (cuando se accede a getCategories())
-SELECT c.*, pc.product_id 
-FROM categories c 
-INNER JOIN product_categories pc ON c.id = pc.category_id 
-WHERE pc.product_id = 1;
+SELECT * FROM products WHERE id = ?;
+SELECT * FROM users WHERE id = ?;
+SELECT * FROM categories WHERE id = ?;
 ```
 
-# **12. Comparación: 1:N vs N:N**
+---
 
-| Aspecto | Relación 1:N | Relación N:N |
-|---------|-------------|-------------|
-| **Tabla intermedia** | ❌ No necesaria | ✅ Requerida |
-| **Flexibilidad** | ⚠️ Limitada | ✅ Alta |
-| **Complejidad** | ✅ Simple | ⚠️ Media |
-| **Performance** | ✅ Mejor | ⚠️ Más consultas |
-| **Uso de memoria** | ✅ Menos | ⚠️ Más (colecciones) |
-| **Casos de uso** | Relaciones fijas | Clasificaciones, tags |
+# 19. Verificación en PostgreSQL
 
-## **12.1. ¿Cuándo usar cada tipo?**
+Entrar a PostgreSQL:
 
-### **Usar 1:N cuando:**
-* La relación es **naturalmente jerárquica**
-* Un elemento pertenece a **una sola categoría padre**
-* La estructura es **estable** y no cambiará frecuentemente
+```bash
+docker exec -it postgres-dev psql -U ups -d devdb
+```
 
-### **Usar N:N cuando:**
-* Necesitas **clasificación múltiple**
-* Los elementos pueden tener **múltiples etiquetas**
-* Requieres **flexibilidad** en la categorización
+Listar tablas:
 
-# **13. Actividad Práctica Completa**
+```sql
+\dt
+```
 
-El estudiante debe implementar **ambos enfoques** para entender las diferencias.
+Revisar estructura de productos:
 
-## **13.1. PARTE A: Implementar relación 1:N (básica)**
+```sql
+\d products
+```
 
-1. **Crear CategoryEntity básica**
-2. **Actualizar ProductEntity con @ManyToOne**
-3. **Implementar ProductService con validación de relaciones**
-4. **Crear endpoints**:
-   - `POST /api/products` (con userId y categoryId)
-   - `GET /api/products/user/{userId}`
-   - `GET /api/products/category/{categoryId}`
-5. **Probar con datos reales en PostgreSQL**
+Consultar productos con sus relaciones:
 
-## **13.2. PARTE B: Evolucionar a N:N (dos)**
+```sql
+SELECT 
+    p.id,
+    p.name,
+    p.price,
+    p.stock,
+    p.user_id,
+    u.name AS user_name,
+    p.category_id,
+    c.name AS category_name
+FROM products p
+INNER JOIN users u ON p.user_id = u.id
+INNER JOIN categories c ON p.category_id = c.id;
+```
 
-1. **Actualizar ProductEntity con @ManyToMany**
-2. **Actualizar CategoryEntity con relación bidireccional**
-3. **Modificar DTOs para múltiples categorías**
-4. **Actualizar ProductService para manejar Set<CategoryEntity>**
-5. **Probar creación de productos con múltiples categorías**
+---
 
-## **13.3. PARTE C: Consultas avanzadas**
+# 20. Actividad práctica
 
-1. **Implementar endpoints adicionales**:
+Se debe implementar relaciones básicas en el módulo de productos.
 
-   - `GET /api/categories/{id}/products/count` (contar productos por categoría)
-2. **Agregar consultas personalizadas con @Query**
-3. **Implementar filtros complejos**
+---
+
+## 20.1. Crear módulo `categories`
+
+Crear:
+
+```txt
+CategoryEntity
+CreateCategoryDto
+UpdateCategoryDto
+CategoryResponseDto
+CategoryRepository
+CategoryService
+CategoryServiceImpl
+CategoriesController
+```
+
+---
+
+## 20.2. Actualizar `ProductEntity`
+
+Agregar relaciones:
+
+```java
+@ManyToOne
+private UserEntity owner;
+
+@ManyToOne
+private CategoryEntity category;
+```
+
+Con sus respectivos `@JoinColumn`.
+
+---
+
+## 20.3. Actualizar DTOs de producto
+
+Agregar en `CreateProductDto`:
+
+```txt
+userId
+categoryId
+```
+
+Agregar en `UpdateProductDto`:
+
+```txt
+categoryId
+```
+
+Agregar en `ProductResponseDto`:
+
+```txt
+owner
+category
+```
+
+como objetos anidados.
+
+---
+
+## 20.4. Actualizar `ProductRepository`
+
+Agregar consultas:
+
+```txt
+findByOwner_IdAndDeletedFalse
+findByCategory_IdAndDeletedFalse
+findByIdAndDeletedFalse
+findByDeletedFalse
+```
+
+---
+
+## 20.5. Actualizar `ProductServiceImpl`
+
+Validar:
+
+* usuario inexistente
+* usuario eliminado
+* categoría inexistente
+* categoría eliminada
+* producto inexistente
+* producto eliminado
+* nombre de producto duplicado
+
+---
+
+## 20.6. Probar endpoints relacionales
+
+Probar:
+
+```txt
+POST /api/categories
+POST /api/products
+GET /api/products
+GET /api/products/user/{userId}
+GET /api/products/category/{categoryId}
+```
+
+---
+
+# 21. Resultados y evidencias
+
+En la nueva entrada del README, se debe agregar:
+
+- 3 captruas 
+- 1 explicación
+
+## Captura de descripcion de la tabla `products` en PostgreSQL
 
 
+## Captura de respuesta en bruno o postmand de la creación de Producto con sus relaciones 
 
-# **14. Resultados y Evidencias Requeridas**
+Debe evidenciar:
 
-## **14.1. Evidencias de implementación**
-1. **Captura de ProductEntity.java** (con ambas versiones: 1:N y N:N)
-2. **Captura de ProductServiceImpl.java** (métodos create y update)
+* objeto anidado `owner`
+* objeto anidado `category`
+* campos de fecha
 
-## **14.2. Evidencias de funcionamiento**
-1. **Producto creado con una categoría** (versión 1:N)
-2. **Producto creado con múltiples categorías** (versión N:N)
-3. **Consulta SQL en consola** mostrando tabla intermedia `product_categories`
-4. **Respuesta JSON** de un producto con múltiples categorías
+---
 
-## **14.3. Evidencias de base de datos**
-1. **CAputra  del consumo de** /api/categories/{id}/products/count
+## Captura de consulta de productos por categoría
 
-## **14.4. Datos para revisión**
+Ejemplo:
 
-**Crear los siguientes productos de prueba**:
+```txt
+GET /api/products/category/1
+```
 
-1. **Laptop Gaming** → Categorías: ["Electrónicos", "Gaming", "Oficina"]
-2. **Mouse Inalámbrico** → Categorías: ["Electrónicos", "Oficina"]
-3. **Monitor 4K** → Categorías: ["Electrónicos", "Gaming", "Diseño"]
-4. **Teclado Mecánico** → Categorías: ["Gaming", "Oficina"]
-5. **Libro Java** → Categorías: ["Libros", "Programación", "Educación"]
+
+---
+
+## Explicación breve
+
+Se debe explicar:
+
+```txt
+¿Cómo se relaciona ProductEntity con UserEntity y CategoryEntity usando @ManyToOne y @JoinColumn?
+```

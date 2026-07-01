@@ -78,6 +78,11 @@ Si se usa el mismo objeto para todo, pueden ocurrir errores como:
 * mezclar responsabilidades
 * dificultar pruebas y mantenimiento
 
+
+
+<img src="assets/06_validaciones-01.png" alt="alt text" style="max-width: 500px; display: block;  margin-bottom: 30px; margin-top: 30px;">
+
+
 Ejemplo no recomendado:
 
 ```json
