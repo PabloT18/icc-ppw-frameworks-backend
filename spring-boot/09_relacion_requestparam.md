@@ -210,33 +210,6 @@ GET /api/users/1/products?name=laptop&minPrice=500&maxPrice=1500&categoryId=2
 
 ---
 
-## 4.2. Productos desde el contexto de categoría
-
-Ruta recomendada:
-
-```txt
-GET /api/categories/{id}/products
-```
-
-Significa:
-
-```txt
-Obtener los productos de la categoría con id indicado.
-```
-
-Ejemplo:
-
-```txt
-GET /api/categories/2/products
-```
-
-Con filtros:
-
-```txt
-GET /api/categories/2/products?name=gaming&minPrice=100
-```
-
----
 
 ## 4.3. Diferencia con endpoints técnicos
 
@@ -323,38 +296,10 @@ Este enfoque es el recomendado en esta práctica porque:
 * mantiene control sobre el SQL generado
 * escala mejor con muchos registros
 
----
-
-# 6. No modificar UserEntity con OneToMany
-
-En la práctica anterior `UserEntity` se mantuvo simple.
-
-No se agregó:
-
-```java
-@OneToMany(mappedBy = "owner")
-private Set<ProductEntity> products;
-```
-
-En esta práctica se mantiene esa decisión.
-
-La relación se consulta desde `ProductRepository`.
-
-Esto evita acoplar `UserEntity` con una colección de productos que no siempre se necesita.
-
-La relación real ya existe en la base de datos mediante:
-
-```java
-@ManyToOne
-@JoinColumn(name = "user_id")
-private UserEntity owner;
-```
-
-dentro de `ProductEntity`.
 
 ---
 
-# 7. DTO para filtros de productos
+# 6. DTO para filtros de productos
 
 Se creará un DTO para recibir filtros opcionales desde query params.
 
@@ -390,7 +335,6 @@ public class ProductFilterByUserDto {
     private Long categoryId;
 
 
-
     /*
      * Valida que el rango de precios sea coherente.
      *
@@ -421,7 +365,7 @@ public class ProductFilterByUserDto {
 
 ---
 
-# 8. Validación de `@ModelAttribute`
+# 7. Validación de `@ModelAttribute`
 
 Para recibir filtros desde query params se puede usar:
 
@@ -458,7 +402,7 @@ filters.minPrice = 500
 
 ---
 
-# 9. Actualización del handler global para filtros
+# 8. Actualización del handler global para filtros
 
 En prácticas anteriores se manejó:
 
@@ -534,7 +478,7 @@ Ejemplo de respuesta:
 
 ---
 
-# 10. Actualización de ProductRepository
+# 9. Actualización de ProductRepository
 
 El repositorio de productos debe incluir consultas con filtros dinámicos.
 
@@ -583,36 +527,13 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
             @Param("categoryId") Long categoryId
     );
 
-    /*
-     * Busca productos activos de una categoría aplicando filtros opcionales.
-     *
-     * Si un filtro llega como null, no se aplica.
-     */
-    @Query("""
-            SELECT p
-            FROM ProductEntity p
-            WHERE p.deleted = false
-              AND p.category.id = :categoryId
-              AND p.category.deleted = false
-              AND (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', COALESCE(:name, ''), '%')))
-              AND (:minPrice IS NULL OR p.price >= :minPrice)
-              AND (:maxPrice IS NULL OR p.price <= :maxPrice)
-              AND (:userId IS NULL OR p.owner.id = :userId)
-              AND (:userId IS NULL OR p.owner.deleted = false)
-            """)
-    List<ProductEntity> findByCategoryIdWithFilters(
-            @Param("categoryId") Long categoryId,
-            @Param("name") String name,
-            @Param("minPrice") Double minPrice,
-            @Param("maxPrice") Double maxPrice,
-            @Param("userId") Long userId
-    );
+    
 }
 ```
 
 ---
 
-## 10.1. Explicación de la consulta
+## 9.1. Explicación de la consulta
 
 Esta parte:
 
@@ -655,9 +576,9 @@ Si categoryId tiene valor, se buscan productos de esa categoría.
 
 ---
 
-# 11. Actualización de ProductService
+# 10. Actualización de ProductService
 
-## 11.1. ProductService
+## 10.1. ProductService
 
 Archivo:
 
@@ -682,18 +603,12 @@ public interface ProductService {
             ProductFilterByUserDto filters
     );
 
-    List<ProductResponseDto> findByCategoryIdWithFilters(
-            Long categoryId,
-            ProductFilterByUserDto filters
-    );
-
- 
 }
 ```
 
 ---
 
-# 12. Actualización de ProductServiceImpl
+# 11. Actualización de ProductServiceImpl
 
 Archivo:
 
@@ -713,7 +628,7 @@ private final CategoryRepository categoryRepository;
 
 ---
 
-## 12.1. Consulta de productos por usuario con filtros
+## 11.1. Consulta de productos por usuario con filtros
 
 ```java
 /*
@@ -752,46 +667,7 @@ public List<ProductResponseDto> findByUserIdWithFilters(
 
 ---
 
-## 12.2. Consulta de productos por categoría con filtros
-
-```java
-/*
- * Retorna productos activos de una categoría aplicando filtros opcionales.
- *
- * Primero valida que la categoría exista y no esté eliminada.
- * Luego valida el rango de precios.
- * Finalmente consulta los productos desde ProductRepository.
- */
-@Override
-public List<ProductResponseDto> findByCategoryIdWithFilters(
-        Long categoryId,
-        ProductFilterByCategoryDto filters
-) {
-    if (!categoryRepository.existsByIdAndDeletedFalse(categoryId)) {
-        throw new NotFoundException("Category not found");
-    }
-
-    validateFilters(filters);
-
-    String name = normalizeName(filters.getName());
-
-    return productRepository.findByCategoryIdWithFilters(
-                    categoryId,
-                    name,
-                    filters.getMinPrice(),
-                    filters.getMaxPrice(),
-                    filters.getUserId()
-            )
-            .stream()
-           .map(ProductMapper::toModelFromEntity)
-                .map(ProductMapper::toResponse)
-            .toList();
-}
-```
-
----
-
-## 12.3. Método helper para validar filtros
+## 11.2. Método helper para validar filtros
 
 ```java
 /*
@@ -818,7 +694,7 @@ private void validateUserFilters(ProductFilterByUserDto filters) {
 
 ---
 
-## 12.4. Método helper para normalizar nombre
+## 11.3. Método helper para normalizar nombre
 
 ```java
 /*
@@ -840,7 +716,7 @@ private String normalizeName(String name) {
 ---
 
 
-# 13. Actualización de UsersController
+# 12. Actualización de UsersController
 
 Se agrega un endpoint semántico para consultar productos de un usuario.
 
@@ -895,9 +771,19 @@ public class UserProductsController {
 }
 ```
 
+Creamos un controlador separado `UserProductsController` para mantener la semántica de la ruta y delegar la lógica al servicio de productos.
+
+```java
+UserProductsController - > ProductService
+``` 
+
+```java
+UsersController - > UserService
+```
+
 ---
 
-## 13.1. Explicación
+## 12.1. Explicación
 
 El endpoint final será:
 
@@ -925,56 +811,685 @@ Por eso no se debe colocar:
 
 ---
 
-# 14. Actualización de CategoriesController
 
-Se agrega un endpoint semántico para consultar productos de una categoría.
+# 13. Endpoints disponibles
+
+## Productos por usuario
+
+| Método | Ruta                                                             | Descripción                   |
+| ------ | ---------------------------------------------------------------- | ----------------------------- |
+| GET    | `/api/users/{id}/products`                                       | Lista productos de un usuario |
+| GET    | `/api/users/{id}/products?name=laptop`                           | Filtra por nombre             |
+| GET    | `/api/users/{id}/products?minPrice=500`                          | Filtra por precio mínimo      |
+| GET    | `/api/users/{id}/products?maxPrice=1500`                         | Filtra por precio máximo      |
+| GET    | `/api/users/{id}/products?categoryId=2`                          | Filtra por categoría          |
+| GET    | `/api/users/{id}/products?name=gaming&minPrice=800&categoryId=2` | Combina filtros               |
+
+
+# 14. Relación ManyToMany entre ProductEntity y CategoryEntity
+
+Hasta este punto, la práctica trabaja con la relación:
+
+```txt
+Category 1 ──── N Product
+```
+
+Es decir, cada producto pertenece a una sola categoría.
+
+En la base de datos esto se representa mediante una columna:
+
+```txt
+products.category_id
+```
+
+y en JPA mediante:
+
+```java
+@ManyToOne
+@JoinColumn(name = "category_id")
+private CategoryEntity category;
+```
+
+Sin embargo, en una aplicación real un producto puede pertenecer a varias categorías.
+
+Ejemplo:
+
+```txt
+Laptop Gaming → Electrónicos, Gaming, Oficina
+Mouse Inalámbrico → Electrónicos, Oficina
+Libro Java → Libros, Programación, Educación
+```
+
+Para representar este caso se modifica la relación hacia:
+
+```txt
+Product N ──── N Category
+```
+
+Esto requiere:
+
+* eliminar la relación directa `ProductEntity.category`
+* agregar una colección `Set<CategoryEntity>`
+* crear una tabla intermedia
+* actualizar DTOs
+* actualizar repositorios
+* actualizar servicios
+* actualizar mappers
+* actualizar consultas con filtros
+
+---
+
+
+## 14.1. ProductEntity actualizado
 
 Archivo:
 
 ```txt
-categories/controllers/CategoriesController.java
+products/entities/ProductEntity.java
+```
+
+La relación anterior:
+
+```java
+@ManyToOne(optional = false, fetch = FetchType.LAZY)
+@JoinColumn(name = "category_id", nullable = false)
+private CategoryEntity category;
+```
+
+debe reemplazarse por:
+
+```java
+/*
+ * Relación muchos a muchos entre productos y categorías.
+ *
+ * Un producto puede pertenecer a varias categorías.
+ * Una categoría puede tener varios productos.
+ */
+@ManyToMany(fetch = FetchType.LAZY)
+@JoinTable(
+        name = "product_categories",
+        joinColumns = @JoinColumn(name = "product_id"),
+        inverseJoinColumns = @JoinColumn(name = "category_id")
+)
+private Set<CategoryEntity> categories = new HashSet<>();
+```
+
+
+
+## 14.2. CategoryEntity actualizado
+
+Archivo:
+
+```txt
+categories/entities/CategoryEntity.java
+```
+
+Si se desea una relación bidireccional, se puede agregar:
+
+```java
+/*
+ * Relación inversa con productos.
+ *
+ * mappedBy indica que la relación principal se define
+ * en el atributo categories de ProductEntity.
+ */
+@ManyToMany(mappedBy = "categories", fetch = FetchType.LAZY)
+private Set<ProductEntity> products = new HashSet<>();
+```
+
+
+
+## 14.3. Tabla intermedia generada
+
+JPA generará una tabla intermedia:
+
+```txt
+product_categories
+```
+
+Con columnas:
+
+```txt
+product_id
+category_id
+```
+
+Conceptualmente:
+
+```sql
+CREATE TABLE product_categories (
+    product_id BIGINT NOT NULL,
+    category_id BIGINT NOT NULL,
+    PRIMARY KEY (product_id, category_id),
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+```
+
+Esta tabla permite que un producto tenga varias categorías sin duplicar productos ni categorías.
+
+---
+
+# 16. Actualización de DTOs para ManyToMany
+
+## 16.1. CreateProductDto
+
+Antes se recibía:
+
+```java
+private Long categoryId;
+```
+
+Ahora se debe recibir:
+
+```java
+    @NotEmpty(message = "Debe seleccionar al menos una categoría")
+    private Set<Long> categoryIds;
+```
+
+Archivo:
+
+```txt
+products/dtos/CreateProductDto.java
+```
+
+
+
+
+---
+
+## 16.2. UpdateProductDto
+
+Archivo:
+
+```txt
+products/dtos/UpdateProductDto.java
+```
+
+Código, ahora se debe recibir:
+
+```java
+   @NotEmpty(message = "Debe seleccionar al menos una categoría")
+    private Set<Long> categoryIds;
+```
+
+
+## 16.3. PartialUpdateProductDto
+
+Archivo:
+
+```txt
+products/dtos/PartialUpdateProductDto.java
+```
+
+
+Código, ahora se debe recibir:
+
+```java
+    private Set<Long> categoryIds;
+```
+
+
+## 16.4. ProductResponseDto
+
+Antes se devolvía una sola categoría.
+
+Ahora se devuelve una lista de categorías.
+
+Archivo:
+
+```txt
+products/dtos/ProductResponseDto.java
+```
+
+Código, a actualizar:
+
+```java
+ private List<CategoryResponseDto> categories;   
+```
+
+Ejemplo de respuesta:
+
+```json
+{
+  "id": 1,
+  "name": "Laptop Gaming",
+  "price": 1200.0,
+  "stock": 5,
+  "owner": {
+    "id": 1,
+    "name": "Juan Pérez",
+    "email": "juan@ups.edu.ec"
+  },
+  "categories": [
+    {
+      "id": 1,
+      "name": "Electrónicos"
+    },
+    {
+      "id": 2,
+      "name": "Gaming"
+    }
+  ],
+  "createdAt": "2026-01-15T10:30:00",
+  "updatedAt": "2026-01-15T10:35:00"
+}
+```
+
+---
+
+# 17. Actualización de ProductMapper
+
+El mapper debe cambiar porque ya no existe una única categoría.
+
+Ahora debe convertir:
+
+```txt
+ProductEntity.categories → ProductResponseDto.categories
+```
+
+Primero tamebien se debe actualizar `ProductModel` para que contenga:
+
+```java
+private List<Long> categories;
+```
+
+Archivo:
+
+```txt
+products/mappers/ProductMapper.java
+```
+
+Código de `ProductMapper.toModelFromEntity` actualizado:
+
+```java
+        model.setCategories(entity.getCategories().stream().toList());
+
+```
+
+Código de `ProductMapper.toResponse` actualizado, se recomienda actualizar `ProductMapper.toResponse` para que el `ProductModel` contenga los datos mínimos necesarios de las categorías.
+
+```java
+        response.setCategories(model.setCategories().stream().map(ProductMapper::toResponse).toList());
+
+```
+Explicación:
+
+- `stream()` sobre la colección de categorías del modelo
+- `map()` para convertir cada categoría en un `CategoryResponseDto`
+- `ProductMapper::toResponse` para convertir cada categoría usa el método estatico `toResponse` que convierte cada `CategoryEntity` del stream a `CategoryResponseDto`.
+
+
+---
+
+# 18. Actualización de ProductRepository para ManyToMany
+
+La consulta anterior usaba:
+
+```java
+p.category.id
+```
+
+Eso ya no aplica después de la relación muchos a muchos.
+
+Ahora se debe hacer JOIN con:
+
+```java
+p.categories
+```
+
+Archivo:
+
+```txt
+products/repositories/ProductRepository.java
 ```
 
 Código:
 
 ```java
 /*
- * Controlador REST encargado de exponer los endpoints HTTP
- * para la gestión de categorías.
+ * Repositorio encargado de gestionar la persistencia
+ * de productos usando Spring Data JPA.
  *
- * También expone consultas semánticas relacionadas con productos
- * desde el contexto de una categoría.
+ * Incluye consultas relacionales y filtros opcionales.
+ */
+@Repository
+public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
+
+    // Otros métodos existentes ...
+    /*
+     * Busca productos activos de una categoría aplicando filtros opcionales.
+     *
+     * La categoría se consulta a través de la tabla intermedia product_categories.
+     */
+    @Query("""
+            SELECT DISTINCT p
+            FROM ProductEntity p
+            JOIN p.categories c
+            WHERE p.deleted = false
+              AND c.id = :categoryId
+              AND c.deleted = false
+              AND p.owner.deleted = false
+              AND (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', COALESCE(:name, ''), '%')))
+              AND (:minPrice IS NULL OR p.price >= :minPrice)
+              AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+              AND (:userId IS NULL OR p.owner.id = :userId)
+            """)
+    List<ProductEntity> findByCategoryIdWithFilters(
+            @Param("categoryId") Long categoryId,
+            @Param("name") String name,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            @Param("userId") Long userId
+    );
+}
+```
+
+
+
+
+---
+
+## 18.1. Por qué se usa DISTINCT
+
+En una relación muchos a muchos, un producto puede estar asociado a varias categorías.
+
+Cuando se hace:
+
+```java
+LEFT JOIN p.categories c
+```
+
+el mismo producto puede aparecer más de una vez en el resultado SQL si coincide con varias filas relacionadas.
+
+Por eso se usa:
+
+```java
+SELECT DISTINCT p
+```
+
+para evitar productos duplicados en la respuesta.
+
+---
+
+
+
+# 19. Filtro para productos desde el contexto de categoría
+
+Cuando se consulta:
+
+```txt
+GET /api/categories/{id}/products
+```
+
+la categoría ya viene en la URL.
+
+Por eso el filtro no debe tener `categoryId`.
+
+Debe permitir filtrar por usuario.
+
+Archivo:
+
+```txt
+products/dtos/ProductFilterByCategoryDto.java
+```
+
+Código:
+
+```java
+/*
+ * DTO utilizado para recibir filtros opcionales
+ * en consultas de productos desde el contexto de categorías.
+ *
+ * Ejemplo:
+ * /api/categories/1/products?name=laptop&minPrice=500&userId=2
+ */
+public class ProductFilterByCategoryDto {
+
+    @Size(min = 2, max = 150, message = "El nombre debe tener entre 2 y 150 caracteres")
+    private String name;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "El precio mínimo no puede ser negativo")
+    private Double minPrice;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "El precio máximo no puede ser negativo")
+    private Double maxPrice;
+
+    @Min(value = 1, message = "El ID de usuario debe ser mayor a 0")
+    private Long userId;
+
+    /*
+     * Valida que el rango de precios sea coherente.
+     */
+    public boolean hasValidPriceRange() {
+        if (minPrice != null && maxPrice != null) {
+            return maxPrice >= minPrice;
+        }
+
+        return true;
+    }
+
+    // Constructor vacío
+
+    // Constructor lleno
+
+    // Getters y setters
+}
+```
+
+---
+
+# 20. Actualización de ProductService
+
+## 20.1. ProductService
+
+Archivo:
+
+```txt
+products/services/ProductService.java
+```
+
+Agregar:
+
+```java
+List<ProductResponseDto> findByCategoryIdWithFilters(
+        Long categoryId,
+        ProductFilterByCategoryDto filters
+);
+```
+
+---
+
+## 20.2. ProductServiceImpl para productos por categoría
+
+Archivo:
+
+```txt
+products/services/ProductServiceImpl.java
+```
+
+Código:
+
+```java
+/*
+ * Retorna productos activos de una categoría aplicando filtros opcionales.
+ *
+ * Primero valida que la categoría exista y no esté eliminada.
+ * Luego valida el rango de precios.
+ * Si viene userId como filtro, valida que el usuario exista.
+ * Finalmente consulta los productos desde ProductRepository.
+ */
+@Override
+public List<ProductResponseDto> findByCategoryIdWithFilters(
+        Long categoryId,
+        ProductFilterByCategoryDto filters
+) {
+    if (!categoryRepository.existsByIdAndDeletedFalse(categoryId)) {
+        throw new NotFoundException("Category not found");
+    }
+
+    validateCategoryFilters(filters);
+
+    String name = normalizeName(filters.getName());
+
+    return productRepository.findByCategoryIdWithFilters(
+                    categoryId,
+                    name,
+                    filters.getMinPrice(),
+                    filters.getMaxPrice(),
+                    filters.getUserId()
+            )
+            .stream()
+            .map(ProductMapper::toModelFromEntity)
+            .map(ProductMapper::toResponse)
+            .toList();
+}
+```
+
+Helper:
+
+```java
+/*
+ * Valida reglas de negocio relacionadas con filtros
+ * usados desde el contexto de categoría.
+ */
+// CREA EL METODO  QUE VALIDA LOS PARAMETROS DE FILTRO PARA CATEGORIA
+```
+
+---
+
+# 21. Actualización de creación y actualización de productos
+
+Al pasar a muchos a muchos, los métodos `create`, `update` y `partialUpdate` ya no deben usar:
+
+```java
+dto.getCategoryId()
+entity.setCategory(category)
+```
+
+Ahora deben usar:
+
+```java
+dto.getCategoryIds()
+entity.setCategories(categories)
+```
+
+---
+
+## 21.1. Helper para validar categorías
+
+```java
+/*
+ * Valida que todas las categorías existan y estén activas.
+ *
+ * Retorna el conjunto de entidades CategoryEntity
+ * que se asociarán al producto.
+ */
+private Set<CategoryEntity> validateAndGetCategories(Set<Long> categoryIds) {
+
+    if (categoryIds == null || categoryIds.isEmpty()) {
+        throw new BadRequestException("Debe seleccionar al menos una categoría");
+    }
+
+    Set<CategoryEntity> categories = new HashSet<>();
+
+    for (Long categoryId : categoryIds) {
+        CategoryEntity category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category not found"));
+
+        if (category.isDeleted()) {
+            throw new NotFoundException("Category not found");
+        }
+
+        categories.add(category);
+    }
+
+    return categories;
+}
+```
+
+---
+
+## 21.2. create actualizado
+
+```java
+/*
+ * Crea un producto asociado a un usuario y a varias categorías.
+ */
+@Override
+public ProductResponseDto create(CreateProductDto dto) {
+    // El metodo de creación ahora debe que las categorías sean validadas (existan y no estén eliminadas) para poderasociar al producto.
+    Set<CategoryEntity> categories = validateAndGetCategories(dto.getCategoryIds());
+
+}
+```
+
+---
+
+## 21.3. update actualizado
+
+Actualmente, el método `update` reemplaza todas las categorías asociadas al producto.
+
+```java
+  Set<CategoryEntity> categories = validateAndGetCategories(dto.getCategoryIds());
+```
+
+
+## 21.4. partialUpdate actualizado
+
+Actualmente, el método `partialUpdate` reemplaza todas las categorías asociadas al producto si `getCategoryIds` viene con valor.
+
+```java
+            Set<CategoryEntity> categories = validateAndGetCategories(dto.getCategoryIds());
+```
+
+
+
+# 22. Actualización de CategoriesController
+
+Se agrega un endpoint semántico para consultar productos de una categoría.
+
+Archivo:
+
+```txt
+categories/controllers/CategoryProductsController.java
+```
+
+Código:
+
+```java
+/*
+ * Controlador REST encargado de exponer consultas relacionadas
+ * entre categorías y productos.
+ *
+ * La ruta pertenece al contexto semántico de categorías:
+ * /categories/{id}/products
+ *
+ * La lógica se delega a ProductService porque el recurso consultado
+ * es products.
  */
 @RestController
 @RequestMapping("/categories")
-public class CategoriesController {
-
-    private final CategoryService service;
+public class CategoryProductsController {
 
     private final ProductService productService;
 
-    public CategoriesController(
-            CategoryService service,
-            ProductService productService
-    ) {
-        this.service = service;
+    public CategoryProductsController(ProductService productService) {
         this.productService = productService;
     }
-
-    // Endpoints existentes de categorías
 
     /*
      * Endpoint para consultar productos de una categoría.
      *
      * GET /api/categories/{id}/products
-     * GET /api/categories/{id}/products?name=gaming
-     * GET /api/categories/{id}/products?minPrice=100
+     * GET /api/categories/{id}/products?name=laptop
+     * GET /api/categories/{id}/products?minPrice=500&maxPrice=1500
      * GET /api/categories/{id}/products?userId=1
      */
     @GetMapping("/{id}/products")
     public List<ProductResponseDto> findProductsByCategory(
             @PathVariable Long id,
-            @Valid @ModelAttribute ProductFilterByUserDto filters
+            @Valid @ModelAttribute ProductFilterByCategoryDto filters
     ) {
         return productService.findByCategoryIdWithFilters(id, filters);
     }
@@ -983,7 +1498,28 @@ public class CategoriesController {
 
 ---
 
-# 15. Endpoints disponibles
+
+# 23. Actualización del flujo `findByOwnerIdWithFilters`
+
+En este flujo de filtros se tenia como parametro `categoryId` que era un `Long` y se comparaba con `p.category.id`.
+
+Esto causara error porque ahora `p.categories` es un `Set<CategoryEntity>`.
+
+Eliminando el filtro `categoryId` de `ProductFilterByUserDto` y `ProductFilterByCategoryDto`, se evita la confusión y se mantiene la semántica de los endpoints.
+
+Tambien en la consulta de `ProductRepository` se elimina la parte:
+
+```java
+AND (:categoryId IS NULL OR p.category.id = :categoryId)
+```
+
+Implica tambien actualizar el método `findByOwnerIdWithFilters` para que ya no reciba `categoryId` como parámetro. Ni mandar como argumento en la llamada a `productRepository.findByOwnerIdWithFilters`.
+
+
+El metodo del repository `findByCategory_IdAndDeletedFalse` ya no se usara porque ahora se tiene la consulta con filtros dinámicos. Lo que incluye el filtro por  categoría `findByCategoryId` del servicio.
+
+
+# 23. Endpoints disponibles
 
 ## Productos por usuario
 
@@ -1002,16 +1538,16 @@ public class CategoriesController {
 | ------ | ---------------------------------------------------- | -------------------------------- |
 | GET    | `/api/categories/{id}/products`                      | Lista productos de una categoría |
 | GET    | `/api/categories/{id}/products?name=laptop`          | Filtra por nombre                |
-| GET    | `/api/categories/{id}/products?minPrice=100`         | Filtra por precio mínimo         |
-| GET    | `/api/categories/{id}/products?maxPrice=900`         | Filtra por precio máximo         |
-| GET    | `/api/categories/{id}/products?userId=1`             | Filtra por usuario               |
+| GET    | `/api/categories/{id}/products?minPrice=500`         | Filtra por precio mínimo         |
+| GET    | `/api/categories/{id}/products?maxPrice=1500`        | Filtra por precio máximo         |
+| GET    | `/api/categories/{id}/products?userId=1`             | Filtra por usuario propietario   |
 | GET    | `/api/categories/{id}/products?name=gaming&userId=1` | Combina filtros                  |
 
 ---
 
-# 16. Pruebas sugeridas en Postman / Bruno
+# 24. Pruebas sugeridas en Postman / Bruno
 
-## Productos de un usuario
+## 24.1. Productos de un usuario
 
 Método:
 
@@ -1028,133 +1564,119 @@ Ruta:
 Resultado esperado:
 
 ```txt
-Lista de productos activos del usuario 1
+Lista de productos activos del usuario 1.
 ```
 
 ---
 
-## Productos de un usuario filtrados por nombre
-
-Método:
+## 24.2. Productos de un usuario filtrados por nombre
 
 ```txt
-GET
-```
-
-Ruta:
-
-```txt
-/api/users/1/products?name=laptop
+GET /api/users/1/products?name=laptop
 ```
 
 Resultado esperado:
 
 ```txt
-Productos del usuario 1 cuyo nombre contenga laptop
+Productos del usuario 1 cuyo nombre contenga laptop.
 ```
 
 ---
 
-## Productos de un usuario filtrados por rango de precio
-
-Método:
+## 24.3. Productos de un usuario filtrados por rango de precio
 
 ```txt
-GET
-```
-
-Ruta:
-
-```txt
-/api/users/1/products?minPrice=500&maxPrice=1500
+GET /api/users/1/products?minPrice=500&maxPrice=1500
 ```
 
 Resultado esperado:
 
 ```txt
-Productos del usuario 1 con precio entre 500 y 1500
+Productos del usuario 1 con precio entre 500 y 1500.
 ```
 
 ---
 
-## Productos de un usuario filtrados por categoría
-
-Método:
+## 24.4. Productos de un usuario filtrados por categoría
 
 ```txt
-GET
-```
-
-Ruta:
-
-```txt
-/api/users/1/products?categoryId=2
+GET /api/users/1/products?categoryId=2
 ```
 
 Resultado esperado:
 
 ```txt
-Productos del usuario 1 pertenecientes a la categoría 2
+Productos del usuario 1 que pertenecen a la categoría 2.
 ```
 
 ---
 
-## Productos de una categoría
+## 24.5. Crear producto con múltiples categorías
 
 Método:
 
 ```txt
-GET
+POST
 ```
 
 Ruta:
 
 ```txt
-/api/categories/1/products
+/api/products
+```
+
+Body:
+
+```json
+{
+  "name": "Laptop Gaming",
+  "price": 1200.0,
+  "stock": 5,
+  "userId": 1,
+  "categoryIds": [1, 2, 3]
+}
 ```
 
 Resultado esperado:
 
 ```txt
-Productos activos de la categoría 1
+Producto creado con varias categorías asociadas.
 ```
 
 ---
 
-## Productos de una categoría filtrados por usuario
-
-Método:
+## 24.6. Productos de una categoría
 
 ```txt
-GET
-```
-
-Ruta:
-
-```txt
-/api/categories/1/products?userId=1
+GET /api/categories/2/products
 ```
 
 Resultado esperado:
 
 ```txt
-Productos de la categoría 1 creados por el usuario 1
+Productos activos asociados a la categoría 2.
 ```
 
 ---
 
-## Error por usuario inexistente
-
-Método:
+## 24.7. Productos de una categoría filtrados por usuario
 
 ```txt
-GET
+GET /api/categories/2/products?userId=1
 ```
 
-Ruta:
+Resultado esperado:
 
 ```txt
-/api/users/999/products
+Productos de la categoría 2 creados por el usuario 1.
+```
+
+---
+
+## 24.8. Error por usuario inexistente
+
+```txt
+GET /api/users/999/products
 ```
 
 Resultado esperado:
@@ -1165,18 +1687,10 @@ Resultado esperado:
 
 ---
 
-## Error por categoría inexistente
-
-Método:
+## 24.9. Error por categoría inexistente
 
 ```txt
-GET
-```
-
-Ruta:
-
-```txt
-/api/categories/999/products
+GET /api/categories/999/products
 ```
 
 Resultado esperado:
@@ -1187,18 +1701,10 @@ Resultado esperado:
 
 ---
 
-## Error por rango inválido
-
-Método:
+## 24.10. Error por rango inválido
 
 ```txt
-GET
-```
-
-Ruta:
-
-```txt
-/api/users/1/products?minPrice=1500&maxPrice=500
+GET /api/users/1/products?minPrice=1500&maxPrice=500
 ```
 
 Resultado esperado:
@@ -1215,18 +1721,10 @@ El precio máximo debe ser mayor o igual al precio mínimo
 
 ---
 
-## Error por parámetro inválido
-
-Método:
+## 24.11. Error por parámetro inválido
 
 ```txt
-GET
-```
-
-Ruta:
-
-```txt
-/api/users/1/products?minPrice=-5
+GET /api/users/1/products?minPrice=-5
 ```
 
 Resultado esperado:
@@ -1235,191 +1733,105 @@ Resultado esperado:
 400 Bad Request
 ```
 
-con campo `details`.
+Debe incluir campo `details`.
 
 ---
 
-# 17. SQL esperado
 
-Al consultar productos de un usuario con filtros, Hibernate generará una consulta similar a:
 
-```sql
-SELECT 
-    p.*
-FROM products p
-INNER JOIN users u ON p.user_id = u.id
-INNER JOIN categories c ON p.category_id = c.id
-WHERE p.deleted = false
-  AND u.id = ?
-  AND u.deleted = false
-  AND (? IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', ?, '%')))
-  AND (? IS NULL OR p.price >= ?)
-  AND (? IS NULL OR p.price <= ?)
-  AND (? IS NULL OR c.id = ?);
-```
+# 25. Actividad práctica
 
-Al consultar productos de una categoría con filtros:
-
-```sql
-SELECT 
-    p.*
-FROM products p
-INNER JOIN users u ON p.user_id = u.id
-INNER JOIN categories c ON p.category_id = c.id
-WHERE p.deleted = false
-  AND c.id = ?
-  AND c.deleted = false
-  AND (? IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', ?, '%')))
-  AND (? IS NULL OR p.price >= ?)
-  AND (? IS NULL OR p.price <= ?)
-  AND (? IS NULL OR u.id = ?);
-```
+Se debe implementar consultas relacionadas con filtros usando request parameters y luego evolucionar la relación Producto–Categoría a muchos a muchos.
 
 ---
 
-# 18. Verificación en PostgreSQL
+## 27.1. Fase A: filtros con relación Category 1 ──── N Product
 
-Entrar a PostgreSQL:
-
-```bash
-docker exec -it postgres-dev psql -U ups -d devdb
-```
-
-Consultar productos con usuario y categoría:
-
-```sql
-SELECT 
-    p.id,
-    p.name,
-    p.price,
-    p.stock,
-    p.user_id,
-    u.name AS user_name,
-    p.category_id,
-    c.name AS category_name
-FROM products p
-INNER JOIN users u ON p.user_id = u.id
-INNER JOIN categories c ON p.category_id = c.id
-WHERE p.deleted = false;
-```
-
-Consultar productos de un usuario:
-
-```sql
-SELECT 
-    p.id,
-    p.name,
-    p.price,
-    p.stock
-FROM products p
-WHERE p.user_id = 1
-  AND p.deleted = false;
-```
-
-Consultar productos de una categoría:
-
-```sql
-SELECT 
-    p.id,
-    p.name,
-    p.price,
-    p.stock
-FROM products p
-WHERE p.category_id = 1
-  AND p.deleted = false;
-```
-
----
-
-# 19. Actividad práctica
-
-Se debe implementar consultas relacionadas con filtros usando request parameters.
-
----
-
-## 19.1. Crear `ProductFilterByUserDto`
-
-Crear:
+Implementar primero:
 
 ```txt
-products/dtos/ProductFilterByUserDto.java
+GET /api/users/{id}/products
 ```
 
-Debe incluir:
+con filtros:
 
 ```txt
 name
 minPrice
 maxPrice
 categoryId
-userId
 ```
 
-con validaciones.
-
----
-
-## 19.2. Actualizar `GlobalExceptionHandler`
-
-Agregar manejo de:
-
-```java
-BindException
-```
-
-para validar correctamente errores de `@ModelAttribute`.
-
----
-
-## 19.3. Actualizar `ProductRepository`
-
-Agregar:
+Debe usarse:
 
 ```txt
-findByOwnerIdWithFilters
-findByCategoryIdWithFilters
+ProductFilterByUserDto
+ProductRepository.findByOwnerIdWithFilters()
+UserProductsController
+ProductService.findByUserIdWithFilters()
 ```
-
-usando `@Query`.
 
 ---
 
-## 19.4. Actualizar `ProductService`
+## 27.2. Fase B: evolución a relación Product N ──── N Category
 
-Agregar métodos:
+Actualizar:
 
 ```txt
-findByUserIdWithFilters
-findByCategoryIdWithFilters
+ProductEntity
+CategoryEntity
+CreateProductDto
+UpdateProductDto
+PartialUpdateProductDto
+ProductResponseDto
+ProductMapper
+ProductRepository
+ProductServiceImpl
 ```
 
----
-
-## 19.5. Actualizar `UsersController`
-
-Agregar endpoint:
+Debe eliminarse el uso de:
 
 ```txt
-GET /api/users/{id}/products
+categoryId como única categoría del producto
 ```
 
-con filtros opcionales.
+y reemplazarse por:
+
+```txt
+categoryIds como colección de categorías
+```
 
 ---
 
-## 19.6. Actualizar `CategoriesController`
+## 27.3. Fase C: consulta desde categorías
 
-Agregar endpoint:
+Crear:
+
+```txt
+ProductFilterByCategoryDto
+CategoryProductsController
+ProductService.findByCategoryIdWithFilters()
+ProductRepository.findByCategoryIdWithFilters()
+```
+
+Endpoint requerido:
 
 ```txt
 GET /api/categories/{id}/products
 ```
 
-con filtros opcionales.
+Filtros permitidos:
+
+```txt
+name
+minPrice
+maxPrice
+userId
+```
 
 ---
 
-## 19.7. Probar filtros combinados
+## 27.4. Probar filtros combinados
 
 Probar:
 
@@ -1428,55 +1840,32 @@ GET /api/users/1/products?name=laptop
 GET /api/users/1/products?minPrice=500&maxPrice=1500
 GET /api/users/1/products?categoryId=2
 GET /api/users/1/products?name=gaming&minPrice=800&categoryId=2
-GET /api/categories/1/products?userId=1
+GET /api/categories/2/products
+GET /api/categories/2/products?userId=1
+GET /api/categories/2/products?name=gaming&userId=1
 ```
 
 ---
 
-# 20. Resultados y evidencias
+# 28. Resultados y evidencias
 
 En la nueva entrada del README, se debe agregar:
 
-## Captura de `ProductFilterByUserDto.java`
-
-Debe evidenciar:
-
-* validaciones de `name`
-* validaciones de `minPrice`
-* validaciones de `maxPrice`
-* validaciones de `categoryId`
-* validaciones de `userId`
-* método `hasValidPriceRange`
-
 ---
 
-## Captura de `ProductRepository.java`
 
-Debe evidenciar:
+## Captura de producto creado con varias categorías
 
-* consulta `findByOwnerIdWithFilters`
-* consulta `findByCategoryIdWithFilters`
-* uso de `@Query`
-* filtros opcionales
+Ejemplo:
 
----
-
-## Captura de `UsersController.java`
-
-Debe evidenciar el endpoint:
-
-```txt
-GET /api/users/{id}/products
-```
-
----
-
-## Captura de `CategoriesController.java`
-
-Debe evidenciar el endpoint:
-
-```txt
-GET /api/categories/{id}/products
+```json
+{
+  "name": "Laptop Gaming",
+  "price": 1200.0,
+  "stock": 5,
+  "userId": 1,
+  "categoryIds": [1, 2, 3]
+}
 ```
 
 ---
@@ -1496,37 +1885,22 @@ GET /api/users/1/products?name=laptop&minPrice=500
 Ejemplo:
 
 ```txt
-GET /api/categories/1/products?userId=1
+GET /api/categories/2/products?userId=1
 ```
 
----
+-
 
-## Captura de error por rango inválido
-
-Ejemplo:
-
-```txt
-GET /api/users/1/products?minPrice=1500&maxPrice=500
-```
-
-Debe responder:
-
-```txt
-400 Bad Request
-```
-
----
-
-## Captura de SQL en consola o PostgreSQL
-
-Debe evidenciar que la consulta se realiza sobre productos relacionados con usuario y categoría.
-
----
 
 ## Explicación breve
 
 El estudiante debe explicar:
 
 ```txt
-¿Por qué se usa ProductRepository para consultar productos aunque el endpoint esté dentro del contexto /users/{id}/products?
+¿Por qué se usa ProductService y ProductRepository para consultar productos aunque el endpoint esté dentro del contexto /users/{id}/products o /categories/{id}/products?
+```
+
+También debe explicar:
+
+```txt
+¿Qué cambió al pasar de Product N ──── 1 Category a Product N ──── N Category?
 ```
