@@ -44,7 +44,19 @@ Esto permitió que cada producto tenga:
 * un usuario propietario
 * una categoría asociada
 
-En esta práctica se trabajará sobre esas relaciones, pero desde el punto de vista de las consultas.
+En esta práctica se trabajará en dos fases.
+
+Primero se implementarán consultas relacionadas y filtros usando la relación actual:
+
+User 1 ──── N Product
+Category 1 ──── N Product
+
+Luego se evolucionará la relación entre productos y categorías hacia:
+
+Product N ──── N Category
+
+Esto permitirá comparar una relación directa mediante category_id frente a una relación flexible mediante tabla intermedia.
+
 
 El objetivo es aprender a consultar datos relacionados usando:
 
@@ -57,22 +69,6 @@ El objetivo es aprender a consultar datos relacionados usando:
 * validación de filtros
 * manejo global de errores
 
-En esta práctica no se cambia el modelo relacional.
-
-Todavía se mantiene:
-
-```txt
-User 1 ──── N Product
-Category 1 ──── N Product
-```
-
-Todavía no se implementa:
-
-* `@ManyToMany`
-* tabla intermedia
-* productos con múltiples categorías
-
-Eso se trabajará en una práctica posterior.
 
 ---
 
@@ -133,7 +129,7 @@ El flujo será:
 ```txt
 Cliente
   ↓
-UsersController / CategoriesController
+UserProductsController / CategoryProductsController
   ↓
 ProductFilterByUserDto
   ↓
@@ -1496,6 +1492,35 @@ public class CategoryProductsController {
 }
 ```
 
+Al consumir el endpoint, se deberia obtener productos activos asociados a la categoría indicada, aplicando los filtros opcionales.:
+
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Monitor 4Kk",
+    "price": 500.0,
+    "stock": 5,
+    "owner": {
+      "id": 5,
+      "name": "Pabloa",
+      "email": "pablo3@test.com"
+    },
+    "categories": [
+      {
+        "id": 1,
+        "name": "Electrónicos",
+        "description": "Dispositivos electrónicos"
+      }
+    ],
+    "createdAt": "2026-07-02T13:18:23.353491",
+    "updatedAt": null,
+  }
+]
+```
+
+
 ---
 
 
@@ -1745,7 +1770,7 @@ Se debe implementar consultas relacionadas con filtros usando request parameters
 
 ---
 
-## 27.1. Fase A: filtros con relación Category 1 ──── N Product
+## 26.1. Fase A: filtros con relación Category 1 ──── N Product
 
 Implementar primero:
 
@@ -1773,7 +1798,7 @@ ProductService.findByUserIdWithFilters()
 
 ---
 
-## 27.2. Fase B: evolución a relación Product N ──── N Category
+## 26.2. Fase B: evolución a relación Product N ──── N Category
 
 Actualizar:
 
@@ -1803,7 +1828,7 @@ categoryIds como colección de categorías
 
 ---
 
-## 27.3. Fase C: consulta desde categorías
+## 26.3. Fase C: consulta desde categorías
 
 Crear:
 
@@ -1831,7 +1856,7 @@ userId
 
 ---
 
-## 27.4. Probar filtros combinados
+## 26.4. Probar filtros combinados
 
 Probar:
 
@@ -1847,7 +1872,7 @@ GET /api/categories/2/products?name=gaming&userId=1
 
 ---
 
-# 28. Resultados y evidencias
+# 27. Resultados y evidencias
 
 En la nueva entrada del README, se debe agregar:
 
