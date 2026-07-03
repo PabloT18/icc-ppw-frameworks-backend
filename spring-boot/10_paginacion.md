@@ -1,1019 +1,1365 @@
 # Programación y Plataformas Web
 
-# **Spring Boot – Paginación de Datos con Spring Data JPA: Optimización y User Experience**
+# Frameworks Backend: Spring Boot – Paginación con Spring Data JPA
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="95">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="95">
 </div>
 
-## **Práctica 10 (Spring Boot): Paginación, Page y Slice con Request Parameters**
+---
 
-### **Autores**
+# Práctica 10 (Spring Boot): Paginación de Productos con Page, Slice y Pageable
+
+### Autores
 
 **Pablo Torres**
 
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
 GitHub: PabloT18
 
-# **1. Introducción a la Paginación en Spring Boot**
+---
 
-En el tema anterior implementamos **filtros con Request Parameters** en consultas relacionadas. Ahora necesitamos **paginar los resultados** para manejar grandes volúmenes de datos eficientemente.
+# 1. Introducción
 
-Los principales problemas sin paginación son:
+En la práctica anterior se trabajó con consultas relacionadas usando:
 
-* **Consultas masivas**: Devolver 100,000 productos consume excesiva memoria
-* **Tiempo de respuesta lento**: Transferir todos los datos a la vez
-* **Sobrecarga de red**: Grandes payloads JSON
-* **Experiencia de usuario deficiente**: Largos tiempos de espera
-* **Problemas de escalabilidad**: El sistema no funciona con millones de registros
+* `@PathVariable`
+* `@RequestParam`
+* `@ModelAttribute`
+* filtros dinámicos
+* consultas personalizadas con `@Query`
+* relaciones entre productos, usuarios y categorías
+* relación muchos a muchos entre productos y categorías
 
-## **1.1. Spring Data JPA Pagination**
+Hasta este punto, la API ya puede consultar productos relacionados desde distintos contextos:
 
-Spring Data JPA proporciona soporte nativo para paginación a través de:
-
-* **Pageable**: Interface para especificar parámetros de paginación
-* **Page**: Interface que encapsula resultados paginados con metadatos
-* **Slice**: Interface ligera para navegación secuencial
-* **PageRequest**: Implementación concreta de Pageable
-
-### **Ejemplo conceptual**
-
-```java
-// Parámetros de entrada
-Pageable pageable = PageRequest.of(0, 10, Sort.by("name").ascending());
-
-// Resultado paginado
-Page<ProductEntity> page = productRepository.findAll(pageable);
+```txt
+GET /api/users/{id}/products
+GET /api/categories/{id}/products
 ```
 
-## **1.2. Ventajas de Spring Data JPA Pagination**
+También puede aplicar filtros como:
 
-* **Automático**: No se escribe SQL de paginación manualmente
-* **Type-safe**: Completamente tipado con generics
-* **Flexible**: Se combina con consultas personalizadas
-* **Optimizado**: Genera SQL eficiente con LIMIT y OFFSET
-* **Integrado**: Funciona perfectamente con el ecosistema Spring
-
-# **2. Tipos de Paginación en Spring Boot**
-
-## **2.1. Page vs Slice**
-
-### **Page (Paginación Completa)**
-
-**Características**:
-* Incluye **count total** de registros
-* Permite **navegación a cualquier página**
-* Proporciona **metadatos completos**
-* **Más costosa** (requiere consulta COUNT adicional)
-
-```java
-Page<ProductEntity> page = productRepository.findAll(pageable);
-// Genera: SELECT COUNT(*) FROM products + SELECT * FROM products LIMIT 10 OFFSET 0
+```txt
+name
+minPrice
+maxPrice
+userId
+categoryId
 ```
 
-### **Slice (Paginación Ligera)**
+Sin embargo, todavía existe un problema importante: las consultas devuelven todos los registros encontrados.
 
-**Características**:
-* **NO incluye count total**
-* Solo navegación **anterior/siguiente**
-* **Más eficiente** (una sola consulta)
-* Ideal para **feeds infinitos**
+En una aplicación real, esto no es suficiente ni adecuado porque puede generar:
 
-```java
-Slice<ProductEntity> slice = productRepository.findAll(pageable);
-// Genera: SELECT * FROM products LIMIT 11 OFFSET 0 (trae uno extra para hasNext)
+* respuestas demasiado grandes
+* alto consumo de memoria
+* consultas lentas
+* sobrecarga de red
+* mala experiencia de usuario
+* problemas al trabajar con miles o millones de registros
+
+En esta práctica se implementa paginación usando Spring Data JPA.
+
+Se trabajará con:
+
+* `Page`
+* `Slice`
+* `Pageable`
+* `PageRequest`
+* `Sort`
+* endpoints paginados separados
+* validación de parámetros de paginación
+* productos con relaciones anidadas
+
+En esta práctica se mantendrá el endpoint normal:
+
+```txt
+GET /api/products
 ```
 
-### **¿Cuándo usar cada tipo?**
+y se agregarán endpoints nuevos para paginación:
 
-| Escenario | Usar Page | Usar Slice |
-|-----------|-----------|------------|
-| **Navegación con números de página** | ✅ SÍ | ❌ |
-| **Necesitas mostrar "Página X de Y"** | ✅ SÍ | ❌ |
-| **Feeds de redes sociales** | ❌ | ✅ SÍ |
-| **Performance crítica** | ⚠️ Depende | ✅ SÍ |
-| **Scroll infinito** | ❌ | ✅ SÍ |
-| **Reportes con totales** | ✅ SÍ | ❌ |
-
-## **2.2. PageRequest - Construcción de Paginación**
-
-```java
-// Página 0, tamaño 10, sin ordenamiento
-Pageable pageable = PageRequest.of(0, 10);
-
-// Con ordenamiento ascendente por nombre
-Pageable pageable = PageRequest.of(0, 10, Sort.by("name"));
-
-// Con ordenamiento descendente por precio
-Pageable pageable = PageRequest.of(0, 10, Sort.by("price").descending());
-
-// Con múltiples criterios de ordenamiento
-Pageable pageable = PageRequest.of(0, 10, 
-    Sort.by("category.name").and(Sort.by("price").descending()));
+```txt
+GET /api/products/page
+GET /api/products/slice
 ```
 
-# **3. Implementación de Paginación en ProductController**
+Al final, la actividad práctica consistirá en aplicar el mismo concepto al endpoint:
 
-Continuando con los endpoints del tema anterior, agregaremos paginación a los productos.
+```txt
+GET /api/categories/{id}/products
+```
 
-## **3.1. ProductController - Endpoints con Paginación**
+creando versiones paginadas.
 
-Archivo: `products/controllers/ProductController.java`
+---
+
+# 2. Problema actual
+
+Actualmente, el método `findAll()` de productos puede devolver todos los productos activos:
 
 ```java
-@RestController
-@RequestMapping("/api/products")
-public class ProductController {
+@Override
+public List<ProductResponseDto> findAll() {
 
-    private final ProductService productService;
-
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
-
-    // ============== PAGINACIÓN BÁSICA ==============
-
-    /**
-     * Lista todos los productos con paginación básica
-     * Ejemplo: GET /api/products?page=0&size=10&sort=name,asc
-     */
-    @GetMapping
-    public ResponseEntity<Page<ProductResponseDto>> findAll(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String[] sort) {
-
-        Page<ProductResponseDto> products = productService.findAll(page, size, sort);
-        return ResponseEntity.ok(products);
-    }
-
-    // ============== PAGINACIÓN CON SLICE (PERFORMANCE) ==============
-
-    /**
-     * Lista productos usando Slice para mejor performance
-     * Ejemplo: GET /api/products/slice?page=0&size=10&sort=createdAt,desc
-     */
-    @GetMapping("/slice")
-    public ResponseEntity<Slice<ProductResponseDto>> findAllSlice(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String[] sort) {
-
-        Slice<ProductResponseDto> products = productService.findAllSlice(page, size, sort);
-        return ResponseEntity.ok(products);
-    }
-
-    // ============== PAGINACIÓN CON FILTROS (CONTINUANDO TEMA 09) ==============
-
-    /**
-     * Lista productos con filtros y paginación
-     * Ejemplo: GET /api/products/search?name=laptop&minPrice=500&page=0&size=5
-     */
-    @GetMapping("/search")
-    public ResponseEntity<Page<ProductResponseDto>> findWithFilters(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String[] sort) {
-
-        Page<ProductResponseDto> products = productService.findWithFilters(
-            name, minPrice, maxPrice, categoryId, page, size, sort);
-        
-        return ResponseEntity.ok(products);
-    }
-
-    // ============== USUARIOS CON SUS PRODUCTOS PAGINADOS ==============
-
-    /**
-     * Productos de un usuario específico con paginación
-     * Ejemplo: GET /api/products/user/1?page=0&size=5&sort=price,desc
-     */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<Page<ProductResponseDto>> findByUserId(
-            @PathVariable Long userId,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String[] sort) {
-
-        Page<ProductResponseDto> products = productService.findByUserIdWithFilters(
-            userId, name, minPrice, maxPrice, categoryId, page, size, sort);
-        
-        return ResponseEntity.ok(products);
-    }
-
-    // ============== OTROS ENDPOINTS EXISTENTES ==============
-    
-   
+    return productRepository.findAll()
+            .stream()
+            .filter(entity -> !entity.isDeleted())
+            .map(ProductMapper::toModelFromEntity)
+            .map(ProductMapper::toResponse)
+            .toList();
 }
 ```
 
-### **Aspectos clave del controlador**
+Este enfoque funciona con pocos registros, pero no escala correctamente.
 
-1. **Parámetros de paginación estándar**: `page`, `size`, `sort[]`
-2. **Valores por defecto**: Página 0, tamaño 10, orden por ID
-3. **Múltiples estrategias**: Page, Slice, filtros + paginación
-4. **Flexibilidad**: Se pueden combinar filtros con paginación
-5. **Convenciones REST**: Mantiene la semántica HTTP correcta
+Si existen 10 productos, no hay problema.
 
-## **3.2. Validación avanzada de parámetros de paginación**
+Si existen 10 000 productos, la API intentará:
 
-Para mayor robustez, podemos crear validaciones personalizadas:
+```txt
+1. Consultar todos los productos
+2. Cargar todos los registros en memoria
+3. Mapear todos los productos a DTOs
+4. Enviar todo el JSON al cliente
+```
 
-Archivo: `shared/dto/PageableDto.java`
+Esto afecta rendimiento y consumo de recursos.
+
+La solución es paginar los resultados.
+
+---
+
+# 3. Flujo después de aplicar paginación
+
+El flujo será:
+
+```txt
+Cliente
+  ↓
+ProductsController
+  ↓
+PaginationDto
+  ↓
+ProductService
+  ↓
+ProductServiceImpl
+  ↓
+Pageable
+  ↓
+ProductRepository
+  ↓
+PostgreSQL
+  ↓
+Page<ProductEntity> / Slice<ProductEntity>
+  ↓
+ProductMapper
+  ↓
+Page<ProductResponseDto> / Slice<ProductResponseDto>
+  ↓
+Cliente
+```
+
+El controlador recibe los parámetros de paginación.
+
+El servicio valida y construye el `Pageable`.
+
+El repositorio ejecuta la consulta paginada.
+
+Spring Data JPA genera automáticamente el `LIMIT`, `OFFSET` y, en el caso de `Page`, también la consulta de conteo.
+
+---
+
+## 3.1. Responsabilidad de cada clase
+
+| Clase                 | Responsabilidad                              |
+| --------------------- | -------------------------------------------- |
+| `ProductsController`  | Exponer endpoints normales y paginados       |
+| `PaginationDto`       | Recibir parámetros `page`, `size`, `sortBy`  |
+| `ProductService`      | Definir operaciones paginadas                |
+| `ProductServiceImpl`  | Validar paginación y construir `Pageable`    |
+| `ProductRepository`   | Ejecutar consultas paginadas                 |
+| `ProductMapper`       | Convertir entidades o modelos a DTOs         |
+| `ProductResponseDto`  | Devolver producto con `owner` y `categories` |
+| `BadRequestException` | Reportar parámetros de paginación inválidos  |
+
+---
+
+# 4. Conceptos principales
+
+## 4.1. Pageable
+
+`Pageable` es el objeto que Spring Data JPA usa para saber:
+
+```txt
+qué página consultar
+cuántos elementos traer
+cómo ordenar los resultados
+```
+
+Ejemplo conceptual:
 
 ```java
-import javax.validation.constraints.*;
+Pageable pageable = PageRequest.of(0, 10, Sort.by("name").ascending());
+```
 
-public class PageableDto {
+Esto significa:
+
+```txt
+Página: 0
+Tamaño: 10
+Orden: name ascendente
+```
+
+---
+
+## 4.2. Page
+
+`Page` representa una respuesta paginada completa.
+
+Incluye:
+
+* lista de datos
+* número de página actual
+* tamaño de página
+* total de elementos
+* total de páginas
+* si es primera página
+* si es última página
+
+Ejemplo:
+
+```java
+Page<ProductEntity> page = productRepository.findActivePage(pageable);
+```
+
+`Page` ejecuta normalmente dos consultas:
+
+```txt
+1. Consulta de datos con LIMIT y OFFSET
+2. Consulta COUNT para saber el total de registros
+```
+
+Se usa cuando el frontend necesita mostrar:
+
+```txt
+Página 1 de 20
+Total de registros: 200
+```
+
+---
+
+## 4.3. Slice
+
+`Slice` representa una respuesta paginada más ligera.
+
+Incluye:
+
+* lista de datos
+* número de página actual
+* tamaño de página
+* si existe página siguiente
+* si existe página anterior
+
+No incluye:
+
+* total de elementos
+* total de páginas
+
+Ejemplo:
+
+```java
+Slice<ProductEntity> slice = productRepository.findActiveSlice(pageable);
+```
+
+`Slice` es más eficiente porque no necesita ejecutar una consulta `COUNT`.
+
+Se usa cuando el cliente solo necesita avanzar o retroceder:
+
+```txt
+Siguiente página
+Página anterior
+Scroll infinito
+```
+
+---
+
+## 4.4. Diferencia entre Page y Slice
+
+| Aspecto                     | Page                   | Slice                      |
+| --------------------------- | ---------------------- | -------------------------- |
+| Incluye datos               | Sí                     | Sí                         |
+| Incluye total elementos     | Sí                     | No                         |
+| Incluye total páginas       | Sí                     | No                         |
+| Permite saber última página | Sí                     | Parcial                    |
+| Ejecuta COUNT               | Sí                     | No                         |
+| Más completo                | Sí                     | No                         |
+| Más liviano                 | No                     | Sí                         |
+| Uso recomendado             | Tablas administrativas | Scroll o navegación simple |
+
+---
+
+# 5. Endpoint donde se aplicará paginación
+
+No se paginarán todos los endpoints en esta práctica.
+
+Se aplicará primero sobre productos porque es el recurso con más relaciones:
+
+```txt
+ProductEntity
+  ├── owner: UserEntity
+  └── categories: Set<CategoryEntity>
+```
+
+Se mantendrá el endpoint normal:
+
+```txt
+GET /api/products
+```
+
+y se agregarán dos endpoints nuevos:
+
+```txt
+GET /api/products/page
+GET /api/products/slice
+```
+
+Esto permite comparar:
+
+```txt
+findAll normal
+findAll paginado con Page
+findAll paginado con Slice
+```
+
+---
+
+# 6. DTO para paginación
+
+Se creará un DTO reutilizable para recibir los parámetros de paginación desde query params.
+
+Archivo:
+
+```txt
+core/dtos/PaginationDto.java
+```
+
+Código:
+
+```java
+/*
+ * DTO utilizado para recibir parámetros de paginación
+ * desde query params.
+ *
+ * Ejemplo:
+ * /api/products/page?page=0&size=10&sortBy=name&direction=asc
+ */
+public class PaginationDto {
 
     @Min(value = 0, message = "La página debe ser mayor o igual a 0")
     private int page = 0;
 
-    @Min(value = 1, message = "El tamaño debe ser mayor a 0")
-    @Max(value = 100, message = "El tamaño no puede ser mayor a 100")
+    @Min(value = 1, message = "El tamaño debe ser mayor o igual a 1")
+    @Max(value = 100, message = "El tamaño no debe superar 100 registros")
     private int size = 10;
 
-    private String[] sort = {"id"};
+    private String sortBy = "id";
 
-    // Constructores
-    public PageableDto() {
-    }
+    private String direction = "asc";
 
-    public PageableDto(int page, int size, String[] sort) {
-        this.page = page;
-        this.size = size;
-        this.sort = sort;
-    }
+    // Constructor vacío
+
+    // Constructor lleno
 
     // Getters y setters
-    public int getPage() {
-        return page;
-    }
-
-    public void setPage(int page) {
-        this.page = page;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
-
-    public String[] getSort() {
-        return sort;
-    }
-
-    public void setSort(String[] sort) {
-        this.sort = sort;
-    }
-
-    // ============== MÉTODO HELPER ==============
-
-    /**
-     * Convierte a PageRequest de Spring Data JPA
-     */
-    public Pageable toPageable() {
-        return PageRequest.of(page, size, createSort());
-    }
-
-    private Sort createSort() {
-        if (sort == null || sort.length == 0) {
-            return Sort.by("id");
-        }
-
-        Sort.Order[] orders = new Sort.Order[sort.length];
-        for (int i = 0; i < sort.length; i++) {
-            String[] parts = sort[i].split(",");
-            String property = parts[0];
-            String direction = parts.length > 1 ? parts[1] : "asc";
-            
-            orders[i] = "desc".equalsIgnoreCase(direction) 
-                ? Sort.Order.desc(property)
-                : Sort.Order.asc(property);
-        }
-        
-        return Sort.by(orders);
-    }
 }
 ```
 
-# **4. Implementación del ProductService con Paginación**
+---
 
-## **4.1. Actualización de ProductService interface**
+## 6.1. Parámetros soportados
 
-Archivo: `products/services/ProductService.java`
+| Parámetro   | Descripción                      | Valor por defecto |
+| ----------- | -------------------------------- | ----------------- |
+| `page`      | Número de página                 | `0`               |
+| `size`      | Cantidad de registros por página | `10`              |
+| `sortBy`    | Campo por el cual se ordena      | `id`              |
+| `direction` | Dirección de ordenamiento        | `asc`             |
+
+---
+
+## 6.2. Ejemplos de uso
+
+```txt
+GET /api/products/page
+GET /api/products/page?page=0&size=5
+GET /api/products/page?page=1&size=10&sortBy=price&direction=desc
+GET /api/products/slice?page=0&size=10&sortBy=createdAt&direction=desc
+```
+
+---
+
+# 7. Validación de `PaginationDto`
+
+Como `PaginationDto` llega desde query params, se usará:
+
+```java
+@Valid
+@ModelAttribute
+```
+
+Ejemplo:
+
+```java
+@GetMapping("/page")
+public Page<ProductResponseDto> findAllPage(
+        @Valid @ModelAttribute PaginationDto pagination
+) {
+    return productService.findAllPage(pagination);
+}
+```
+
+Si el cliente envía:
+
+```txt
+GET /api/products/page?page=-1&size=0
+```
+
+Spring Boot debe devolver:
+
+```txt
+400 Bad Request
+```
+
+Esto funcionará con el handler `BindException` creado en la práctica anterior.
+
+---
+
+# 8. Page, Slice y Pageable, Sort
+
+Estas interfaces y clases son parte de Spring Data JPA y permiten implementar paginación de manera sencilla.
+
+Se deben importar:
 
 ```java
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-
-public interface ProductService {
-
-    // ============== MÉTODOS BÁSICOS EXISTENTES ==============
-    ProductResponseDto create(CreateProductDto createProductDto);
-    ProductResponseDto findById(Long id);
-    ProductResponseDto update(Long id, UpdateProductDto updateProductDto);
-    void delete(Long id);
-
-    // ============== MÉTODOS CON PAGINACIÓN ==============
-
-    /**
-     * Obtiene todos los productos con paginación completa (Page)
-     */
-    Page<ProductResponseDto> findAll(int page, int size, String[] sort);
-
-    /**
-     * Obtiene todos los productos con paginación ligera (Slice)
-     */
-    Slice<ProductResponseDto> findAllSlice(int page, int size, String[] sort);
-
-    /**
-     * Busca productos con filtros y paginación
-     */
-    Page<ProductResponseDto> findWithFilters(
-        String name, 
-        Double minPrice, 
-        Double maxPrice, 
-        Long categoryId,
-        int page, 
-        int size, 
-        String[] sort
-    );
-
-    /**
-     * Productos de un usuario con filtros y paginación
-     */
-    Page<ProductResponseDto> findByUserIdWithFilters(
-        Long userId,
-        String name,
-        Double minPrice,
-        Double maxPrice,
-        Long categoryId,
-        int page,
-        int size,
-        String[] sort
-    );
-}
+import org.springframework.data.domain.PageRequest; 
+import org.springframework.data.domain.Sort;
 ```
 
-## **4.2. Implementación de ProductServiceImpl**
 
-Archivo: `products/services/ProductServiceImpl.java`
+# 9. Actualización de ProductRepository
 
-```java
-@Service
-public class ProductServiceImpl implements ProductService {
 
-    private final ProductRepository productRepository;
-    private final UserRepository userRepository;
-    private final CategoryRepository categoryRepository;
 
-    public ProductServiceImpl(ProductRepository productRepository, 
-                            UserRepository userRepository,
-                            CategoryRepository categoryRepository) {
-        this.productRepository = productRepository;
-        this.userRepository = userRepository;
-        this.categoryRepository = categoryRepository;
-    }
+Se agregarán dos consultas nuevas:
 
-    // ============== MÉTODOS BÁSICOS EXISTENTES ==============
-    // (implementaciones previas del tema 08 y 09)
-
-    // ============== MÉTODOS CON PAGINACIÓN ==============
-
-    @Override
-    public Page<ProductResponseDto> findAll(int page, int size, String[] sort) {
-        Pageable pageable = createPageable(page, size, sort);
-        Page<ProductEntity> productPage = productRepository.findAll(pageable);
-        
-        return productPage.map(this::toResponseDto);
-    }
-
-    @Override
-    public Slice<ProductResponseDto> findAllSlice(int page, int size, String[] sort) {
-        Pageable pageable = createPageable(page, size, sort);
-        Slice<ProductEntity> productSlice = productRepository.findAll(pageable);
-        
-        return productSlice.map(this::toResponseDto);
-    }
-
-    @Override
-    public Page<ProductResponseDto> findWithFilters(
-            String name, Double minPrice, Double maxPrice, Long categoryId,
-            int page, int size, String[] sort) {
-        
-        // Validaciones de filtros (del tema 09)
-        validateFilterParameters(minPrice, maxPrice);
-        
-        // Crear Pageable
-        Pageable pageable = createPageable(page, size, sort);
-        
-        // Consulta con filtros y paginación
-        Page<ProductEntity> productPage = productRepository.findWithFilters(
-            name, minPrice, maxPrice, categoryId, pageable);
-        
-        return productPage.map(this::toResponseDto);
-    }
-
-    @Override
-    public Page<ProductResponseDto> findByUserIdWithFilters(
-            Long userId, String name, Double minPrice, Double maxPrice, Long categoryId,
-            int page, int size, String[] sort) {
-        
-        // 1. Validar que el usuario existe
-        if (!userRepository.existsById(userId)) {
-            throw new NotFoundException("Usuario no encontrado con ID: " + userId);
-        }
-        
-        // 2. Validar filtros
-        validateFilterParameters(minPrice, maxPrice);
-        
-        // 3. Crear Pageable
-        Pageable pageable = createPageable(page, size, sort);
-        
-        // 4. Consulta con filtros y paginación
-        Page<ProductEntity> productPage = productRepository.findByUserIdWithFilters(
-            userId, name, minPrice, maxPrice, categoryId, pageable);
-        
-        return productPage.map(this::toResponseDto);
-    }
-
-    // ============== MÉTODOS HELPER ==============
-
-    private Pageable createPageable(int page, int size, String[] sort) {
-        // Validar parámetros
-        if (page < 0) {
-            throw new BadRequestException("La página debe ser mayor o igual a 0");
-        }
-        if (size < 1 || size > 100) {
-            throw new BadRequestException("El tamaño debe estar entre 1 y 100");
-        }
-        
-        // Crear Sort
-        Sort sortObj = createSort(sort);
-        
-        return PageRequest.of(page, size, sortObj);
-    }
-
-    private Sort createSort(String[] sort) {
-        if (sort == null || sort.length == 0) {
-            return Sort.by("id");
-        }
-
-        List<Sort.Order> orders = new ArrayList<>();
-        for (String sortParam : sort) {
-            String[] parts = sortParam.split(",");
-            String property = parts[0];
-            String direction = parts.length > 1 ? parts[1] : "asc";
-            
-            // Validar propiedades permitidas para evitar inyección SQL
-            if (!isValidSortProperty(property)) {
-                throw new BadRequestException("Propiedad de ordenamiento no válida: " + property);
-            }
-            
-            Sort.Order order = "desc".equalsIgnoreCase(direction) 
-                ? Sort.Order.desc(property)
-                : Sort.Order.asc(property);
-            
-            orders.add(order);
-        }
-        
-        return Sort.by(orders);
-    }
-
-    private boolean isValidSortProperty(String property) {
-        // Lista blanca de propiedades permitidas para ordenamiento
-        Set<String> allowedProperties = Set.of(
-            "id", "name", "price", "createdAt", "updatedAt",
-            "owner.name", "owner.email", "category.name"
-        );
-        return allowedProperties.contains(property);
-    }
-
-    private void validateFilterParameters(Double minPrice, Double maxPrice) {
-        if (minPrice != null && minPrice < 0) {
-            throw new BadRequestException("El precio mínimo no puede ser negativo");
-        }
-        
-        if (maxPrice != null && maxPrice < 0) {
-            throw new BadRequestException("El precio máximo no puede ser negativo");
-        }
-        
-        if (minPrice != null && maxPrice != null && maxPrice < minPrice) {
-            throw new BadRequestException("El precio máximo debe ser mayor o igual al precio mínimo");
-        }
-    }
-
-    private ProductResponseDto toResponseDto(ProductEntity product) {
-        ProductResponseDto dto = new ProductResponseDto();
-        
-        dto.id = product.getId();
-        dto.name = product.getName();
-        dto.price = product.getPrice();
-        dto.description = product.getDescription();
-        dto.createdAt = product.getCreatedAt();
-        dto.updatedAt = product.getUpdatedAt();
-        
-        // Información del usuario (owner)
-        dto.user = new ProductResponseDto.UserSummaryDto();
-        dto.user.id = product.getOwner().getId();
-        dto.user.name = product.getOwner().getName();
-        dto.user.email = product.getOwner().getEmail();
-        
-        // Información de las categorías (relación Many-to-Many)
-        List<ProductResponseDto.CategoryResponseDto> categoryDtos = new ArrayList<>();
-        for (CategoryEntity categoryEntity : product.getCategories()) {
-            ProductResponseDto.CategoryResponseDto categoryDto = new ProductResponseDto.CategoryResponseDto();
-            categoryDto.id = categoryEntity.getId();
-            categoryDto.name = categoryEntity.getName();
-            categoryDto.description = categoryEntity.getDescription();
-            categoryDtos.add(categoryDto);
-        }
-        dto.categories = categoryDtos;
-        
-        return dto;
-    }
-}
+```txt
+findActivePage
+findActiveSlice
 ```
 
-### **Aspectos clave del servicio**
+Ambas consultan solo productos activos:
 
-1. **Page.map()**: Convierte Page<Entity> a Page<DTO> automáticamente
-2. **Validación de parámetros**: Página, tamaño y propiedades de ordenamiento
-3. **Lista blanca**: Solo permite ordenamiento por propiedades seguras
-4. **Combinación**: Filtros + paginación en la misma consulta
-5. **Performance**: Usa las capacidades nativas de Spring Data JPA
+```txt
+deleted = false
+```
 
-# **5. Actualización del ProductRepository con Paginación**
+Archivo:
 
-## **5.1. ProductRepository - Consultas con Pageable**
+```txt
+products/repositories/ProductRepository.java
+```
 
-Archivo: `products/repositories/ProductRepository.java`
+
+
+Código:
 
 ```java
+/*
+ * Repositorio encargado de gestionar la persistencia
+ * de productos usando Spring Data JPA.
+ */
 @Repository
 public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
-    // ============== CONSULTAS BÁSICAS (HEREDA AUTOMÁTICAMENTE) ==============
-    // Page<ProductEntity> findAll(Pageable pageable) - Viene de JpaRepository
-    // Slice<ProductEntity> findAll(Pageable pageable) - Viene de JpaRepository
+    // Otros métodos existentes
 
-    // ============== CONSULTAS PERSONALIZADAS CON PAGINACIÓN ==============
-
-    /**
-     * Busca productos por nombre de usuario con paginación
+    /*
+     * Consulta productos activos usando Page.
+     *
+     * Page ejecuta consulta de datos y consulta COUNT.
      */
-    @Query("SELECT p FROM ProductEntity p " +
-           "JOIN p.owner o WHERE LOWER(o.name) LIKE LOWER(CONCAT('%', :ownerName, '%'))")
-    Page<ProductEntity> findByOwnerNameContaining(@Param("ownerName") String ownerName, Pageable pageable);
+    @Query(
+            value = """
+                    SELECT p
+                    FROM ProductEntity p
+                    WHERE p.deleted = false
+                    """,
+            countQuery = """
+                    SELECT COUNT(p)
+                    FROM ProductEntity p
+                    WHERE p.deleted = false
+                    """
+    )
+    Page<ProductEntity> findActivePage(Pageable pageable);
 
-    /**
-     * Busca productos por categoría con paginación
-     * Usa LEFT JOIN porque la relación es Many-to-Many
+    /*
+     * Consulta productos activos usando Slice.
+     *
+     * Slice no necesita total de registros.
      */
-    @Query("SELECT DISTINCT p FROM ProductEntity p " +
-           "LEFT JOIN p.categories c " +
-           "WHERE c.id = :categoryId")
-    Page<ProductEntity> findByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
+    @Query("""
+            SELECT p
+            FROM ProductEntity p
+            WHERE p.deleted = false
+            """)
+    Slice<ProductEntity> findActiveSlice(Pageable pageable);
+}
+```
 
-    /**
-     * Busca productos en rango de precio con paginación
+---
+
+## 9.1. Por qué se usa `Pageable`
+
+El parámetro:
+
+```java
+Pageable pageable
+```
+
+permite que Spring Data JPA reciba:
+
+```txt
+page
+size
+sort
+```
+
+y los traduzca a SQL.
+
+Ejemplo:
+
+```txt
+GET /api/products/page?page=0&size=5&sortBy=price&direction=desc
+```
+
+se traduce conceptualmente a:
+
+```sql
+SELECT *
+FROM products
+WHERE deleted = false
+ORDER BY price DESC
+LIMIT 5 OFFSET 0;
+```
+
+---
+
+# 11. Actualización de ProductService
+
+Archivo:
+
+```txt
+products/services/ProductService.java
+```
+
+Agregar los métodos nuevos:
+
+```java
+/*
+ * Servicio que define las operaciones disponibles
+ * para la gestión de productos.
+ */
+public interface ProductService {
+
+    // Métodos existentes 
+
+    /*
+     * Retorna productos activos usando Page.
      */
-    Page<ProductEntity> findByPriceBetween(Double minPrice, Double maxPrice, Pageable pageable);
+    Page<ProductResponseDto> findAllPage(PaginationDto pagination);
 
-    // ============== CONSULTA COMPLEJA CON FILTROS Y PAGINACIÓN ==============
-
-    /**
-     * Busca productos con filtros opcionales y paginación
-     * Todos los parámetros son opcionales excepto el Pageable
-     * NOTA: Usa LEFT JOIN p.categories para relación Many-to-Many
+    /*
+     * Retorna productos activos usando Slice.
      */
-    @Query("SELECT DISTINCT p FROM ProductEntity p " +
-           "LEFT JOIN p.categories c " +
-           "WHERE (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-           "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
-           "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
-           "AND (:categoryId IS NULL OR c.id = :categoryId)")
-    Page<ProductEntity> findWithFilters(
-        @Param("name") String name,
-        @Param("minPrice") Double minPrice,
-        @Param("maxPrice") Double maxPrice,
-        @Param("categoryId") Long categoryId,
-        Pageable pageable
-    );
+    Slice<ProductResponseDto> findAllSlice(PaginationDto pagination);
+}
+```
 
-    /**
-     * Busca productos de un usuario con filtros opcionales y paginación
-     * NOTA: Usa LEFT JOIN p.categories para relación Many-to-Many
-     */
-    @Query("SELECT DISTINCT p FROM ProductEntity p " +
-           "LEFT JOIN p.categories c " +
-           "WHERE p.owner.id = :userId " +
-           "AND (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-           "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
-           "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
-           "AND (:categoryId IS NULL OR c.id = :categoryId)")
-    Page<ProductEntity> findByUserIdWithFilters(
-        @Param("userId") Long userId,
-        @Param("name") String name,
-        @Param("minPrice") Double minPrice,
-        @Param("maxPrice") Double maxPrice,
-        @Param("categoryId") Long categoryId,
-        Pageable pageable
-    );
+---
 
-    // ============== CONSULTAS CON SLICE PARA PERFORMANCE ==============
+# 12. Actualización de ProductServiceImpl
 
-    /**
-     * Productos de una categoría usando Slice
-     * Usa LEFT JOIN para relación Many-to-Many
-     */
-    @Query("SELECT DISTINCT p FROM ProductEntity p " +
-           "LEFT JOIN p.categories c " +
-           "WHERE c.id = :categoryId " +
-           "ORDER BY p.createdAt DESC")
-    Slice<ProductEntity> findByCategoryIdOrderByCreatedAtDesc(@Param("categoryId") Long categoryId, Pageable pageable);
+Archivo:
 
-    /**
-     * Productos creados después de una fecha usando Slice
-     */
-    @Query("SELECT p FROM ProductEntity p WHERE p.createdAt > :date ORDER BY p.createdAt DESC")
-    Slice<ProductEntity> findCreatedAfter(@Param("date") LocalDateTime date, Pageable pageable);
+```txt
+products/services/ProductServiceImpl.java
+```
 
-    // ============== CONSULTAS DE CONTEO (PARA METADATOS) ==============
+La clase ya debe tener:
 
-    /**
-     * Cuenta productos con filtros (útil para estadísticas)
-     * NOTA: Usa COUNT(DISTINCT p.id) por la relación Many-to-Many
-     */
-    @Query("SELECT COUNT(DISTINCT p.id) FROM ProductEntity p " +
-           "LEFT JOIN p.categories c " +
-           "WHERE (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-           "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
-           "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
-           "AND (:categoryId IS NULL OR c.id = :categoryId)")
-    long countWithFilters(
-        @Param("name") String name,
-        @Param("minPrice") Double minPrice,
-        @Param("maxPrice") Double maxPrice,
-        @Param("categoryId") Long categoryId
+```java
+private final ProductRepository productRepository;
+private final UserRepository userRepository;
+private final CategoryRepository categoryRepository;
+```
+
+Agregar los métodos paginados:
+
+```java
+/*
+ * Retorna productos activos usando Page.
+ *
+ * Incluye metadatos completos:
+ * totalElements, totalPages, number, size, first, last.
+ */
+@Override
+@Transactional(readOnly = true)
+public Page<ProductResponseDto> findAllPage(PaginationDto pagination) {
+
+    Pageable pageable = createPageable(pagination);
+
+    return productRepository.findActivePage(pageable)
+            .map(ProductMapper::toModelFromEntity).map(ProductMapper::toResponse)
+}
+
+/*
+ * Retorna productos activos usando Slice.
+ *
+ * No incluye totalElements ni totalPages.
+ * Es más liviano para navegación secuencial.
+ */
+@Override
+@Transactional(readOnly = true)
+public Slice<ProductResponseDto> findAllSlice(PaginationDto pagination) {
+
+    Pageable pageable = createPageable(pagination);
+
+    return productRepository.findActiveSlice(pageable)
+          .map(ProductMapper::toModelFromEntity).map(ProductMapper::toResponse)
+}
+```
+
+---
+
+## 12.1. Helper para construir Pageable
+
+Agregar en `ProductServiceImpl`:
+
+```java
+/*
+ * Construye el objeto Pageable validando:
+ * página, tamaño, campo de ordenamiento y dirección.
+ */
+private Pageable createPageable(PaginationDto pagination) {
+
+    String sortBy = normalizeSortBy(pagination.getSortBy());
+
+    Sort.Direction direction = normalizeDirection(pagination.getDirection());
+
+    Sort sort = Sort.by(direction, sortBy);
+
+    return PageRequest.of(
+            pagination.getPage(),
+            pagination.getSize(),
+            sort
     );
 }
 ```
 
-### **Aspectos técnicos importantes**
+---
 
-1. **Automático**: JpaRepository ya proporciona `findAll(Pageable)`
-2. **@Query + Pageable**: Se pueden combinar consultas personalizadas con paginación
-3. **Slice vs Page**: Mismo método, diferente tipo de retorno
-4. **Ordenamiento**: Se especifica en el Pageable, no en la consulta
-5. **Performance**: Spring Data JPA genera SQL optimizado automáticamente
+## 12.2. Helper para validar `sortBy`
 
-### **SQL generado por Spring Data JPA**
+```java
+/*
+ * Valida que el campo de ordenamiento exista y esté permitido.
+ *
+ * Se usa lista blanca para evitar ordenar por campos inexistentes
+ * o por relaciones complejas no preparadas para esta práctica.
+ */
+private String normalizeSortBy(String sortBy) {
 
-```sql
--- Para Page con filtros (consulta principal + count)
--- NOTA: Usa DISTINCT porque la relación Many-to-Many puede generar duplicados
-SELECT DISTINCT p.*, o.* FROM products p 
-JOIN users o ON p.user_id = o.id 
-LEFT JOIN product_categories pc ON p.id = pc.product_id
-LEFT JOIN categories c ON pc.category_id = c.id
-WHERE (COALESCE(:name, '') = '' OR LOWER(p.name) LIKE LOWER('%' || :name || '%'))
-  AND (:minPrice IS NULL OR p.price >= :minPrice)
-  AND (:maxPrice IS NULL OR p.price <= :maxPrice)
-  AND (:categoryId IS NULL OR c.id = :categoryId)
-ORDER BY p.created_at DESC 
-LIMIT 10 OFFSET 0;
-
--- COUNT query automática para Page
--- NOTA: Usa COUNT(DISTINCT p.id) para evitar contar duplicados
-SELECT COUNT(DISTINCT p.id) FROM products p 
-LEFT JOIN product_categories pc ON p.id = pc.product_id
-LEFT JOIN categories c ON pc.category_id = c.id
-WHERE [...same conditions...];
-
--- Para Slice (solo consulta principal, trae uno extra)
-SELECT DISTINCT p.*, o.* FROM products p 
-[...same query...] 
-LIMIT 11 OFFSET 0;  -- Trae 11 para saber si hasNext
-```
-
-# **6. Respuestas JSON con Metadatos de Paginación**
-
-## **6.1. Estructura de Page Response**
-
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Laptop Gaming",
-      "price": 1200.00,
-      "description": "High performance laptop",
-      "user": {
-        "id": 1,
-        "name": "Juan Pérez",
-        "email": "juan@email.com"
-      },
-      "categories": [
-        {
-          "id": 2,
-          "name": "Electrónicos",
-          "description": "Dispositivos electrónicos"
-        },
-        {
-          "id": 3,
-          "name": "Gaming",
-          "description": "Productos para videojuegos"
-        }
-      ],
-      },
-      "createdAt": "2024-01-15T10:30:00",
-      "updatedAt": "2024-01-15T10:30:00"
+    if (sortBy == null || sortBy.isBlank()) {
+        return "id";
     }
-    // ... más productos ...
-  ],
-  "pageable": {
-    "sort": {
-      "sorted": true,
-      "unsorted": false,
-      "empty": false
-    },
-    "pageNumber": 0,
-    "pageSize": 10,
-    "offset": 0,
-    "paged": true,
-    "unpaged": false
-  },
-  "totalPages": 125,
-  "totalElements": 1250,
-  "last": false,
-  "first": true,
-  "numberOfElements": 10,
-  "size": 10,
-  "number": 0,
-  "sort": {
-    "sorted": true,
-    "unsorted": false,
-    "empty": false
-  },
-  "empty": false
+
+    Set<String> allowedFields = Set.of(
+            "id",
+            "name",
+            "price",
+            "stock",
+            "createdAt",
+            "updatedAt"
+    );
+
+    if (!allowedFields.contains(sortBy)) {
+        throw new BadRequestException("Campo de ordenamiento no permitido: " + sortBy);
+    }
+
+    return sortBy;
 }
 ```
 
-## **6.2. Estructura de Slice Response**
+---
 
-```json
-{
-  "content": [
-    // ... productos ...
-  ],
-  "pageable": {
-    "sort": {
-      "sorted": true,
-      "unsorted": false,
-      "empty": false
-    },
-    "pageNumber": 0,
-    "pageSize": 10,
-    "offset": 0,
-    "paged": true,
-    "unpaged": false
-  },
-  "numberOfElements": 10,
-  "size": 10,
-  "number": 0,
-  "first": true,
-  "last": false,
-  "hasNext": true,
-  "hasPrevious": false,
-  "sort": {
-    "sorted": true,
-    "unsorted": false,
-    "empty": false
-  },
-  "empty": false
+## 12.3. Helper para validar dirección
+
+```java
+/*
+ * Convierte la dirección recibida por query param
+ * en Sort.Direction.
+ */
+private Sort.Direction normalizeDirection(String direction) {
+
+    if (direction == null || direction.isBlank()) {
+        return Sort.Direction.ASC;
+    }
+
+    if (direction.equalsIgnoreCase("asc")) {
+        return Sort.Direction.ASC;
+    }
+
+    if (direction.equalsIgnoreCase("desc")) {
+        return Sort.Direction.DESC;
+    }
+
+    throw new BadRequestException("Dirección de ordenamiento no válida: " + direction);
 }
 ```
 
-### **Diferencias clave**
+---
 
-| Metadato | Page | Slice |
-|----------|------|-------|
-| **totalElements** | ✅ Incluido | ❌ NO incluido |
-| **totalPages** | ✅ Incluido | ❌ NO incluido |
-| **hasNext** | ✅ Calculado | ✅ Verificado |
-| **hasPrevious** | ✅ Calculado | ✅ Verificado |
-| **Performance** | ⚠️ 2 consultas | ✅ 1 consulta |
+## 12.4. Por qué no ordenar por `owner.name` o `categories.name`
 
-# **7. Optimizaciones y Consideraciones de Performance**
+En esta práctica se permite ordenar solamente por campos directos de `ProductEntity`:
 
-## **7.1. Índices de Base de Datos**
+```txt
+id
+name
+price
+stock
+createdAt
+updatedAt
+```
 
-Para consultas paginadas eficientes, crear índices en:
+No se recomienda ordenar todavía por:
+
+```txt
+owner.name
+categories.name
+```
+
+porque esos campos pertenecen a entidades relacionadas.
+
+Ordenar por relaciones requiere consultas específicas con `JOIN`, posibles duplicados y validación adicional.
+
+
+
+---
+
+# 13. Actualización de ProductsController
+
+Se mantienen los endpoints existentes.
+
+Archivo:
+
+```txt
+products/controllers/ProductsController.java
+```
+
+Código:
+
+```java
+/*
+ * Controlador REST encargado de exponer endpoints HTTP
+ * para la gestión de productos.
+ */
+    /*
+     * Endpoint normal.
+     *
+     * GET /api/products
+     *
+     * Se mantiene sin paginación para comparar con los endpoints paginados.
+     */
+    @GetMapping
+    public List<ProductResponseDto> findAll() {
+        return service.findAll();
+    }
+
+    /*
+     * Endpoint paginado usando Page.
+     *
+     * GET /api/products/page
+     * GET /api/products/page?page=0&size=5
+     * GET /api/products/page?page=0&size=5&sortBy=price&direction=desc
+     */
+    @GetMapping("/page")
+    public Page<ProductResponseDto> findAllPage(
+            @Valid @ModelAttribute PaginationDto pagination
+    ) {
+        return service.findAllPage(pagination);
+    }
+
+    /*
+     * Endpoint paginado usando Slice.
+     *
+     * GET /api/products/slice
+     * GET /api/products/slice?page=0&size=5
+     * GET /api/products/slice?page=0&size=5&sortBy=createdAt&direction=desc
+     */
+    @GetMapping("/slice")
+    public Slice<ProductResponseDto> findAllSlice(
+            @Valid @ModelAttribute PaginationDto pagination
+    ) {
+        return service.findAllSlice(pagination);
+    }
+
+    /*
+     * Los demás endpoints CRUD se mantienen igual.
+     */
+}
+```
+
+
+# 14. Endpoints disponibles
+
+
+## Productos sin paginación
+
+| Método | Ruta            | Descripción                       |
+| ------ | --------------- | --------------------------------- |
+| GET    | `/api/products` | Lista todos los productos activos |
+
+---
+
+## Productos con Page
+
+| Método | Ruta                                                           | Descripción                                |
+| ------ | -------------------------------------------------------------- | ------------------------------------------ |
+| GET    | `/api/products/page`                                           | Página inicial con valores por defecto     |
+| GET    | `/api/products/page?page=0&size=5`                             | Primera página con 5 registros             |
+| GET    | `/api/products/page?page=1&size=10`                            | Segunda página con 10 registros            |
+| GET    | `/api/products/page?page=0&size=5&sortBy=price&direction=desc` | Productos ordenados por precio descendente |
+| GET    | `/api/products/page?page=0&size=5&sortBy=name&direction=asc`   | Productos ordenados por nombre ascendente  |
+
+---
+
+## Productos con Slice
+
+| Método | Ruta                                                                | Descripción                           |
+| ------ | ------------------------------------------------------------------- | ------------------------------------- |
+| GET    | `/api/products/slice`                                               | Slice inicial con valores por defecto |
+| GET    | `/api/products/slice?page=0&size=5`                                 | Primer slice con 5 registros          |
+| GET    | `/api/products/slice?page=1&size=5`                                 | Segundo slice con 5 registros         |
+| GET    | `/api/products/slice?page=0&size=5&sortBy=createdAt&direction=desc` | Slice ordenado por fecha descendente  |
+
+
+![alt text](assets/10-slic-14.png)
+---
+# 15. Carga Masiva de Datos
+
+Crearemos un script SQL para insertar varios registros de prueba en la base de datos.
+
+`seed_data`
+
+Ver el archivo en 
+
+[seed_data](files/seed_data.sql)
+
+
+## Ejecución dentro del contenedor Docker
+
+Desde la carpeta donde está el archivo:
+
+docker exec -i postgres-dev psql -U ups -d devdb < seed_data.sql
+---
+
+# 16. Respuesta del endpoint normal 
+
+# Problema detectado en el endpoint `GET /api/products`
+
+Consumir un endpoint `GET all` sin paginación no es adecuado cuando la tabla ya contiene muchos registros.
+
+![alt text](assets/10-all.png)
+
+En la prueba realizada, la respuesta del endpoint tardó aproximadamente:
+
+```txt
+4.58 segundos
+```
+
+y devolvió un tamaño de respuesta de:
+
+```txt
+7902.46 KB
+```
+
+Esto evidencia un problema de rendimiento importante, porque el backend está enviando todos los productos en una sola respuesta. Además, cada producto incluye información relacionada como:
+
+```txt
+owner
+categories
+```
+
+Por tanto, el tamaño del JSON crece rápidamente.
+
+Este comportamiento afecta directamente a:
+
+* tiempo de respuesta del backend
+* consumo de memoria del servidor
+* tráfico de red
+* tiempo de carga en el cliente
+* procesamiento del JSON en el navegador o cliente REST
+* experiencia de usuario
+
+Aunque el endpoint responda con `200 OK`, no significa que esté bien diseñado. Una respuesta de casi 8 MB y más de 4 segundos para un listado general indica que el endpoint no escala correctamente.
+
+El problema principal es que el endpoint está funcionando como:
+
+```txt
+GET /api/products
+```
+
+devolviendo todos los registros existentes.
+
+En una API real, este tipo de consulta debe evitarse cuando existe un volumen alto de datos. La solución correcta es aplicar paginación para limitar la cantidad de registros devueltos por cada solicitud.
+
+Por ejemplo:
+
+```txt
+GET /api/products/page?page=0&size=20
+```
+
+De esta forma, el cliente recibe solo una parte controlada de los datos, reduciendo el tamaño de la respuesta, mejorando el tiempo de carga y evitando sobrecargar la base de datos, el backend y el cliente.
+
+Este caso justifica la necesidad de implementar paginación usando `Page` o `Slice` en Spring Data JPA.
+
+
+# 17. Respuesta esperadas aplicando paginación
+
+La solución es implementar paginación usando `Page` o `Slice`. Esto permite al cliente solicitar solo una parte de los registros, mejorando el rendimiento y reduciendo el tamaño de la respuesta.
+
+### Respuesta con Page
+
+
+Ejemplo:
+
+```txt
+GET /api/products/page?page=0&size=2&sortBy=price&direction=desc
+```
+
+Respuesta esperada:
+
+![alt text](assets/10-page14.png)
+
+el tamaño de la respuesta es más pequeno que la respuesta normal. 
+
+
+---
+
+## Respuesta con con Slice
+
+Ejemplo:
+
+```txt
+GET /api/products/slice?page=0&size=2&sortBy=createdAt&direction=desc
+```
+
+Respuesta esperada:
+
+![alt text](assets/10-slice-14.png)
+
+La diferencia principal es que `Slice` no devuelve:
+
+```txt
+totalElements
+totalPages
+```
+
+El tiempo de respuesta de `Slice` es más rápido porque no ejecuta la consulta `COUNT`.
+
+y el tamaño de la respuesta es más pequeño.
+
+
+---
+
+# 18. SQL esperado
+
+## 18.1. Consulta con Page
+
+Cuando se usa:
+
+```txt
+GET /api/products/page?page=0&size=5
+```
+
+Hibernate genera una consulta similar a:
 
 ```sql
--- Índices básicos para ordenamiento
-CREATE INDEX idx_products_id ON products(id);
-CREATE INDEX idx_products_created_at ON products(created_at);
-CREATE INDEX idx_products_updated_at ON products(updated_at);
-CREATE INDEX idx_products_name ON products(name);
-CREATE INDEX idx_products_price ON products(price);
-
--- Índices para filtros
-CREATE INDEX idx_products_user_id ON products(user_id);
-CREATE INDEX idx_products_category_id ON products(category_id);
-
--- Índices compuestos para consultas complejas
-CREATE INDEX idx_products_user_created ON products(user_id, created_at DESC);
-CREATE INDEX idx_products_category_price ON products(category_id, price);
-CREATE INDEX idx_products_price_created ON products(price, created_at DESC);
-
--- Índice para búsqueda de texto (opcional)
-CREATE INDEX idx_products_name_gin ON products USING gin(to_tsvector('spanish', name));
+SELECT 
+    p.*
+FROM products p
+WHERE p.deleted = false
+ORDER BY p.id ASC
+LIMIT 5 OFFSET 0;
 ```
 
-## **7.2. Límites y Validaciones**
+Además, para `Page`, se genera una consulta adicional:
+
+```sql
+SELECT COUNT(*)
+FROM products p
+WHERE p.deleted = false;
+```
+
+---
+
+## 18.2. Consulta con Slice
+
+Cuando se usa:
+
+```txt
+GET /api/products/slice?page=0&size=5
+```
+
+Hibernate genera una consulta similar a:
+
+```sql
+SELECT 
+    p.*
+FROM products p
+WHERE p.deleted = false
+ORDER BY p.id ASC
+LIMIT 6 OFFSET 0;
+```
+
+Spring puede traer un registro adicional para saber si existe una siguiente página.
+
+Por eso `Slice` puede responder:
+
+```txt
+hasNext = true
+```
+
+sin ejecutar un `COUNT`.
+
+---
+
+
+# 19. Aplicación posterior a productos por categoría
+
+En la práctica anterior ya existe este endpoint:
+
+```txt
+GET /api/categories/{id}/products
+```
+
+Ese endpoint devuelve productos de una categoría con filtros opcionales.
+
+
+La actividad final será crear endpoints paginados equivalentes:
+
+```txt
+GET /api/categories/{id}/products/page
+GET /api/categories/{id}/products/slice
+```
+
+El endpoint normal debe mantenerse:
+
+```txt
+GET /api/categories/{id}/products
+```
+
+De esta forma quedan habilitadas ambas opciones:
+
+```txt
+consulta normal
+consulta paginada con Page
+consulta paginada con Slice
+```
+
+---
+
+# 20. Actividad práctica
+
+Se debe aplicar paginación al endpoint de productos por categoría.
+
+---
+
+## 20.1. Mantener endpoint existente
+
+El endpoint actual debe conservarse:
+
+```txt
+GET /api/categories/{id}/products
+```
+
+Este endpoint seguirá devolviendo:
 
 ```java
-// Configuración de límites
-public class PaginationConfig {
-    public static final int MIN_PAGE_SIZE = 1;
-    public static final int MAX_PAGE_SIZE = 100;
-    public static final int DEFAULT_PAGE_SIZE = 10;
-    
-    public static final int MAX_PAGE_NUMBER = 1000; // Prevenir páginas muy altas
+List<ProductResponseDto>
+```
+
+---
+
+## 20.2. Crear endpoints paginados
+
+Archivo:
+
+```txt
+categories/controllers/CategoryProductsController.java
+```
+
+Agregar:
+
+```java
+/*
+ * Endpoint paginado con Page para productos de una categoría.
+ *
+ * GET /api/categories/{id}/products/page
+ * GET /api/categories/{id}/products/page?page=0&size=5
+ * GET /api/categories/{id}/products/page?name=laptop&minPrice=500&page=0&size=5
+ */
+@GetMapping("/{id}/products/page")
+public Page<ProductResponseDto> findProductsByCategoryPage(...)
+      {}
+
+
+/*
+ * Endpoint paginado con Slice para productos de una categoría.
+ *
+ * GET /api/categories/{id}/products/slice
+ * GET /api/categories/{id}/products/slice?page=0&size=5
+ */
+@GetMapping("/{id}/products/slice")
+public Slice<ProductResponseDto> findProductsByCategorySlice(
+      ){
 }
 ```
 
-## **7.3. Estrategias según el Caso de Uso**
+---
 
-### **Para Listados Administrativos**
+## 20.3. Actualizar ProductService
+
+Archivo:
+
+```txt
+products/services/ProductService.java
+```
+
+Agregar:
+
 ```java
-// Usar Page con metadatos completos
-@GetMapping("/admin/products")
-public Page<ProductResponseDto> adminProducts(Pageable pageable) {
-    return productService.findAll(pageable);
+/*
+ * Retorna productos de una categoría con filtros y Page.
+ */
+Page<ProductResponseDto> findByCategoryIdWithFiltersPage();
+
+/*
+ * Retorna productos de una categoría con filtros y Slice.
+ */
+Slice<ProductResponseDto> findByCategoryIdWithFiltersSlice();
+```
+
+---
+
+## 20.4. Actualizar ProductRepository
+
+Archivo:
+
+```txt
+products/repositories/ProductRepository.java
+```
+
+Agregar versión con `Page`
+
+Agregar versión con `Slice`
+
+
+---
+
+## 20.5. Actualizar ProductServiceImpl
+
+Archivo:
+
+```txt
+products/services/ProductServiceImpl.java
+```
+
+Agregar:
+
+```java
+/*
+ * Retorna productos activos de una categoría usando Page.
+ *
+ * Mantiene los filtros de la práctica anterior y agrega paginación.
+ */
+@Override
+@Transactional(readOnly = true)
+public Page<ProductResponseDto> findByCategoryIdWithFiltersPage(
+        Long categoryId,
+        ProductFilterByCategoryDto filters,
+        PaginationDto pagination
+) {
+    if (!categoryRepository.existsByIdAndDeletedFalse(categoryId)) {
+        throw new NotFoundException("Category not found");
+    }
+
+    validateCategoryFilters(filters);
+
+    String name = normalizeName(filters.getName());
+
+    Pageable pageable = createPageable(pagination);
+
+    return .....
+}
+
+/*
+ * Retorna productos activos de una categoría usando Slice.
+ *
+ * No calcula totalElements ni totalPages.
+ */
+@Override
+@Transactional(readOnly = true)
+public Slice<ProductResponseDto> findByCategoryIdWithFiltersSlice(
+        Long categoryId,
+        ProductFilterByCategoryDto filters,
+        PaginationDto pagination
+) {
+    if (!categoryRepository.existsByIdAndDeletedFalse(categoryId)) {
+        throw new NotFoundException("Category not found");
+    }
+
+    validateCategoryFilters(filters);
+
+    String name = normalizeName(filters.getName());
+
+    Pageable pageable = createPageable(pagination);
+
+    return ....
 }
 ```
 
-### **Para Feeds de Usuarios**
-```java
-// Usar Slice para mejor performance
-@GetMapping("/feed")
-public Slice<ProductResponseDto> feed(Pageable pageable) {
-    return productService.findRecentProducts(pageable);
-}
+---
+
+## 20.6. Helper para validar filtros de categoría
+
+Si todavía no existe, crear en `ProductServiceImpl`:
+
+
+# 22. Resultados y evidencias
+
+En la nueva entrada del README, se debe agregar:
+
+---
+
+
+
+
+## Captura de respuesta con Page
+
+Ejemplo:
+
+```txt
+GET /api/products/page?page=0&size=5
 ```
 
-### **Para Búsquedas**
-```java
-// Combinar filtros con paginación
-@GetMapping("/search")
-public Page<ProductResponseDto> search(
-    @RequestParam String query,
-    Pageable pageable) {
-    return productService.search(query, pageable);
-}
+Debe evidenciar:
+
+```txt
+content
+totalElements
+totalPages
+number
+size
+first
+last
 ```
 
-## **7.4. Problemas Comunes y Soluciones**
+---
 
-### **Problema: Páginas muy altas**
-```java
-// Solución: Limitar número máximo de páginas
-if (page > MAX_PAGE_NUMBER) {
-    throw new BadRequestException("Página muy alta, usar búsqueda en su lugar");
-}
+## Captura de respuesta con Slice
+
+Ejemplo:
+
+```txt
+GET /api/products/slice?page=0&size=5
 ```
 
-### **Problema: Ordenamiento por campos no indexados**
-```java
-// Solución: Lista blanca de campos permitidos
-private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
-    "id", "name", "price", "createdAt", "updatedAt"
-);
+Debe evidenciar que no aparece:
+
+```txt
+totalElements
+totalPages
 ```
 
-### **Problema: Consultas COUNT lentas**
-```java
-// Solución: Usar Slice cuando no se necesita count total
-public Slice<ProductResponseDto> findForFeed(Pageable pageable) {
-    return productRepository.findRecentProducts(pageable);
-}
+---
+
+## Captura de error por paginación inválida
+
+Ejemplo:
+
+```txt
+GET /api/products/page?page=-1&size=0
 ```
 
-# **8. Actividad Práctica Completa**
+Debe responder:
 
-## **8.1. Implementación requerida**
-
-El estudiante debe implementar:
-
-1. **Actualizar ProductController** con endpoints paginados:
-   - `GET /api/products?page=0&size=10&sort=name,asc`
-   - `GET /api/products/slice?page=0&size=10`
-   - `GET /api/products/search?name=laptop&page=0&size=5`
-   - `GET /api/products/user/1?page=0&size=5&sort=price,desc`
-
-2. **Implementar métodos** en `ProductService`:
-   - `findAll(page, size, sort)` con Page
-   - `findAllSlice(page, size, sort)` con Slice
-   - `findWithFilters(...)` con filtros y paginación
-   - `findByUserIdWithFilters(...)` combinando todo
-
-3. **Actualizar ProductRepository** con consultas paginadas:
-   - Usar `@Query` con `Pageable` parameter
-   - Implementar consultas con filtros opcionales
-
-4. **Validaciones robustas**:
-   - Límites de página y tamaño
-   - Lista blanca de propiedades de ordenamiento
-   - Combinación de filtros y paginación
-
-## **8.2. Casos de prueba específicos**
-
-**Probar los siguientes casos**:
-
-```bash
-# 1. Paginación básica
-GET /api/products?page=0&size=5
-
-# 2. Paginación con ordenamiento
-GET /api/products?page=1&size=10&sort=price,desc
-
-# 3. Paginación con ordenamiento múltiple
-GET /api/products?page=0&size=5&sort=category.name,asc&sort=price,desc
-
-# 4. Slice para performance
-GET /api/products/slice?page=0&size=10&sort=createdAt,desc
-
-# 5. Búsqueda con filtros y paginación
-GET /api/products/search?name=gaming&minPrice=500&page=0&size=3
-
-# 6. Productos de usuario con paginación
-GET /api/products/user/1?page=0&size=5&sort=name,asc
-
-# 7. Casos de error
-GET /api/products?page=-1&size=0  # Error de validación
-GET /api/products?sort=invalidField,asc  # Campo no permitido
+```txt
+400 Bad Request
 ```
 
-## **8.3. Verificaciones técnicas**
+con formato estándar de `ErrorResponse`.
 
-1. **SQL generado**: Verificar LIMIT y OFFSET en los logs
-2. **Metadatos**: Confirmar que Page incluye totalElements y totalPages
-3. **Performance**: Comparar tiempos Page vs Slice
-4. **Índices**: Verificar que las consultas usen índices apropiados
-5. **Validaciones**: Probar límites de página y tamaño
+---
 
-# **9. Resultados y Evidencias Requeridas**
+## Captura de endpoint de categoría paginado
 
-## **9.1. Datos para revisión**
+Ejemplo:
 
-**Usar un dataset de al menos 1000 productos**:
-Crear un script de carga masiva para poblar la base de datos con datos variados:
-- al menos 5 usuarios
-- alemnos 2 categorias por producto  
-- Precios variados ($10 - $5000)
-- Nombres con texto buscable
+```txt
+GET /api/categories/2/products/page?page=110&size=5
+```
 
-## **9.2. Evidencias de funcionamiento** Caputuras de Postman Bruno o similar mostrando respuestas correctas
-1. **Page response**: `GET /api/products?page=0&size=5` mostrando metadatos completos
-2. **Slice response**: `GET /api/products/slice?page=0&size=5` sin totalElements
-3. **Filtros + paginación**: `GET /api/products/search?name=laptop&page=0&size=3`
-4. **Ordenamiento**: `GET /api/products?sort=price,desc&page=1&size=5`
+Debe evidenciar:
 
-## **9.3. Evidencias de performance**
-1. **Comparación**: Tiempos de respuesta Page vs Slice
+* productos filtrados por categoría
+* paginación aplicada
+* metadatos de `Page`
 
-**Consultas de prueba con volumen**: para cada uno Page y Slice
-1. Primera página de productos (page=0, size=10)
-2. Página intermedia (page=5, size=10) 
-3. Últimas páginas para verificar performance
-4. Búsquedas con pocos y muchos resultados
-5. Ordenamiento por diferentes campos
 
-# **10. Conclusiones**
+## Captura de endpoint de categoría paginado
 
-Esta implementación de paginación en Spring Boot demuestra:
+Ejemplo:
 
-* **Paginación nativa**: Uso completo de Spring Data JPA Pageable
-* **Flexibilidad**: Page vs Slice según necesidades de performance
-* **Integración**: Filtros + paginación + ordenamiento en una sola consulta
-* **Escalabilidad**: Funciona eficientemente con millones de registros
-* **Usabilidad**: APIs REST estándar con metadatos completos
-* **Performance**: Consultas optimizadas con índices apropiados
+```txt
+GET /api/categories/2/products/slice?page=10&size=5
+```
 
-El enfoque implementado proporciona una base sólida para aplicaciones que requieren manejar grandes volúmenes de datos de manera eficiente, manteniendo una excelente experiencia de usuario y siguiendo las mejores prácticas de Spring Boot.
+Debe evidenciar:
+
+* productos filtrados por categoría
+* paginación aplicada
+* metadatos de `Slcie`
+---
+
+## Explicación breve
+
+El estudiante debe explicar:
+
+```txt
+¿Cuál es la diferencia entre Page y Slice?
+```
+
+También debe explicar:
+
+```txt
+¿Por qué la paginación debe aplicarse en el repositorio y no después de traer todos los datos en memoria?
+```
