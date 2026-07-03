@@ -4,7 +4,9 @@ BEGIN;
 
 TRUNCATE TABLE product_categories RESTART IDENTITY CASCADE;
 TRUNCATE TABLE products RESTART IDENTITY CASCADE;
-TRUNCATE TABLE category_entity RESTART IDENTITY CASCADE;
+-- TRUNCATE TABLE category_entity RESTART IDENTITY CASCADE;
+TRUNCATE TABLE categories RESTART IDENTITY CASCADE;
+
 TRUNCATE TABLE users RESTART IDENTITY CASCADE;
 
 -- =========================
@@ -32,7 +34,7 @@ FROM generate_series(1, 10) AS gs;
 -- 2. Crear 10 categorías
 -- =========================
 
-INSERT INTO category_entity (
+INSERT INTO  (
     name,
     description,
     created_at,
@@ -94,7 +96,7 @@ SELECT
 FROM products p
 CROSS JOIN LATERAL (
     SELECT ce.id
-    FROM category_entity ce
+    FROM categories ce
     WHERE ce.deleted = false
     ORDER BY random() + p.id * 0
     LIMIT (2 + FLOOR(random() * 2))::int

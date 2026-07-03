@@ -837,6 +837,8 @@ Código:
 | ------ | --------------- | --------------------------------- |
 | GET    | `/api/products` | Lista todos los productos activos |
 
+![alt text](assets/10-all.png)
+
 ---
 
 ## Productos con Page
@@ -849,6 +851,7 @@ Código:
 | GET    | `/api/products/page?page=0&size=5&sortBy=price&direction=desc` | Productos ordenados por precio descendente |
 | GET    | `/api/products/page?page=0&size=5&sortBy=name&direction=asc`   | Productos ordenados por nombre ascendente  |
 
+![alt text](assets/10-page14.png)
 ---
 
 ## Productos con Slice
@@ -861,7 +864,7 @@ Código:
 | GET    | `/api/products/slice?page=0&size=5&sortBy=createdAt&direction=desc` | Slice ordenado por fecha descendente  |
 
 
-![alt text](assets/10-slic-14.png)
+![alt text](assets/10-slice-14.png)
 ---
 # 15. Carga Masiva de Datos
 
