@@ -1,15 +1,15 @@
 # Programación y Plataformas Web
 
-# **Spring Boot – Autenticación y Autorización con JWT: Seguridad y Control de Acceso**
+# Spring Boot – Autenticación y Autorización con JWT: Seguridad y Control de Acceso
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="95">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="95">
 </div>
 
-## **Práctica 11 (Spring Boot): Autenticación JWT, Autorización por Roles y Protección de Endpoints**
+## Práctica 11 (Spring Boot): Autenticación JWT, Autorización por Roles y Protección de Endpoints
 
-### **Autores**
+### Autores
 
 **Pablo Torres**
 
@@ -17,7 +17,7 @@
 
 GitHub: PabloT18
 
-# **1. Introducción a la Seguridad en Spring Boot**
+# 1. Introducción a la Seguridad en Spring Boot
 
 En los temas anteriores implementamos **CRUD completo, relaciones, filtros y paginación**. Sin embargo, **TODOS los endpoints están completamente abiertos**.
 
@@ -33,7 +33,7 @@ En aplicaciones reales esto es **inaceptable**. Necesitamos:
 * **Protección de endpoints**: Solo usuarios autenticados pueden acceder
 * **Control de ownership**: Solo el propietario puede modificar sus recursos
 
-## **1.1. Estrategia de implementación**
+## 1.1. Estrategia de implementación
 
 En este tema implementaremos:
 
@@ -44,7 +44,7 @@ En este tema implementaremos:
 * **BCrypt**: Algoritmo seguro para hash de contraseñas
 * **Filtros de autorización**: Proteger endpoints automáticamente
 
-## **1.2. Niveles de protección**
+## 1.2. Niveles de protección
 
 | Endpoint | Protección | Ejemplo |
 |----------|------------|---------|
@@ -53,34 +53,69 @@ En este tema implementaremos:
 | **Con roles** | Requiere rol específico | `DELETE /api/users/{id}` (solo ADMIN) |
 | **Con ownership** | Requiere ser propietario | `PUT /api/products/{id}` (solo owner o ADMIN) |
 
-# **2. Configuración Inicial del Proyecto**
+# 2. Configuración Inicial del Proyecto
 
-## **2.1. Dependencias en Gradle**
+
+## Estructura de paquetes
+
+Se creará el paquete:
+
+```txt
+security/
+```
+
+Estructura recomendada:
+
+```txt
+security/
+├── config
+│   ├── JwtProperties.java
+│   ├── SecurityConfig.java
+│   └── SecurityDataInitializer.java
+├── controllers
+│   └── AuthController.java
+├── dtos
+│   ├── AuthResponseDto.java
+│   ├── LoginRequestDto.java
+│   └── RegisterRequestDto.java
+├── entities
+│   └── RoleEntity.java
+├── enums
+│   └── RoleName.java
+├── filters
+│   ├── JwtAuthenticationEntryPoint.java
+│   └── JwtAuthenticationFilter.java
+├── repositories
+│   └── RoleRepository.java
+├── services
+│   ├── AuthService.java
+│   ├── UserDetailsImpl.java
+│   └── UserDetailsServiceImpl.java
+└── utils
+    └── JwtUtil.java
+```
+
+
+Para crear todas las carpetas se puede usar el comando desde la raiz del proyecto (asegurarse tener los mismos nombres de paquetes):
+
+```bash
+mkdir -p src/main/java/ec/edu/ups/icc/fundamentos01/security/{config,controllers,dtos,entities,enums,filters,repositories,services,utils}
+```
+
+o desde la carpeta `fundamentos01`s
+
+```bash
+mkdir -p security/{config,controllers,dtos,entities,enums,filters,repositories,services,utils}
+```
+
+
+## 2.1. Dependencias en Gradle
 
 Archivo: `build.gradle.kts`
 
 ```kotlin
-plugins {
-	java
-	id("org.springframework.boot") version "4.0.0"
-	id("io.spring.dependency-management") version "1.1.7"
-}
-
-group = "ec.edu.ups.icc"
-version = "0.0.1-SNAPSHOT"
-// ============== CONFIGURAION QUE TIENEN ==============
-// ....
 dependencies {
-	// ============== DEPENDENCIAS EXISTENTES ==============
-	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.springframework.boot:spring-boot-starter-validation")
-	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	runtimeOnly("org.postgresql:postgresql")
-	
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	// Otras dependencias existentes...
 
 	// ============== NUEVAS DEPENDENCIAS DE SEGURIDAD ==============
 	
@@ -88,51 +123,17 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	
 	// JWT - JSON Web Token
-	implementation("io.jsonwebtoken:jjwt-api:0.12.3")
-	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
-	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
-	
-	// Jackson para manejo de fechas Java 8+ (LocalDateTime, LocalDate, etc.)
-	// NECESARIO: ErrorResponse usa LocalDateTime que requiere este módulo
-	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-	
-	// Tests de seguridad
-	testImplementation("org.springframework.security:spring-security-test")
-}
-
-tasks.withType<Test> {
-	useJUnitPlatform()
-}
-
-tasks.withType<JavaCompile> {
-	options.compilerArgs.add("-parameters")
+	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 }
 ```
 
-## **2.2. Configuración en application.yml**
+## 2.2. Configuración en application.yml
 
 Archivo: `src/main/resources/application.yml`
 
 ```yaml
-spring:
-    application:
-        name: fundamentos01
-    datasource:
-        url: jdbc:postgresql://localhost:5434/devdb
-        username: ups
-        password: ups123
-    jpa:
-        hibernate:
-            ddl-auto: update
-        show-sql: true
-        properties:
-            hibernate:
-                format_sql: true
-                dialect: org.hibernate.dialect.PostgreSQLDialect
-
-server:
-    port: 8080
-
 # ============== CONFIGURACIÓN DE JWT ==============
 jwt:
     # Secret key para firmar tokens (EN PRODUCCIÓN USAR VARIABLE DE ENTORNO)
@@ -154,7 +155,7 @@ jwt:
     prefix: "Bearer "
 ```
 
-### **Explicación de configuración JWT**:
+### Explicación de configuración JWT*
 
 * **secret**: Clave secreta para firmar tokens (debe ser >=256 bits para HS256)
 * **expiration**: 30 minutos para access tokens (corto para seguridad)
@@ -163,20 +164,13 @@ jwt:
 * **header**: Authorization (estándar HTTP)
 * **prefix**: "Bearer " (convención OAuth 2.0)
 
-# **3. Modelo de Datos para Seguridad**
+# 3. Modelo de Datos para Seguridad
 
-## **3.1. Entidad Role (nueva)**
+## 3.1. Entidad Role (nueva)
 
-Archivo: `security/models/RoleEntity.java`
+Archivo: `security/entity/RoleEntity.java`
 
 ```java
-package ec.edu.ups.icc.fundamentos01.security.models;
-
-import ec.edu.ups.icc.fundamentos01.core.entities.BaseModel;
-import jakarta.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * ENTIDAD: Role (Rol de usuario)
  * 
@@ -188,7 +182,7 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "roles")  // Nombre de la tabla en PostgreSQL
-public class RoleEntity extends BaseModel {  // Hereda id, createdAt, updatedAt
+public class RoleEntity extends BaseEntity {  // Hereda id, createdAt, updatedAt
 
     /**
      * Nombre del rol (enum para type-safety)
@@ -212,54 +206,9 @@ public class RoleEntity extends BaseModel {  // Hereda id, createdAt, updatedAt
     @Column(length = 200)
     private String description;
 
-    /**
-     * Relación INVERSA con usuarios (bidireccional)
-     * 
-     * @ManyToMany(mappedBy = "roles"): 
-     *   - mappedBy indica que UserEntity es el DUEÑO de la relación
-     *   - UserEntity tiene @JoinTable que crea la tabla intermedia user_roles
-     * 
-     * fetch = FetchType.LAZY: 
-     *   - NO carga los usuarios automáticamente al consultar un rol
-     *   - Se cargan solo cuando se accede a role.getUsers()
-     *   - Mejora performance (evita cargar datos innecesarios)
-     * 
-     * Set<UserEntity>:
-     *   - Set (no List) para evitar duplicados
-     *   - HashSet por defecto (orden no importa)
-     * 
-     * Ejemplo:
-     * RoleEntity adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN);
-     * Set<UserEntity> admins = adminRole.getUsers();  // ← Aquí se carga desde BD
-     */
-    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
-    private Set<UserEntity> users = new HashSet<>();
+    
 
     // ============== CONSTRUCTORES ==============
-
-    /**
-     * Constructor vacío (REQUERIDO por JPA)
-     * JPA usa reflexión para crear instancias
-     */
-    public RoleEntity() {
-    }
-
-    /**
-     * Constructor con nombre de rol
-     * Útil para crear roles en DataInitializer
-     */
-    public RoleEntity(RoleName name) {
-        this.name = name;
-    }
-
-    /**
-     * Constructor completo
-     * Útil para crear roles con descripción
-     */
-    public RoleEntity(RoleName name, String description) {
-        this.name = name;
-        this.description = description;
-    }
 
     // ============== GETTERS Y SETTERS ==============
 
@@ -267,17 +216,14 @@ public class RoleEntity extends BaseModel {  // Hereda id, createdAt, updatedAt
 }
 ```
 
-## **3.2. Enum RoleName**
+## 3.2. Enum RoleName
 
-Archivo: `security/models/RoleName.java`
+Archivo: `security/enums/RoleName.java`
 
 ```java
-package ec.edu.ups.icc.fundamentos01.security.models;
-
 public enum RoleName {
     ROLE_USER("Usuario estándar con permisos básicos"),
-    ROLE_ADMIN("Administrador con permisos completos"),
-    ROLE_MODERATOR("Moderador con permisos intermedios");
+    ROLE_ADMIN("Administrador con permisos completos");
 
     private final String description;
 
@@ -296,48 +242,41 @@ public enum RoleName {
 * Fácil de mantener: Cambios en un solo lugar
 * Evita typos: "ADMIN" vs "ADMNI"
 
-## **3.3. Actualización de UserEntity**
+## 3.3. Actualización de UserEntity
 
-Archivo: `users/models/UserEntity.java`
+
+Archivo:
+
+```txt
+users/entities/UserEntity.java
+```
+
+La entidad actual debe mantener:
+
+```txt
+name
+email
+passwordHash
+```
+
+ y demas atributos, a esta entidad se debe agregar la relación con roles.
+
+Código:
 
 ```java
-// imports packages y clases....
 
-
-/**
- * ENTIDAD: User (Usuario del sistema)
- * 
- * Representa un usuario con sus credenciales y roles.
- * Relaciones:
- * - ManyToMany con RoleEntity (un usuario puede tener varios roles)
- * - OneToMany con ProductEntity (un usuario puede tener varios productos)
+/*
+ * Entidad JPA del recurso users.
+ *
+ * Representa la tabla users en PostgreSQL.
+ * Se agrega relación con roles para autenticación y autorización.
  */
 @Entity
 @Table(name = "users")
-public class UserEntity extends BaseModel {
+public class UserEntity extends BaseEntity {
 
-    @Column(nullable = false, length = 150)
-    private String name;
+    // Otros atributos existentes: name, email, passwordHash, deleted, createdAt, updatedAt
 
-    @Column(nullable = false, unique = true, length = 150)
-    private String email;
-
-    /**
-     * Contraseña HASHEADA con BCrypt
-     * 
-     * NUNCA se almacena en texto plano.
-     * Ejemplo hash: $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
-     * 
-     * Al registrar usuario:
-     *   String plainPassword = "Secure123";
-     *   String hashedPassword = passwordEncoder.encode(plainPassword);
-     *   user.setPassword(hashedPassword);  // ← Esto se guarda en BD
-     * 
-     * Al hacer login:
-     *   passwordEncoder.matches("Secure123", user.getPassword());  // true/false
-     */
-    @Column(nullable = false)
-    private String password;
 
     // ============== NUEVA RELACIÓN CON ROLES ==============
 
@@ -375,52 +314,23 @@ public class UserEntity extends BaseModel {
      */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<RoleEntity> roles = new HashSet<>();
-
-    // ============== RELACIÓN EXISTENTE CON PRODUCTOS ==============
-
-    @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
-    private List<ProductEntity> products;
-
-    // ============== CONSTRUCTORES ==============
 
     public UserEntity() {
     }
 
-    public UserEntity(String name, String email, String password) {
-        this.name = name;
-        this.email = email;
-        this.password = password;
-    }
-
-    // ============== GETTERS Y SETTERS ==============
-
-  
-    // ============== MÉTODOS HELPER ==============
-
-    /**
-     * Agrega un rol al usuario
-     */
-    public void addRole(RoleEntity role) {
-        this.roles.add(role);
-        role.getUsers().add(this);
-    }
-
-    /**
-     * Verifica si el usuario tiene un rol específico
-     */
-    public boolean hasRole(RoleName roleName) {
-        return this.roles.stream()
-            .anyMatch(role -> role.getName().equals(roleName));
-    }
+    // Getters y setters
 }
 ```
 
-### **Decisión de diseño: ¿Por qué tabla separada de Roles?**
+
+
+
+### Decisión de diseño: ¿Por qué tabla separada de Roles?
 
 **VENTAJAS de tabla separada (RECOMENDADO)**:
 * Separación de responsabilidades
@@ -429,12 +339,8 @@ public class UserEntity extends BaseModel {
 * Escalable para permisos granulares
 * Auditoría independiente
 
-**Desventajas de campo en User**:
-* Difícil de consultar
-* No reutilizable
-* Escalabilidad limitada
 
-### **¿Cómo funciona esta arquitectura de roles?**
+### ¿Cómo funciona esta arquitectura de roles?
 
 **1. Tabla `roles`**:
 ```sql
@@ -505,53 +411,64 @@ private List<String> roles; // ["USER", "ADMIN"] - Propenso a errores
 private Set<RoleEntity> roles; // Relación con tabla roles
 ```
 
-# **4. DTOs de Autenticación**
+# 4. DTOs de Autenticación
 
-## **4.1. LoginRequestDto**
+## 4.1. LoginRequestDto
 
-Archivo: `security/dtos/LoginRequestDto.java`
+Archivo:
+
+```txt
+security/dtos/LoginRequestDto.java
+```
+
+Código:
 
 ```java
-// imports packages y clases....
+package ec.edu.ups.icc.fundamentos01.security.dtos;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/*
+ * DTO usado para recibir credenciales de login.
+ */
 public class LoginRequestDto {
 
     @NotBlank(message = "El email es obligatorio")
-    @Email(message = "El email debe ser válido")
+    @Email(message = "Debe ingresar un email válido")
     private String email;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
     private String password;
 
-    // Constructores
     public LoginRequestDto() {
     }
 
-    public LoginRequestDto(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
+    // Constructor lleno
 
-    // Getters y Setters
-
+    // Getters y setters
 }
 ```
 
-## **4.2. RegisterRequestDto**
+---
 
-Archivo: `security/dtos/RegisterRequestDto.java`
+## 4.2. RegisterRequestDto
+
+Archivo:
+
+```txt
+security/dtos/RegisterRequestDto.java
+```
+
+Código:
 
 ```java
-// imports packages y clases....
 
-
-import jakarta.validation.constraints.*;
-
+/*
+ * DTO usado para registrar usuarios desde /auth/register.
+ */
 public class RegisterRequestDto {
 
     @NotBlank(message = "El nombre es obligatorio")
@@ -559,57 +476,71 @@ public class RegisterRequestDto {
     private String name;
 
     @NotBlank(message = "El email es obligatorio")
-    @Email(message = "El email debe ser válido")
-    @Size(max = 150, message = "El email no puede exceder 150 caracteres")
+    @Email(message = "Debe ingresar un email válido")
+    @Size(max = 150, message = "El email no debe superar los 150 caracteres")
     private String email;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, max = 100, message = "La contraseña debe tener entre 6 y 100 caracteres")
+    @Size(min = 8, max = 100, message = "La contraseña debe tener entre 8 y 100 caracteres")
     @Pattern(
-        regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*$",
-        message = "La contraseña debe contener al menos una mayúscula, una minúscula y un número"
+            regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*$",
+            message = "La contraseña debe contener al menos una mayúscula, una minúscula y un número"
     )
     private String password;
 
-    // Constructores
     public RegisterRequestDto() {
     }
 
-    public RegisterRequestDto(String name, String email, String password) {
-        this.name = name;
-        this.email = email;
-        this.password = password;
-    }
+    // Constructor lleno
 
-    // Getters y Setters
-  
+    // Getters y setters
 }
 ```
 
-## **4.3. AuthResponseDto**
+---
 
-Archivo: `security/dtos/AuthResponseDto.java`
+## 4.3. AuthResponseDto
+
+Archivo:
+
+```txt
+security/dtos/AuthResponseDto.java
+```
+
+Código:
 
 ```java
-// imports packages y clases....
 
 
-import java.util.Set;
-
+/*
+ * DTO de respuesta para login y register.
+ *
+ * Devuelve el token y datos básicos del usuario autenticado.
+ */
 public class AuthResponseDto {
 
     private String token;
+
     private String type = "Bearer";
+
     private Long userId;
+
     private String name;
+
     private String email;
+
     private Set<String> roles;
 
-    // Constructores
     public AuthResponseDto() {
     }
 
-    public AuthResponseDto(String token, Long userId, String name, String email, Set<String> roles) {
+    public AuthResponseDto(
+            String token,
+            Long userId,
+            String name,
+            String email,
+            Set<String> roles
+    ) {
         this.token = token;
         this.userId = userId;
         this.name = name;
@@ -617,14 +548,15 @@ public class AuthResponseDto {
         this.roles = roles;
     }
 
-    // Getters y Setters
-  
+    // Getters y setters
 }
 ```
 
-# **5. Configuración de JWT**
+---
 
-## **5.1. JwtProperties (propiedades centralizadas)**
+# 5. Configuración de JWT
+
+## 5.1. JwtProperties (propiedades centralizadas)
 
 Archivo: `security/config/JwtProperties.java`
 
@@ -651,7 +583,7 @@ public class JwtProperties {
 }
 ```
 
-### **¿Cómo funciona @ConfigurationProperties?**
+### ¿Cómo funciona @ConfigurationProperties?
 
 Esta anotación permite mapear automáticamente propiedades del `application.yml` a campos de la clase Java.
 
@@ -677,7 +609,7 @@ JwtProperties {
 }
 ```
 
-### **Explicación de cada propiedad**:
+### Explicación de cada propiedad*
 
 **1. secret (String)**
 
@@ -908,7 +840,7 @@ if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
 
 "Bearer" significa "portador" → quien presente el token tiene acceso (como un ticket).
 
-### **Resumen de configuración completa**:
+### Resumen de configuración completa*
 
 ```yaml
 # application.yml
@@ -950,7 +882,7 @@ public class JwtUtil {
 }
 ```
 
-## **5.2. JwtUtil (generación y validación de tokens)**
+## 5.2. JwtUtil (generación y validación de tokens)
 
 Archivo: `security/utils/JwtUtil.java`
 
@@ -1190,9 +1122,9 @@ public class JwtUtil {
 }
 ```
 
-### **¿Cómo funciona JWT?**
+### ¿Cómo funciona JWT?
 
-#### **Anatomía de un token JWT**
+#### Anatomía de un token JWT
 
 Un JWT consta de 3 partes separadas por puntos:
 
@@ -1230,7 +1162,7 @@ HMAC-SHA256(
 )
 ```
 
-#### **¿Por qué JWT es seguro?**
+#### ¿Por qué JWT es seguro?
 
 **1. Firma criptográfica (SIGNATURE)**:
 - La firma se genera con una **clave secreta** que solo conoce el servidor
@@ -1271,7 +1203,7 @@ validateToken(token) → Firma inválida → 401 Unauthorized
 - Si roban el token, solo es útil hasta que expire
 - Refresh tokens (7 días) permiten renovar sin re-login
 
-#### **Flujo completo de autenticación con JWT**
+#### Flujo completo de autenticación con JWT
 
 ```
 ┌────────────┐                                    ┌──────────────┐
@@ -1319,7 +1251,7 @@ validateToken(token) → Firma inválida → 401 Unauthorized
        │                                                 │
 ```
 
-#### **Métodos clave de JwtUtil explicados**
+#### Métodos clave de JwtUtil explicados
 
 **`generateToken(Authentication authentication)`**:
 ```java
@@ -1373,7 +1305,7 @@ Long userId = jwtUtil.getUserIdFromToken(token);
 // - Establecer la autenticación en SecurityContext
 ```
 
-#### **Configuración de seguridad JWT**
+#### Configuración de seguridad JWT
 
 **¿Por qué HS256 y no otros algoritmos?**
 
@@ -1415,7 +1347,7 @@ java -jar app.jar
 ./gradlew bootRun
 ```
 
-### **Aspectos clave del JwtUtil**:
+### Aspectos clave del JwtUtil*
 
 * **HS256**: Algoritmo de firma HMAC con SHA-256 (seguro y eficiente)
 * **Claims personalizados**: email, name, roles en el payload
@@ -1424,9 +1356,9 @@ java -jar app.jar
 * **Stateless**: No almacena información en el servidor
 * **Self-contained**: Token contiene toda la información necesaria
 
-# **6. UserDetailsService Implementation**
+# 6. UserDetailsService Implementation
 
-## **6.1. UserDetailsImpl**
+## 6.1. UserDetailsImpl
 
 Archivo: `security/services/UserDetailsImpl.java`
 
@@ -1517,7 +1449,7 @@ public class UserDetailsImpl implements UserDetails {
 }
 ```
 
-### **¿Cómo funciona UserDetailsImpl?**
+### ¿Cómo funciona UserDetailsImpl?
 
 Este adaptador convierte nuestro `UserEntity` en algo que Spring Security entiende. Es el **puente** entre nuestra base de datos y el sistema de seguridad.
 
@@ -1567,7 +1499,7 @@ String email = currentUser.getEmail();  // "pablo@example.com"
 | `isCredentialsNonExpired()` | boolean | ¿Contraseña válida? (siempre true) |
 | `isEnabled()` | boolean | ¿Cuenta habilitada? (siempre true) |
 
-## **6.2. UserDetailsServiceImpl**
+## 6.2. UserDetailsServiceImpl
 
 Archivo: `security/services/UserDetailsServiceImpl.java`
 
@@ -1647,7 +1579,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 }
 ```
 
-### **¿Cómo funciona UserDetailsServiceImpl?**
+### ¿Cómo funciona UserDetailsServiceImpl?
 
 Esta clase es el **CONECTOR** entre Spring Security y nuestra base de datos.
 
@@ -1739,9 +1671,9 @@ UserDetails user = userDetailsService.loadUserByUsername(email);
 // Spring Security convierte la excepción en 401 Unauthorized
 ```
 
-# **7. Filtros de Seguridad**
+# 7. Filtros de Seguridad
 
-## **7.1. JwtAuthenticationFilter**
+## 7.1. JwtAuthenticationFilter
 
 Archivo: `security/filters/JwtAuthenticationFilter.java`
 
@@ -2007,7 +1939,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 }
 ```
 
-### **¿Cómo funciona JwtAuthenticationFilter?**
+### ¿Cómo funciona JwtAuthenticationFilter?
 
 Este filtro es el **GUARDIÁN** que protege todos los endpoints. Se ejecuta en CADA petición HTTP.
 
@@ -2069,7 +2001,7 @@ public UserDetails loadUserByUsername(String email) { ... }
 // NO recomendado: Si cambian los roles, JWT viejo tendría roles viejos
 ```
 
-## **7.2. JwtAuthenticationEntryPoint**
+## 7.2. JwtAuthenticationEntryPoint
 
 Archivo: `security/filters/JwtAuthenticationEntryPoint.java`
 
@@ -2319,7 +2251,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 }
 ```
 
-### **¿Cómo funciona JwtAuthenticationEntryPoint?**
+### ¿Cómo funciona JwtAuthenticationEntryPoint?
 
 Este componente es el **MANEJADOR DE ERRORES** de autenticación. Se ejecuta cuando Spring Security detecta falta de autenticación válida.
 
@@ -2517,7 +2449,7 @@ if (authException instanceof BadCredentialsException) {
 // Registrar IP, user agent, timestamp en BD para análisis de seguridad
 ```
 
-### **Aspectos clave del JwtAuthenticationEntryPoint**:
+### Aspectos clave del JwtAuthenticationEntryPoint*
 
 * **Usa `ErrorResponse` existente**: Mantiene consistencia con el formato de errores de toda la aplicación
 * **NO usa `@RestControllerAdvice`**: Este filtro se ejecuta antes de llegar a los controladores
@@ -2525,7 +2457,7 @@ if (authException instanceof BadCredentialsException) {
 * **HTTP 401 Unauthorized**: Status code apropiado para errores de autenticación
 * **Primera línea de defensa**: Captura errores de autenticación antes que cualquier otro handler
 
-## **7.3. Configuración de Jackson para serialización de fechas**
+## 7.3. Configuración de Jackson para serialización de fechas
 
 **¿Por qué es necesario?**
 
@@ -2589,7 +2521,7 @@ public class JacksonConfig {
 }
 ```
 
-### **¿Qué hace cada configuración?**
+### ¿Qué hace cada configuración?
 
 | Configuración | Propósito | Ejemplo |
 |---------------|-----------|----------|
@@ -2598,7 +2530,7 @@ public class JacksonConfig {
 | **FAIL_ON_EMPTY_BEANS = false** | Permite serializar beans vacíos | Evita errores con POJOs sin getters |
 | **@Primary** | ObjectMapper por defecto | Se usa en toda la aplicación |
 
-### **Dependencia requerida**
+### Dependencia requerida
 
 Esta configuración requiere la dependencia ya agregada en `build.gradle.kts`:
 
@@ -2606,7 +2538,7 @@ Esta configuración requiere la dependencia ya agregada en `build.gradle.kts`:
 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 ```
 
-### **¿Dónde se usa este ObjectMapper?**
+### ¿Dónde se usa este ObjectMapper?
 
 1. **JwtAuthenticationEntryPoint**: Serializa `ErrorResponse` con `timestamp`
 2. **@RestController**: Serializa automáticamente todas las respuestas
@@ -2614,7 +2546,7 @@ implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 4. **Cualquier lugar** que inyecte `ObjectMapper`
 
 
-# **8. Configuración de Spring Security**
+# 8. Configuración de Spring Security
 
 Archivo: `security/config/SecurityConfig.java`
 
@@ -2906,7 +2838,7 @@ Cliente → Request con JWT → Servidor valida firma → No busca en BD/memoria
 - Necesitamos validar JWT **ANTES** del filtro estándar de Spring
 - Si JWT es válido → Establecemos autenticación → Siguiente filtro ve usuario autenticado
 
-#### **Flujo completo de seguridad**
+#### Flujo completo de seguridad
 
 ```
 Petición: GET /api/products
@@ -2940,7 +2872,7 @@ Header: Authorization: Bearer eyJhbGci...
    - Sin permisos → AccessDeniedException → 403
 ```
 
-### **Aspectos clave de SecurityConfig**:
+### Aspectos clave de SecurityConfig*
 
 * **CSRF deshabilitado**: No necesario para APIs REST stateless
 * **SessionCreationPolicy.STATELESS**: No usar sesiones HTTP
@@ -2950,9 +2882,9 @@ Header: Authorization: Bearer eyJhbGci...
 * **BCrypt**: Hashing seguro de contraseñas con salt
 * **Filtros ordenados**: JWT validation → Spring Security → Controllers
 
-# **9. Servicios de Autenticación**
+# 9. Servicios de Autenticación
 
-## **9.1. AuthService**
+## 9.1. AuthService
 
 Archivo: `security/services/AuthService.java`
 
@@ -3086,7 +3018,7 @@ public class AuthService {
 }
 ```
 
-### **¿Cómo funciona AuthService?**
+### ¿Cómo funciona AuthService?
 
 Este servicio maneja las operaciones de autenticación y registro de usuarios.
 
@@ -3187,7 +3119,7 @@ POST /auth/register
 
 
 
-# **10. Controlador de Autenticación**
+# 10. Controlador de Autenticación
 
 Archivo: `security/controllers/AuthController.java`
 
@@ -3233,7 +3165,7 @@ public class AuthController {
 }
 ```
 
-### **¿Cómo funciona AuthController?**
+### ¿Cómo funciona AuthController?
 
 Este controlador expone los endpoints REST para autenticación. Es simple porque toda la lógica está en AuthService.
 
@@ -3316,9 +3248,9 @@ En SecurityConfig estos endpoints están configurados como públicos:
 
 
 
-# **11. Repositorios de Seguridad**
+# 11. Repositorios de Seguridad
 
-## **11.1. RoleRepository**
+## 11.1. RoleRepository
 
 Archivo: `security/repository/RoleRepository.java`
 
@@ -3340,7 +3272,7 @@ public interface RoleRepository extends JpaRepository<RoleEntity, Long> {
 }
 ```
 
-### **¿Cómo funciona RoleRepository?**
+### ¿Cómo funciona RoleRepository?
 
 Repositorio para gestión de roles del sistema.
 
@@ -3362,7 +3294,7 @@ RoleEntity userRole = roleRepository.findByName(RoleName.ROLE_USER)
     .orElseThrow(() -> new BadRequestException("Rol por defecto no encontrado"));
 ```
 
-## **11.2. Actualizar UserRepository**
+## 11.2. Actualizar UserRepository
 
 Archivo: `users/repository/UserRepository.java`
 
@@ -3385,14 +3317,23 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     // ============== NUEVOS MÉTODOS PARA SEGURIDAD ==============
     
     // Buscar usuario por email (usado en login)
-    Optional<UserEntity> findByEmail(String email);
+    Optional<UserEntity> findByEmailAndDeletedFalse(String email);
     
     // Verificar si email ya está registrado (usado en registro)
     boolean existsByEmail(String email);
 }
 ```
 
-### **¿Cómo funciona UserRepository actualizado?**
+Para login se usará:
+
+```java
+findByEmailAndDeletedFalse
+```
+
+así un usuario eliminado lógicamente no podrá autenticarse.
+
+
+### ¿Cómo funciona UserRepository actualizado?
 
 Se agregaron dos métodos para soportar autenticación.
 
@@ -3430,9 +3371,161 @@ if (userRepository.existsByEmail(registerRequest.getEmail())) {
 
 ---
 
-# **Próximos Pasos**
 
-Has completado la Práctica 11 sobre **Autenticación con JWT**. Has aprendido:
+
+## 11.3. Inicialización de roles
+
+Antes de registrar usuarios, deben existir los roles base.
+
+Archivo:
+
+```txt
+security/config/SecurityDataInitializer.java
+```
+
+Código:
+
+```java
+
+
+/*
+ * Inicializa roles base del sistema.
+ *
+ * Se ejecuta al iniciar la aplicación.
+ */
+@Component
+public class SecurityDataInitializer implements CommandLineRunner {
+
+    private final RoleRepository roleRepository;
+
+    public SecurityDataInitializer(RoleRepository roleRepository) {
+        this.roleRepository = roleRepository;
+    }
+
+    @Override
+    public void run(String... args) {
+
+        createRoleIfNotExists(
+                RoleName.ROLE_USER,
+                "Usuario estándar del sistema"
+        );
+
+        createRoleIfNotExists(
+                RoleName.ROLE_ADMIN,
+                "Administrador del sistema"
+        );
+    }
+
+    private void createRoleIfNotExists(RoleName roleName, String description) {
+
+        if (!roleRepository.existsByName(roleName)) {
+            RoleEntity role = new RoleEntity(roleName, description);
+            roleRepository.save(role);
+        }
+    }
+}
+```
+
+Sin esta inicialización, el registro fallará porque `AuthService` no encontrará `ROLE_USER`.
+
+---
+
+
+
+
+# 12. Actividad práctica
+
+Se debe implementar autenticación JWT en el proyecto.
+
+- Crear estructura de seguridad
+- Crear roles
+- Actualizar UserEntity
+- Crear DTOs de autenticación
+- Implementar JWT
+- Configurar Spring Security
+- Crear AuthService y AuthController
+
+## Entregables
+
+## Captura de registro exitoso
+
+Endpoint:
+
+```txt
+POST /api/auth/register
+```
+
+Debe evidenciar:
+
+```txt
+201 Created
+token generado
+ROLE_USER asignado
+```
+
+---
+
+## Captura de login exitoso
+
+Endpoint:
+
+```txt
+POST /api/auth/login
+```
+
+Debe evidenciar:
+
+```txt
+200 OK
+token generado
+roles devueltos
+```
+
+---
+
+## Captura de endpoint protegido sin token
+
+Ejemplo:
+
+```txt
+GET /api/products/page?page=0&size=5
+```
+
+Debe evidenciar:
+
+```txt
+401 Unauthorized
+```
+
+---
+
+## Captura de endpoint protegido con token
+
+Ejemplo:
+
+```txt
+GET /api/products/page?page=0&size=5
+```
+
+Debe incluir:
+
+```http
+Authorization: Bearer <token>
+```
+
+y evidenciar:
+
+```txt
+200 OK
+```
+
+---
+
+
+
+# Próximos Pasos
+
+Se ha completado la Práctica 11 sobre **Autenticación con JWT**. 
 
 - Configurar Spring Security con JWT
 - Crear filtros personalizados de autenticación
@@ -3442,9 +3535,9 @@ Has completado la Práctica 11 sobre **Autenticación con JWT**. Has aprendido:
 
 **Continúa con las siguientes prácticas**:
 
-## **Práctica 12: Roles y @PreAuthorize**
+## Práctica 12: Roles y @PreAuthorize
 
-Aprenderás a:
+Se realizara:
 - Proteger endpoints específicos con roles
 - Usar @PreAuthorize para control de acceso
 - Inyectar usuario actual con @AuthenticationPrincipal
@@ -3452,9 +3545,9 @@ Aprenderás a:
 
 📄 Ver [12_roles_preauthorize.md](12_roles_preauthorize.md)
 
-## **Práctica 13: Validación de Ownership**
+## Práctica 13: Validación de Ownership
 
-Aprenderás a:
+Se realizara:
 - Validar propiedad de recursos (ownership)
 - Implementar validateOwnership() en servicios
 - Permitir bypass de ADMIN
@@ -3464,15 +3557,7 @@ Aprenderás a:
 
 ---
 
-# **Conclusión**
 
-Al finalizar la implementación de autenticación JWT en Spring Boot. Tu API ahora cuenta con:
-
-**Autenticación stateless** con tokens JWT  
-**Registro y login** funcionales  
-**Gestión de roles** (USER, ADMIN)  
-**Protección de endpoints** con Spring Security  
-**Manejo robusto de errores**  
 
 
 
