@@ -3430,6 +3430,7 @@ Sin esta inicialización, el registro fallará porque `AuthService` no encontrar
 
 ---
 
+![alt text](assets/11-autrepsonse.png)
 
 
 
