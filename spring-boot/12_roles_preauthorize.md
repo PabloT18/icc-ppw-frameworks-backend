@@ -1,26 +1,62 @@
 # Programación y Plataformas Web
 
-# **Spring Boot – Roles y @PreAuthorize**
+# Spring Boot – Roles y @PreAuthorize
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="95">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="95">
 </div>
 
-## **Práctica 12 (Spring Boot): Protección de Endpoints con Roles**
+---
 
-### **Autores**
+# Práctica 12 (Spring Boot): Protección de Endpoints con Roles
+
+### Autores
 
 **Pablo Torres**
 
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
 GitHub: PabloT18
 
+---
 
-# **Introducción**
+# 1. Introducción
 
-En la práctica anterior implementamos autenticación completa con JWT. Con `.anyRequest().authenticated()` en SecurityConfig, **todos los endpoints ya requieren token válido** (excepto los públicos como `/auth/**`).
+En la práctica anterior se implementó autenticación JWT usando:
+
+* Spring Security
+* JWT
+* `JwtAuthenticationFilter`
+* `JwtAuthenticationEntryPoint`
+* `UserDetailsImpl`
+* `UserDetailsServiceImpl`
+* `AuthService`
+* `AuthController`
+* roles mediante `RoleEntity`
+* relación `ManyToMany` entre `UserEntity` y `RoleEntity`
+
+Hasta este punto, la API ya puede:
+
+```txt
+registrar usuarios
+iniciar sesión
+generar token JWT
+validar token JWT
+proteger endpoints con autenticación
+````
+
+Además, en `SecurityConfig` se configuró:
+
+```java
+.anyRequest().authenticated()
+```
+
+Esto significa que todos los endpoints, excepto los públicos, requieren un token válido.
+
+Sin embargo, todavía existe un problema importante: todos los usuarios autenticados tienen el mismo nivel de acceso.
+
+Un usuario normal con `ROLE_USER` podría consumir endpoints que deberían ser solo para administradores.
 
 Ahora vamos a implementar **protección por roles** usando:
 
@@ -29,15 +65,137 @@ Ahora vamos a implementar **protección por roles** usando:
 - **@AuthenticationPrincipal**: Acceder al usuario autenticado
 - **Dos enfoques**: Configuración global vs. anotaciones por método
 
-**Prerequisitos**:
-- Haber completado la Práctica 11 (JWT + Login)
-- Tener usuarios registrados con diferentes roles
-- SecurityConfig con @EnableMethodSecurity configurado
+---
+
+# 2. Objetivo de la práctica
+
+El objetivo es diferenciar entre:
+
+```txt
+usuario autenticado
+usuario autorizado
+```
+
+Un usuario autenticado es alguien que tiene un token válido.
+
+Un usuario autorizado es alguien que, además de tener token válido, posee el rol necesario para ejecutar una acción.
+
+Ejemplo:
+
+```txt
+GET /api/products/page
+```
+
+Puede ser consumido por cualquier usuario autenticado.
+
+Pero:
+
+```txt
+GET /api/products
+```
+
+debe ser consumido solo por usuarios administradores, porque devuelve todos los productos sin paginación.
+
+---
+
+# 4. Autenticación vs autorización
+
+## 4.1. Autenticación
+
+La autenticación responde a la pregunta:
+
+```txt
+¿Quién eres?
+```
+
+En esta aplicación se resuelve mediante JWT.
+
+Ejemplo:
+
+```http
+Authorization: Bearer <token>
+```
+
+Si el token es válido, Spring Security crea un usuario autenticado en el `SecurityContext`.
+
+---
+
+## 4.2. Autorización
+
+La autorización responde a la pregunta:
+
+```txt
+¿Qué puedes hacer?
+```
+
+En esta práctica se resuelve mediante roles.
+
+Ejemplo:
+
+```java
+@PreAuthorize("hasRole('ADMIN')")
+```
+
+Esto significa:
+
+```txt
+solo usuarios con ROLE_ADMIN pueden ejecutar este método
+```
+
+---
+
+# 5. Validar configuración de seguridad
+
+Para usar `@PreAuthorize`, la clase `SecurityConfig` debe tener:
+
+Archivo:
+
+```txt
+security/config/SecurityConfig.java
+```
+
+Código relevante:
+
+```java
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+public class SecurityConfig {
+    // Configuración existente
+}
+```
+
+---
+
+## 5.1. Qué hace `@EnableMethodSecurity`
+
+La anotación:
+
+```java
+@EnableMethodSecurity(prePostEnabled = true)
+```
+
+habilita seguridad a nivel de método.
+
+Permite usar anotaciones como:
+
+```java
+@PreAuthorize
+@PostAuthorize
+```
+
+Sin esta configuración, una anotación como esta no se aplicaría:
+
+```java
+@PreAuthorize("hasRole('ADMIN')")
+```
+
+---
 
 
-# **1. Dos Enfoques para Protección por Roles**
+# 6. Dos Enfoques para Protección por Roles
 
-## **1.1. Enfoque 1: Configuración Global (SecurityConfig)**
+## 6.1. Enfoque 1: Configuración Global (SecurityConfig)
 
 Proteger rutas completas por patrón de URL:
 
@@ -79,7 +237,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 -  Menos granular: Protege por patrón de URL, no por método específico
 -  No permite expresiones complejas
 
-## **1.2. Enfoque 2: Anotaciones por Método (@PreAuthorize)**
+## 6.2. Enfoque 2: Anotaciones por Método (@PreAuthorize)
 
 Proteger métodos individuales con expresiones:
 
@@ -112,7 +270,7 @@ public class ProductController {
 -  Distribuido: Seguridad esparcida por múltiples controladores
 -  Segunda línea: Se ejecuta después del filtro (más tarde en el flujo)
 
-## **1.3. Mejor Práctica: COMBINAR AMBOS**
+## 6.3. Mejor Práctica: COMBINAR AMBOS
 
 ```java
 // SecurityConfig - Protección básica por rutas
@@ -132,335 +290,508 @@ public ResponseEntity<Void> adminDelete(@PathVariable Long id) {
 ```
 
 
-# **2. ProductController con Protección por Roles**
+---
 
-# **2. ProductController con Protección por Roles**
+# 7. Uso de `@PreAuthorize`
 
-Archivo: `products/controllers/ProductController.java`
+`@PreAuthorize` evalúa una condición antes de ejecutar el método.
+
+Ejemplo:
 
 ```java
-// imports packages y clases....
+@PreAuthorize("hasRole('ADMIN')")
+```
 
-public class ProductController {
+Si el usuario tiene el rol requerido, el método se ejecuta.
 
+Si no tiene el rol requerido, Spring Security bloquea la ejecución y responde:
 
-    // ============== ENDPOINTS DE CREACIÓN ==============
+```txt
+403 Forbidden
+```
 
-    /**
-     * Crear producto
-     * POST /api/products
-     * 
-     * Nota: Requiere autenticación por .anyRequest().authenticated()
-     * Se asigna al usuario actual como owner en el servicio
-     */
-    @PostMapping
-    public ResponseEntity<ProductResponseDto> create(@Valid @RequestBody CreateProductDto dto) {
-        ProductResponseDto created = productService.create(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
+---
 
-    // ============== ENDPOINTS DE CONSULTA ==============
+## 7.1. Diferencia entre `hasRole` y `hasAuthority`
 
-    /**
-     * Listar TODOS los productos (sin paginación) - SOLO ADMIN
+Cuando el usuario inicia sesión, los roles se convierten en authorities.
+
+Ejemplo:
+
+```txt
+ROLE_USER
+ROLE_ADMIN
+```
+
+Con `hasRole`, Spring agrega automáticamente el prefijo `ROLE_`.
+
+```java
+@PreAuthorize("hasRole('ADMIN')")
+```
+
+Busca internamente:
+
+```txt
+ROLE_ADMIN
+```
+
+Con `hasAuthority`, se debe escribir el nombre completo:
+
+```java
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+```
+
+En esta práctica se usará:
+
+```java
+hasRole
+```
+
+porque es más claro para los estudiantes.
+
+---
+
+## 7.2. Expresiones principales
+
+| Expresión                     | Significado                             |
+| ----------------------------- | --------------------------------------- |
+| `hasRole('ADMIN')`            | Solo usuarios con `ROLE_ADMIN`          |
+| `hasRole('USER')`             | Solo usuarios con `ROLE_USER`           |
+| `hasAnyRole('USER', 'ADMIN')` | Usuarios con `ROLE_USER` o `ROLE_ADMIN` |
+| `isAuthenticated()`           | Cualquier usuario autenticado           |
+
+---
+
+# 8. Actualización de ProductsController
+
+En la práctica de paginación se mantuvo el endpoint:
+
+```txt
+GET /api/products
+```
+
+Este endpoint devuelve todos los productos activos sin paginación.
+
+Como no tiene paginación, puede devolver demasiados registros y debe quedar restringido solo para administradores.
+
+Los endpoints paginados se mantienen disponibles para cualquier usuario autenticado:
+
+```txt
+GET /api/products/page
+GET /api/products/slice
+```
+
+---
+
+## 8.1. ProductsController actualizado
+
+Archivo:
+
+```txt
+products/controllers/ProductsController.java
+```
+
+Código:
+
+```java
+/*
+ * Controlador REST encargado de exponer endpoints HTTP
+ * para la gestión de productos.
+ *
+ * En esta práctica se agrega autorización por roles
+ * usando @PreAuthorize.
+ */
+@RestController
+@RequestMapping("/products")
+public class ProductsController {
+
+/*
+     * Endpoint administrativo.
+     *
      * GET /api/products
-     * 
-     * Este endpoint muestra información sensible de todos los usuarios
-     * Por eso está protegido con @PreAuthorize
+     *
+     * Devuelve todos los productos activos sin paginación.
+     * Por esa razón, solo debe ser consumido por usuarios ADMIN.
+     *
+     * hasRole('ADMIN') busca internamente ROLE_ADMIN.
      */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ProductResponseDto>> findAll() {
-        List<ProductResponseDto> products = productService.findAll();
-        return ResponseEntity.ok(products);
+    public List<ProductResponseDto> findAll() {
+        return service.findAll();
     }
 
-    /**
-     * Listar productos con paginación básica
-     * GET /api/products/paginated?page=0&size=10&sort=name,asc
-     * 
-     * Nota: Requiere autenticación por .anyRequest().authenticated()
-     */
-    @GetMapping("/paginated")
-    public ResponseEntity<Page<ProductResponseDto>> findAllPaginado(
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam(value = "sort", defaultValue = "id") String[] sort) {
-
-        Page<ProductResponseDto> products = productService.findAllPaginado(page, size, sort);
-        return ResponseEntity.ok(products);
-    }
-
-    /**
-     * Listar productos usando Slice para mejor performance
-     * GET /api/products/slice?page=0&size=10&sort=createdAt,desc
-     * 
-     * Nota: Requiere autenticación por .anyRequest().authenticated()
-     */
-    @GetMapping("/slice")
-    public ResponseEntity<Slice<ProductResponseDto>> findAllSlice(
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam(value = "sort", defaultValue = "id") String[] sort) {
-
-        Slice<ProductResponseDto> products = productService.findAllSlice(page, size, sort);
-        return ResponseEntity.ok(products);
-    }
-
-    /**
-     * Listar productos con filtros opcionales y paginación
-     * GET /api/products/search?name=laptop&minPrice=500&page=0&size=5
-     * 
-     * Nota: Requiere autenticación por .anyRequest().authenticated()
-     */
-    @GetMapping("/search")
-    public ResponseEntity<Page<ProductResponseDto>> findWithFilters(
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "minPrice", required = false) Double minPrice,
-            @RequestParam(value = "maxPrice", required = false) Double maxPrice,
-            @RequestParam(value = "categoryId", required = false) Long categoryId,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam(value = "sort", defaultValue = "id") String[] sort) {
-
-        Page<ProductResponseDto> products = productService.findWithFilters(
-                name, minPrice, maxPrice, categoryId, page, size, sort);
-
-        return ResponseEntity.ok(products);
-    }
-
-    /**
-     * Obtener producto por ID
-     * GET /api/products/{id}
-     * 
-     * Nota: Requiere autenticación por .anyRequest().authenticated()
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductResponseDto> findById(@PathVariable("id") String id) {
-        ProductResponseDto product = productService.findById(Long.parseLong(id));
-        return ResponseEntity.ok(product);
-    }
-
-    /**
-     * Productos de un usuario específico con filtros opcionales y paginación
-     * GET /api/products/user/1?name=laptop&page=0&size=5&sort=price,desc
-     * 
-     * Nota: Requiere autenticación por .anyRequest().authenticated()
-     */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<Page<ProductResponseDto>> findByUserId(
-            @PathVariable("userId") Long userId,
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "minPrice", required = false) Double minPrice,
-            @RequestParam(value = "maxPrice", required = false) Double maxPrice,
-            @RequestParam(value = "categoryId", required = false) Long categoryId,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam(value = "sort", defaultValue = "id") String[] sort) {
-
-        Page<ProductResponseDto> products = productService.findByUserIdWithFilters(
-                userId, name, minPrice, maxPrice, categoryId, page, size, sort);
-
-        return ResponseEntity.ok(products);
-    }
-
-    /**
-     * Productos por categoría
-     * GET /api/products/category/{categoryId}
-     * 
-     * Nota: Requiere autenticación por .anyRequest().authenticated()
-     */
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<ProductResponseDto>> findByCategoryId(
-            @PathVariable("categoryId") Long categoryId) {
-        List<ProductResponseDto> products = productService.findByCategoryId(categoryId);
-        return ResponseEntity.ok(products);
-    }
-
-    // ============== ENDPOINTS DE MODIFICACIÓN ==============
-
-    /**
-     * Actualizar producto
-     * PUT /api/products/{id}
-     * 
-     * Nota: NO tiene @PreAuthorize aquí porque la validación de ownership
-     * se hace EN EL SERVICIO (ver Práctica 13)
-     * 
-     * El servicio valida:
-     * - Si eres USER → Solo puedes actualizar TUS productos
-     * - Si eres ADMIN o MODERATOR → Puedes actualizar CUALQUIER producto
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductResponseDto> update(
-            @PathVariable("id") Long id,
-            @Valid @RequestBody UpdateProductDto dto) {
-        ProductResponseDto updated = productService.update(id, dto);
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Eliminar producto
-     * DELETE /api/products/{id}
-     * 
-     * Nota: NO tiene @PreAuthorize aquí porque la validación de ownership
-     * se hace EN EL SERVICIO (ver Práctica 13)
-     * 
-     * El servicio valida:
-     * - Si eres USER → Solo puedes eliminar TUS productos
-     * - Si eres ADMIN o MODERATOR → Puedes eliminar CUALQUIER producto
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
-        productService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
-}
-```
-
-## **2.1. ¿Por qué update() y delete() NO tienen @PreAuthorize?**
-
-Porque la validación de ownership se hace **EN EL SERVICIO**, no en el controlador:
-
-```java
-// NO necesitamos esto en el controlador:
-@DeleteMapping("/{id}")
-@PreAuthorize("hasRole('ADMIN') or @productService.isOwner(#id, authentication.principal.id)")
-public ResponseEntity<Void> delete(@PathVariable Long id) { ... }
-
-// En su lugar, validamos en el servicio (Práctica 13):
-@Service
-public class ProductService {
-    public void delete(Long id) {
-        ProductEntity product = findProductOrThrow(id);
-        validateOwnership(product);  // ← Aquí se valida
-        productRepository.delete(product);
-    }
-    
-    private void validateOwnership(ProductEntity product) {
-        UserDetailsImpl currentUser = getCurrentUser();
-        
-        // ADMIN o MODERATOR pueden todo
-        if (hasAnyRole(currentUser, "ADMIN", "MODERATOR")) {
-            return;
-        }
-        
-        // USER solo sus propios productos
-        if (!product.getOwner().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("No puedes modificar productos ajenos");
-        }
-    }
-}
-```
-
-**Ventajas de validar en el servicio**:
-- Mismo método para todos (no necesitas `/admin` separado)
-- Lógica de negocio centralizada
-- Más fácil de testear
-- Reutilizable desde otros lugares
-
-### **¿Cómo funciona @PreAuthorize en findAll()?**
-
-**@PreAuthorize("hasRole('ADMIN')")** evalúa la expresión **ANTES** de ejecutar el método:
-
-```java
-@GetMapping
-@PreAuthorize("hasRole('ADMIN')")  // ← Se evalúa ANTES del método
-public ResponseEntity<List<ProductResponseDto>> findAll() {
-    // Solo llega aquí si el usuario tiene ROLE_ADMIN
-    List<ProductResponseDto> products = productService.findAll();
-    return ResponseEntity.ok(products);
-}
-```
-
-**Flujo de validación**:
-```
-Request: GET /api/products
-Header: Authorization: Bearer <token-con-ROLE_USER>
-        ↓
-1. JwtAuthenticationFilter valida token 2. SecurityContext se establece con usuario 3. .anyRequest().authenticated() pasa 4. @PreAuthorize("hasRole('ADMIN')") evalúa    → Usuario tiene ROLE_USER
-   → NO tiene ROLE_ADMIN
-   → Expresión = false
-5. Spring Security lanza AccessDeniedException
-6. → 403 Forbidden
+    /*
    
-¡El método NUNCA se ejecuta!
-```
-
-
-# **3. Expresiones de @PreAuthorize**
-
-## **3.1. Expresiones Básicas por Rol**
-
-| Expresión | Descripción | Ejemplo de uso |
-|-----------|-------------|----------------|
-| `hasRole('ADMIN')` | Usuario tiene rol ADMIN | Eliminar recursos |
-| `hasAnyRole('ADMIN', 'MODERATOR')` | Tiene al menos uno de los roles | Moderar contenido |
-| `hasRole('ADMIN') and hasRole('MODERATOR')` | Tiene ambos roles | Permisos combinados |
-
-**Ejemplos**:
-
-```java
-// Solo ADMIN
-@PreAuthorize("hasRole('ADMIN')")
-public void deleteUser(Long id) { ... }
-
-// ADMIN o MODERATOR
-@PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
-public void moderateContent(Long id) { ... }
-
-// Combinación con AND
-@PreAuthorize("hasRole('ADMIN') and hasRole('SUPERUSER')")
-public void criticalOperation() { ... }
-```
-
-## **3.2. Diferencia entre hasRole() y hasAuthority()**
-
-```java
-// hasRole() - Añade prefijo "ROLE_" automáticamente
-@PreAuthorize("hasRole('ADMIN')")
-// Busca: "ROLE_ADMIN" en authorities
-
-// hasAuthority() - Busca el nombre exacto
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
-// Busca: "ROLE_ADMIN" en authorities
-
-//  INCORRECTO - No encuentra nada
-@PreAuthorize("hasAuthority('ADMIN')")
-// Busca: "ADMIN" → NO existe (tenemos "ROLE_ADMIN")
-```
-
-**Recomendación**: Usa `hasRole()` por simplicidad y consistencia.
-
-## **3.3. @AuthenticationPrincipal**
-
-Inyecta el usuario autenticado en el método:
-
-```java
-@PostMapping
-public ResponseEntity<ProductResponseDto> create(
-        @Valid @RequestBody CreateProductDto dto,
-        @AuthenticationPrincipal UserDetailsImpl currentUser) {
-    
-    // Acceso directo al usuario autenticado
-    Long userId = currentUser.getId();
-    String email = currentUser.getEmail();
-    String name = currentUser.getName();
-    Collection<? extends GrantedAuthority> roles = currentUser.getAuthorities();
-    
-    // Usar en lógica de negocio
-    ProductResponseDto product = productService.create(dto, userId);
-    return ResponseEntity.status(HttpStatus.CREATED).body(product);
 }
 ```
 
-**¿Cuándo usar @AuthenticationPrincipal?**
-- Crear recursos asociados al usuario actual
-- Filtrar resultados por usuario
-- Auditoría (quién modificó qué)
-- Pasar contexto al servicio
+---
+
+## 8.2. Resultado de esta protección
+
+Con esta configuración:
+
+| Endpoint                    | Protección          |
+| --------------------------- | ------------------- |
+| `GET /api/products`         | Solo `ROLE_ADMIN`   |
+| `GET /api/products/page`    | Usuario autenticado |
+| `GET /api/products/slice`   | Usuario autenticado |
+| `GET /api/products/{id}`    | Usuario autenticado |
+| `POST /api/products`        | Usuario autenticado |
+| `PUT /api/products/{id}`    | Usuario autenticado |
+| `PATCH /api/products/{id}`  | Usuario autenticado |
+| `DELETE /api/products/{id}` | Usuario autenticado |
+
+---
+
+# 9. Crear endpoint para usuario autenticado
+
+Para demostrar el uso de `@AuthenticationPrincipal`, se creará un endpoint que devuelva los datos del usuario autenticado.
+
+Ruta esperada:
+
+```txt
+GET /api/users/me
+```
+
+Este endpoint permitirá verificar qué usuario está autenticado y qué roles tiene.
+
+---
+
+## 9.1. DTO de usuario autenticado
+
+Archivo:
+
+```txt
+security/dtos/CurrentUserResponseDto.java
+```
+
+Código:
+
+```java
+/*
+ * DTO usado para devolver la información básica
+ * del usuario autenticado.
+ */
+public class CurrentUserResponseDto {
+
+    private Long id;
+
+    private String name;
+
+    private String email;
+
+    private Set<String> roles;
+
+    public CurrentUserResponseDto() {
+    }
+
+    public CurrentUserResponseDto(
+            Long id,
+            String name,
+            String email,
+            Set<String> roles
+    ) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.roles = roles;
+    }
+
+    // Getters y setters
+}
+```
+
+---
+
+## 9.2. CurrentUserController
+
+Archivo:
+
+```txt
+users/controllers/CurrentUserController.java
+```
+
+Código:
+
+```java
 
 
-# **4. Flujo Completo de Validación por Roles**
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/*
+ * Controlador REST para consultar información
+ * del usuario autenticado.
+ *
+ * La ruta final es:
+ * GET /api/users/me
+ */
+@RestController
+@RequestMapping("/users")
+public class CurrentUserController {
+
+    /*
+     * Retorna los datos del usuario autenticado.
+     *
+     * @AuthenticationPrincipal obtiene el usuario que fue colocado
+     * en el SecurityContext por JwtAuthenticationFilter.
+     */
+    @GetMapping("/me")
+    public CurrentUserResponseDto me(
+            @AuthenticationPrincipal UserDetailsImpl currentUser
+    ) {
+        Set<String> roles = currentUser.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+
+        return new CurrentUserResponseDto(
+                currentUser.getId(),
+                currentUser.getName(),
+                currentUser.getEmail(),
+                roles
+        );
+    }
+}
+```
+
+---
+
+## 9.3. Flujo de `@AuthenticationPrincipal`
+
+```txt
+Cliente envía token JWT
+  ↓
+JwtAuthenticationFilter valida token
+  ↓
+UserDetailsServiceImpl carga el usuario
+  ↓
+UserDetailsImpl se coloca en SecurityContext
+  ↓
+@AuthenticationPrincipal recibe UserDetailsImpl
+  ↓
+Controller devuelve datos del usuario autenticado
+```
+
+---
+
+# 10. Manejo de errores 403 Forbidden
+
+Cuando un usuario autenticado no tiene el rol requerido, Spring Security lanza una excepción de autorización.
+
+Ejemplo:
+
+```txt
+Usuario con ROLE_USER consume GET /api/products
+```
+
+Como ese endpoint tiene:
+
+```java
+@PreAuthorize("hasRole('ADMIN')")
+```
+
+el usuario no debe acceder.
+
+La respuesta correcta debe ser:
+
+```txt
+403 Forbidden
+```
+
+No debe responder:
+
+```txt
+500 Internal Server Error
+```
+
+---
+
+## 10.1. Actualización de GlobalExceptionHandler
+
+Archivo:
+
+```txt
+core/exceptions/handler/GlobalExceptionHandler.java
+```
+
+Agregar estos handlers antes del handler genérico de `Exception`.
+
+Código:
+
+```java
+/*
+ * Handler global de excepciones.
+ *
+ * También maneja excepciones de seguridad para devolver
+ * respuestas uniformes con ErrorResponse.
+ */
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // Otros handlers existentes:
+    // ApplicationException
+    // MethodArgumentNotValidException
+    // BindException
+
+    /*
+     * Maneja errores de autorización generados por @PreAuthorize.
+     *
+     * Ocurre cuando el usuario está autenticado,
+     * pero no tiene el rol necesario.
+     *
+     * Ejemplo:
+     * ROLE_USER intenta consumir un endpoint con hasRole('ADMIN').
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDeniedException(
+            AuthorizationDeniedException ex,
+            HttpServletRequest request
+    ) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.FORBIDDEN,
+                "No tienes permisos para acceder a este recurso",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(response);
+    }
+
+    /*
+     * Maneja errores de acceso denegado.
+     *
+     * También se usará en la práctica siguiente cuando se valide
+     * ownership desde los servicios.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.FORBIDDEN,
+                "Acceso denegado",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(response);
+    }
+
+    /*
+     * Maneja errores de autenticación producidos dentro del flujo
+     * de controladores o servicios, por ejemplo credenciales inválidas
+     * durante login.
+     *
+     * Los errores de token inválido o token ausente normalmente son
+     * manejados por JwtAuthenticationEntryPoint.
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            AuthenticationException ex,
+            HttpServletRequest request
+    ) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                "Credenciales inválidas o sesión expirada",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(response);
+    }
+
+    // El handler genérico Exception debe quedar al final.
+}
+```
+
+---
+
+## 10.2. Diferencia entre 401 y 403
+
+| Código             | Significado                         | Ejemplo                                                |
+| ------------------ | ----------------------------------- | ------------------------------------------------------ |
+| `401 Unauthorized` | No hay autenticación válida         | Sin token o token inválido                             |
+| `403 Forbidden`    | Hay autenticación, pero no permisos | `ROLE_USER` intenta acceder a endpoint de `ROLE_ADMIN` |
+
+---
+
+# 11. Asignar rol ADMIN a un usuario
+
+El registro normal asigna:
+
+```txt
+ROLE_USER
+```
+
+Para probar endpoints administrativos, se necesita al menos un usuario con:
+
+```txt
+ROLE_ADMIN
+```
+
+Se puede asignar manualmente en PostgreSQL.
+
+---
+
+## 11.1. Ver usuarios registrados
+
+```sql
+SELECT id, name, email, deleted
+FROM users;
+```
+
+---
+
+## 11.2. Ver roles existentes
+
+```sql
+SELECT id, name, description
+FROM roles;
+```
+
+---
+
+## 11.3. Asignar ROLE_ADMIN a un usuario
+
+Ejemplo para asignar `ROLE_ADMIN` al usuario con id `1`:
+
+```sql
+INSERT INTO user_roles (user_id, role_id)
+SELECT 1, r.id
+FROM roles r
+WHERE r.name = 'ROLE_ADMIN'
+ON CONFLICT DO NOTHING;
+```
+
+---
+
+## 11.4. Verificar roles por usuario
+
+```sql
+SELECT 
+    u.id AS user_id,
+    u.email,
+    r.name AS role
+FROM users u
+INNER JOIN user_roles ur ON ur.user_id = u.id
+INNER JOIN roles r ON r.id = ur.role_id
+ORDER BY u.id;
+```
+
+---
+
+# 12. Flujo completo de autorización por rol
+
 
 ```
 Request: DELETE /api/products/5/admin
@@ -497,375 +828,44 @@ Header: Authorization: Bearer <token>
  Response 204 No Content
 ```
 
+## Escenario: usuario normal intenta acceder a endpoint ADMIN
 
-# **5. Ejemplos de Peticiones**
-
-# **5. Ejemplos de Peticiones**
-
-## **5.1. Usuario con ROLE_USER**
+Request:
 
 ```http
-# Crear producto (permitido)
-POST http://localhost:8080/api/products
-Authorization: Bearer <token-ROLE_USER>
-Body: {"name": "Laptop", "price": 999}
-→ 201 Created
-
-# Ver productos paginados (permitido)
-GET http://localhost:8080/api/products/paginated?page=0&size=10
-Authorization: Bearer <token-ROLE_USER>
-→ 200 OK
-
-# Buscar productos (permitido)
-GET http://localhost:8080/api/products/search?name=laptop
-Authorization: Bearer <token-ROLE_USER>
-→ 200 OK
-
-# Actualizar propio producto (permitido, ver Práctica 13)
-PUT http://localhost:8080/api/products/1
-Authorization: Bearer <token-ROLE_USER-owner>
-Body: {"name": "Updated"}
-→ 200 OK
-
-# Actualizar producto ajeno (DENEGADO en servicio)
-PUT http://localhost:8080/api/products/2
-Authorization: Bearer <token-ROLE_USER>
-Body: {"name": "Updated"}
-→ 403 Forbidden
-{
-  "status": 403,
-  "error": "Forbidden",
-  "message": "No puedes modificar productos ajenos"
-}
-
-# Intentar listar TODOS los productos (DENEGADO)
-GET http://localhost:8080/api/products
-Authorization: Bearer <token-ROLE_USER>
-→ 403 Forbidden
-{
-  "status": 403,
-  "error": "Forbidden",
-  "message": "Access Denied"
-}
+GET /api/products
+Authorization: Bearer <token-role-user>
 ```
 
-## **5.2. Usuario con ROLE_ADMIN**
+Flujo:
 
-```http
-# Listar TODOS los productos (permitido)
-GET http://localhost:8080/api/products
-Authorization: Bearer <token-ROLE_ADMIN>
-→ 200 OK
-[
-  { "id": 1, "name": "Laptop", "owner": {...} },
-  { "id": 2, "name": "Mouse", "owner": {...} },
-  ...
-]
-
-# Actualizar cualquier producto (permitido)
-PUT http://localhost:8080/api/products/1
-Authorization: Bearer <token-ROLE_ADMIN>
-Body: {"name": "Updated by admin"}
-→ 200 OK
-
-# Eliminar cualquier producto (permitido)
-DELETE http://localhost:8080/api/products/2
-Authorization: Bearer <token-ROLE_ADMIN>
-→ 204 No Content
-```
-
-## **5.3. Usuario con ROLE_MODERATOR**
-
-```http
-# Actualizar cualquier producto (permitido, si así lo defines en servicio)
-PUT http://localhost:8080/api/products/1
-Authorization: Bearer <token-ROLE_MODERATOR>
-Body: {"name": "Updated by moderator"}
-→ 200 OK
-
-# Eliminar cualquier producto (permitido, si así lo defines en servicio)
-DELETE http://localhost:8080/api/products/2
-Authorization: Bearer <token-ROLE_MODERATOR>
-→ 204 No Content
-
-# Intentar listar TODOS los productos (DENEGADO)
-GET http://localhost:8080/api/products
-Authorization: Bearer <token-ROLE_MODERATOR>
-→ 403 Forbidden
-```
-
-## **5.4. Sin Token**
-
-```http
-# Cualquier endpoint protegido
-GET http://localhost:8080/api/products/paginated
-→ 401 Unauthorized
-{
-  "status": 401,
-  "error": "Unauthorized",
-  "message": "Token de autenticación inválido o no proporcionado"
-}
-```
-
-
-# **6. Configuración Necesaria**
-
-## **6.1. @EnableMethodSecurity en SecurityConfig**
-
-Para que @PreAuthorize funcione, debes tener:
-
-```java
-@Configuration
-@EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)  // ← IMPORTANTE
-public class SecurityConfig {
-    // ...
-}
-```
-
-**¿Qué hace @EnableMethodSecurity?**
-- Habilita anotaciones de seguridad en métodos
-- Permite usar @PreAuthorize, @PostAuthorize, @Secured
-- Evalúa expresiones SpEL antes de ejecutar métodos
-- Integra con SecurityContext de Spring Security
-
-**Sin esta anotación**:
-```java
+```txt
+Request HTTP
+  ↓
+JwtAuthenticationFilter
+  ↓
+Token válido
+  ↓
+SecurityContext contiene usuario con ROLE_USER
+  ↓
+ProductsController.findAll()
+  ↓
 @PreAuthorize("hasRole('ADMIN')")
-public void delete() { }
-// ← Se ignora, el método se ejecuta sin validar
+  ↓
+La expresión evalúa false
+  ↓
+AuthorizationDeniedException
+  ↓
+GlobalExceptionHandler
+  ↓
+Response HTTP 403
 ```
 
-## **6.2. Tabla Comparativa de Protección**
+Respuesta esperada:
 
-| Endpoint | Método | Protección | Quién puede acceder |
-|----------|--------|------------|---------------------|
-| `POST /api/products` | create() | `.anyRequest().authenticated()` | Cualquier usuario autenticado |
-| `GET /api/products` | findAll() | `@PreAuthorize("hasRole('ADMIN')")` | Solo ADMIN |
-| `GET /api/products/paginated` | findAllPaginado() | `.anyRequest().authenticated()` | Cualquier usuario autenticado |
-| `GET /api/products/slice` | findAllSlice() | `.anyRequest().authenticated()` | Cualquier usuario autenticado |
-| `GET /api/products/search` | findWithFilters() | `.anyRequest().authenticated()` | Cualquier usuario autenticado |
-| `GET /api/products/{id}` | findById() | `.anyRequest().authenticated()` | Cualquier usuario autenticado |
-| `GET /api/products/user/{userId}` | findByUserId() | `.anyRequest().authenticated()` | Cualquier usuario autenticado |
-| `GET /api/products/category/{categoryId}` | findByCategoryId() | `.anyRequest().authenticated()` | Cualquier usuario autenticado |
-| `PUT /api/products/{id}` | update() | Ownership en servicio | Propietario, ADMIN o MODERATOR (ver Práctica 13) |
-| `DELETE /api/products/{id}` | delete() | Ownership en servicio | Propietario, ADMIN o MODERATOR (ver Práctica 13) |
-
-**Nota importante**: Los métodos `update()` y `delete()` **NO tienen @PreAuthorize en el controlador** porque la validación de ownership (propietario vs ADMIN/MODERATOR) se hace **dentro del servicio** en la Práctica 13.
-
-
-
-# **7. Manejo de Excepciones de Autorización**
-
-## **7.1. Problema: Error 500 en lugar de 403**
-
-Cuando un usuario sin el rol adecuado intenta acceder a un endpoint protegido con `@PreAuthorize`, Spring Security lanza una excepción de autorización. Si no la manejas correctamente, tu API devuelve **500 Internal Server Error** en lugar del esperado **403 Forbidden**.
-
-**Ejemplo del problema**:
-
-```http
-# Usuario con ROLE_USER intenta acceder a endpoint de ADMIN
-GET http://localhost:8080/api/products
-Authorization: Bearer <token-ROLE_USER>
-
-# Respuesta INCORRECTA (sin manejador):
-→ 500 Internal Server Error
+```json
 {
-  "status": 500,
-  "error": "Internal Server Error",
-  "message": "Error interno del servidor"
-}
-
-# Respuesta CORRECTA (con manejador):
-→ 403 Forbidden
-{
-  "status": 403,
-  "error": "Forbidden",
-  "message": "No tienes permisos para acceder a este recurso"
-}
-```
-
-## **7.2. Solución: Agregar Manejadores en GlobalExceptionHandler**
-
-Spring Security lanza diferentes excepciones según la versión y el contexto. Debes manejar todas:
-
-Archivo: `shared/exception/GlobalExceptionHandler.java`
-
-```java
-package com.p67.iccppwbackend.shared.exception;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authorization.AuthorizationDeniedException;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.HashMap;
-import java.util.Map;
-
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-
-    // ============== EXCEPCIONES DE NEGOCIO ==============
-
-    @ExceptionHandler(ApplicationException.class)
-    public ResponseEntity<ErrorResponse> handleApplicationException(
-            ApplicationException ex,
-            HttpServletRequest request) {
-        ErrorResponse response = new ErrorResponse(
-                ex.getStatus(),
-                ex.getMessage(),
-                request.getRequestURI());
-
-        return ResponseEntity
-                .status(ex.getStatus())
-                .body(response);
-    }
-
-    // ============== EXCEPCIONES DE VALIDACIÓN ==============
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request) {
-        Map<String, String> errors = new HashMap<>();
-
-        ex.getBindingResult()
-                .getFieldErrors()
-                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
-
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.BAD_REQUEST,
-                "Datos de entrada inválidos",
-                request.getRequestURI(),
-                errors);
-
-        return ResponseEntity
-                .badRequest()
-                .body(response);
-    }
-
-    // ============== EXCEPCIONES DE SEGURIDAD ==============
-
-    /**
-     * Maneja AuthorizationDeniedException (Spring Security 6.x)
-     * Se lanza cuando un usuario autenticado no tiene los permisos necesarios
-     * 
-     * Contexto: Ocurre cuando @PreAuthorize evalúa a false
-     * Ejemplo: Usuario con ROLE_USER intenta acceder a endpoint con hasRole('ADMIN')
-     */
-    @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAuthorizationDeniedException(
-            AuthorizationDeniedException ex,
-            HttpServletRequest request) {
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.FORBIDDEN,
-                "No tienes permisos para acceder a este recurso",
-                request.getRequestURI());
-
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(response);
-    }
-
-    /**
-     * Maneja AccessDeniedException (Spring Security legacy)
-     * Fallback para versiones anteriores de Spring Security o casos específicos
-     * 
-     * Contexto: Excepción estándar de acceso denegado
-     * También se lanza desde código personalizado de validación de ownership
-     */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-            AccessDeniedException ex,
-            HttpServletRequest request) {
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.FORBIDDEN,
-                "Acceso denegado. No tienes los permisos necesarios",
-                request.getRequestURI());
-
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(response);
-    }
-
-    /**
-     * Maneja AuthenticationException
-     * Se lanza cuando hay problemas con la autenticación
-     * 
-     * Contexto: Problemas con credenciales, tokens inválidos, sesión expirada
-     * Nota: JwtAuthenticationFilter ya maneja la mayoría de casos de tokens inválidos
-     */
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorResponse> handleAuthenticationException(
-            AuthenticationException ex,
-            HttpServletRequest request) {
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED,
-                "Credenciales inválidas o sesión expirada",
-                request.getRequestURI());
-
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(response);
-    }
-
-    // ============== EXCEPCIONES GENERALES ==============
-
-    /**
-     * Maneja cualquier excepción no capturada por otros manejadores
-     * Debe ser el último manejador (más genérico)
-     */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnexpectedException(
-            Exception ex,
-            HttpServletRequest request) {
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Error interno del servidor",
-                request.getRequestURI());
-
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(response);
-    }
-}
-```
-
-## **7.3. Diferencias entre las Excepciones de Seguridad**
-
-| Excepción | Cuándo se lanza | Código HTTP | Contexto |
-|-----------|-----------------|-------------|----------|
-| `AuthorizationDeniedException` | @PreAuthorize evalúa a false (Spring Security 6.x) | 403 | Usuario autenticado sin permisos |
-| `AccessDeniedException` | Validación de autorización fallida (legacy/custom) | 403 | Usuario autenticado sin permisos |
-| `AuthenticationException` | Token inválido, credenciales incorrectas | 401 | Usuario no autenticado |
-
-## **7.4. Flujo de Manejo de Excepciones**
-
-```
-Request: GET /api/products
-Header: Authorization: Bearer <token-ROLE_USER>
-        ↓
-1. JwtAuthenticationFilter valida token → OK
-2. SecurityContext se establece con usuario
-3. @PreAuthorize("hasRole('ADMIN')") evalúa
-   → Usuario tiene ROLE_USER
-   → NO tiene ROLE_ADMIN
-   → Lanza AuthorizationDeniedException
-        ↓
-4. GlobalExceptionHandler captura excepción
-   → Método: handleAuthorizationDeniedException()
-   → Crea ErrorResponse con status 403
-   → Devuelve ResponseEntity<ErrorResponse>
-        ↓
-Response: 403 Forbidden
-{
+  "timestamp": "2026-01-15T10:30:00",
   "status": 403,
   "error": "Forbidden",
   "message": "No tienes permisos para acceder a este recurso",
@@ -873,139 +873,359 @@ Response: 403 Forbidden
 }
 ```
 
-## **7.5. ¿Por qué necesitas AMBOS manejadores?**
+---
 
-```java
-// Spring Security 6.x (nueva excepción)
-@ExceptionHandler(AuthorizationDeniedException.class)
-// Lanzada por @PreAuthorize, @PostAuthorize
+## Escenario: usuario ADMIN accede al endpoint
 
-// Spring Security legacy (excepción tradicional)
-@ExceptionHandler(AccessDeniedException.class)
-// Lanzada por código personalizado o configuraciones antiguas
-// También útil si lanzas manualmente desde servicios
-```
-
-**Ejemplo de uso personalizado**:
-
-```java
-@Service
-public class ProductService {
-    public void delete(Long id) {
-        ProductEntity product = findProductOrThrow(id);
-        
-        if (!isOwner(product)) {
-            // Lanza AccessDeniedException manualmente
-            throw new AccessDeniedException("No puedes eliminar productos ajenos");
-        }
-        
-        productRepository.delete(product);
-    }
-}
-```
-
-## **7.6. Pruebas de Validación**
-
-Después de agregar los manejadores, verifica:
+Request:
 
 ```http
-# 1. Usuario sin rol ADMIN intenta acceder a endpoint protegido
-GET http://localhost:8080/api/products
-Authorization: Bearer <token-ROLE_USER>
-→ Debe devolver 403 (NO 500)
-{
-  "status": 403,
-  "message": "No tienes permisos para acceder a este recurso"
-}
-
-# 2. Usuario sin token intenta acceder a endpoint protegido
-GET http://localhost:8080/api/products
-→ Debe devolver 401
-{
-  "status": 401,
-  "message": "Token de autenticación inválido o no proporcionado"
-}
-
-# 3. Usuario ADMIN accede correctamente
-GET http://localhost:8080/api/products
-Authorization: Bearer <token-ROLE_ADMIN>
-→ Debe devolver 200 con lista de productos
-
-# 4. Token expirado o inválido
-GET http://localhost:8080/api/products
-Authorization: Bearer invalid-token
-→ Debe devolver 401
+GET /api/products
+Authorization: Bearer <token-role-admin>
 ```
 
-## **7.7. Orden de Importancia de los Manejadores**
+Flujo:
 
-1. **Manejadores específicos primero**: `@ExceptionHandler(AuthorizationDeniedException.class)`
-2. **Manejadores genéricos al final**: `@ExceptionHandler(Exception.class)`
+```txt
+Request HTTP
+  ↓
+JwtAuthenticationFilter
+  ↓
+Token válido
+  ↓
+SecurityContext contiene usuario con ROLE_ADMIN
+  ↓
+@PreAuthorize("hasRole('ADMIN')")
+  ↓
+La expresión evalúa true
+  ↓
+ProductsController.findAll()
+  ↓
+ProductService.findAll()
+  ↓
+Response HTTP 200
+```
 
-Spring busca el manejador más específico que coincida con la excepción. Si no hay manejadores para `AuthorizationDeniedException`, cae en `Exception.class` y devuelve 500.
+---
+
+# 13. Endpoints disponibles para prueba
+
+## Autenticación
+
+| Método | Ruta                 | Descripción       |
+| ------ | -------------------- | ----------------- |
+| POST   | `/api/auth/register` | Registrar usuario |
+| POST   | `/api/auth/login`    | Iniciar sesión    |
+
+---
+
+## Usuario autenticado
+
+| Método | Ruta            | Protección          |
+| ------ | --------------- | ------------------- |
+| GET    | `/api/users/me` | Usuario autenticado |
+
+---
+
+## Productos
+
+| Método | Ruta                  | Protección          |
+| ------ | --------------------- | ------------------- |
+| GET    | `/api/products`       | Solo `ROLE_ADMIN`   |
+| GET    | `/api/products/page`  | Usuario autenticado |
+| GET    | `/api/products/slice` | Usuario autenticado |
+| GET    | `/api/products/{id}`  | Usuario autenticado |
+| POST   | `/api/products`       | Usuario autenticado |
+| PUT    | `/api/products/{id}`  | Usuario autenticado |
+| PATCH  | `/api/products/{id}`  | Usuario autenticado |
+| DELETE | `/api/products/{id}`  | Usuario autenticado |
+
+---
+
+# 14. Pruebas sugeridas en Bruno o Postman
+
+## 14.1. Login con usuario normal
+
+Request:
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@ups.edu.ec",
+  "password": "Password123"
+}
+```
+
+Resultado esperado:
+
+```txt
+200 OK
+```
+
+Debe devolver:
+
+```txt
+token
+ROLE_USER
+```
+
+---
+
+## 14.2. Consultar usuario autenticado
+
+Request:
+
+```http
+GET /api/users/me
+Authorization: Bearer <token-role-user>
+```
+
+Resultado esperado:
+
+```txt
+200 OK
+```
+
+Respuesta esperada:
+
+```json
+{
+  "id": 2,
+  "name": "Usuario Normal",
+  "email": "user@ups.edu.ec",
+  "roles": [
+    "ROLE_USER"
+  ]
+}
+```
+
+---
+
+## 14.3. Usuario normal intenta consumir endpoint ADMIN
+
+Request:
+
+```http
+GET /api/products
+Authorization: Bearer <token-role-user>
+```
+
+Resultado esperado:
+
+```txt
+403 Forbidden
+```
+
+---
+
+## 14.4. Usuario normal consume endpoint paginado
+
+Request:
+
+```http
+GET /api/products/page?page=0&size=5
+Authorization: Bearer <token-role-user>
+```
+
+Resultado esperado:
+
+```txt
+200 OK
+```
+
+---
+
+## 14.5. Login con usuario ADMIN
+
+Request:
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@ups.edu.ec",
+  "password": "Password123"
+}
+```
+
+Resultado esperado:
+
+```txt
+200 OK
+```
+
+Debe devolver:
+
+```txt
+token
+ROLE_ADMIN
+```
+
+---
+
+## 14.6. Usuario ADMIN consume endpoint administrativo
+
+Request:
+
+```http
+GET /api/products
+Authorization: Bearer <token-role-admin>
+```
+
+Resultado esperado:
+
+```txt
+200 OK
+```
+
+---
+
+## 14.7. Endpoint protegido sin token
+
+Request:
+
+```http
+GET /api/products/page?page=0&size=5
+```
+
+Resultado esperado:
+
+```txt
+401 Unauthorized
+```
+
+---
+
+# 15. Actividad práctica
+
+Se debe implementar autorización por roles en el backend.
+
+## 15.1. Crear endpoint `/users/me`
+
+Crear:
+
+```txt
+security/dtos/CurrentUserResponseDto.java
+users/controllers/CurrentUserController.java
+```
+
+El endpoint debe devolver:
+
+```txt
+id
+name
+email
+roles
+```
+
+del usuario autenticado.
+
+---
+
+## 15.4. Actualizar `GlobalExceptionHandler`
+
+Agregar handlers para:
+
+```java
+AuthorizationDeniedException
+AccessDeniedException
+AuthenticationException
+```
+
+---
+
+## 15.5. Asignar rol ADMIN
+
+Asignar manualmente `ROLE_ADMIN` a un usuario existente usando SQL:
+ con la sentencia INSERT en la tabla correspondiente.
 
 
-# **8. Actividad Práctica**
+# 16. Resultados y evidencias
 
-**Objetivo**: Implementar protección por roles en tu API y manejar correctamente las excepciones de autorización.
+En la nueva entrada del README, se debe agregar:
 
-**Pasos**:
+---
 
-1. **Agregar @EnableMethodSecurity** en SecurityConfig (si no lo tienes)
-   
-2. **Agregar manejadores de excepciones de seguridad** en GlobalExceptionHandler:
-   - `AuthorizationDeniedException` → 403
-   - `AccessDeniedException` → 403
-   - `AuthenticationException` → 401
+## Captura de usuario autenticado
 
-3. **Agregar @PreAuthorize a findAll()** en ProductController:
-   ```java
-   @GetMapping
-   @PreAuthorize("hasRole('ADMIN')")
-   public ResponseEntity<List<ProductResponseDto>> findAll() { ... }
-   ```
+Endpoint:
 
-4. **Usar el usuario ADMIN** en tu base de datos:
+```txt
+GET /api/users/me
+```
 
-    Este se genera en el script inicial o puedes asignarlo manualmente:
-   ```sql
-   -- Asignar ROLE_ADMIN a un usuario existente
-   INSERT INTO user_roles (user_id, role_id) 
-   VALUES (1, (SELECT id FROM roles WHERE name = 'ROLE_ADMIN'));
-   ```
+Debe evidenciar:
 
-5. **Probar con Postman**:
-   - Login con usuario normal (ROLE_USER)
-   - Intentar `GET /api/products` → Debe dar **403 Forbidden** (NO 500)
-   - Login con usuario ADMIN
-   - Intentar `GET /api/products` → Debe funcionar (200)
-   - Probar `GET /api/products/paginated` con ambos usuarios → Ambos funcionan
-   - Intentar sin token → Debe dar **401 Unauthorized**
+```txt
+id
+name
+email
+roles
+```
 
-6. **Verificar diferencia de endpoints**:
-   - `/api/products` → Solo ADMIN (lista completa sin paginación)
-   - `/api/products/paginated` → Cualquier usuario autenticado
-   - `/api/products/search` → Cualquier usuario autenticado
+---
 
-**Resultado esperado**:
-- ADMIN puede acceder a `/api/products` (200 con lista completa)
-- USER no puede acceder a `/api/products` (403 Forbidden, NO 500)
-- USER puede acceder a `/api/products/paginated` y otros endpoints (200)
-- Sin token → 401 Unauthorized en cualquier endpoint protegido
-- UPDATE y DELETE funcionan para todos (ownership en servicio, Práctica 13)
+## Captura de acceso denegado por rol
+
+Endpoint:
+
+```txt
+GET /api/products
+```
+
+Usar token de usuario con:
+
+```txt
+ROLE_USER
+```
+
+Debe evidenciar:
+
+```txt
+403 Forbidden
+```
+
+---
+
+## Captura de acceso permitido por rol ADMIN
+
+Endpoint:
+
+```txt
+GET /api/products
+```
+
+Usar token de usuario con:
+
+```txt
+ROLE_ADMIN
+```
+
+Debe evidenciar:
+
+```txt
+200 OK
+```
+
+---
 
 
-# **9. Próximos Pasos**
+## Explicación breve
 
-En la **Práctica 13** implementaremos:
-- Validación de ownership en servicios
-- Método `validateOwnership()` 
-- Diferencia entre validación por rol y por ownership
-- ADMIN puede saltarse validación de ownership
-- Mejores prácticas de autorización contextual
+El estudiante debe responder:
 
-**Relación entre archivos**:
-- **Archivo 11**: Token válido → 401 si falla
-- **Archivo 12**: Rol correcto → 403 si falla
-- **Archivo 13**: Propietario del recurso → 403 si falla
+```txt
+¿Cuál es la diferencia entre autenticación y autorización?
+```
+
+También debe responder:
+
+```txt
+¿Por qué GET /api/products debe ser solo para ADMIN, mientras GET /api/products/page puede ser consumido por cualquier usuario autenticado?
+```
+
+---
 
