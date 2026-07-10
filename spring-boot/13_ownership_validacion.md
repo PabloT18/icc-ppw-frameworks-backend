@@ -1,47 +1,96 @@
 # Programación y Plataformas Web
 
-# **Spring Boot – Validación de Ownership**
+# Spring Boot – Validación de Ownership
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="95">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="95">
 </div>
 
-## **Práctica 13 (Spring Boot): Validación de Propiedad de Recursos**
+---
 
-### **Autores**
+# Práctica 13 (Spring Boot): Validación de Propiedad de Recursos
+
+### Autores
 
 **Pablo Torres**
 
- [ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
+[ptorresp@ups.edu.ec](mailto:ptorresp@ups.edu.ec)
 
 GitHub: PabloT18
 
+---
 
-# **Introducción**
+# 1. Introducción
 
-En las prácticas anteriores implementamos:
-- **Práctica 11**: Autenticación con JWT → Valida que el usuario esté autenticado (401)
-- **Práctica 12**: Autorización por roles → Valida que tenga el rol correcto (403)
+En las prácticas anteriores se implementó seguridad en dos niveles:
 
-Ahora implementaremos **validación de ownership (propiedad)**: Validar que un usuario solo pueda modificar/eliminar **sus propios recursos**.
-
-**Escenario del problema**:
-```
-Usuario A (ROLE_USER) crea Producto #1 → owner_id = A
-Usuario B (ROLE_USER) intenta eliminar Producto #1 → ¿Debería poder?
-→ NO, solo el dueño (A) o un ADMIN pueden eliminarlo
+```txt
+Práctica 11 → Autenticación con JWT
+Práctica 12 → Autorización por roles con @PreAuthorize
 ```
 
-**En esta práctica aprenderás**:
-- Validación de ownership en servicios
-- Método `validateOwnership()` reutilizable
-- Diferencia entre validación por rol y por propiedad
-- ADMIN y MODERATOR pueden saltarse validación de ownership
-- Manejo automático de excepciones con `AccessDeniedException`
+La práctica 11 resolvió la pregunta:
 
+```txt
+¿Quién eres?
+```
 
-# **1. Concepto: ¿Qué es Ownership?**
+La práctica 12 resolvió la pregunta:
+
+```txt
+¿Qué rol tienes?
+```
+
+Ahora se debe resolver una tercera pregunta:
+
+```txt
+¿Este recurso te pertenece?
+```
+
+A esto se le conoce como **ownership** o validación de propiedad del recurso.
+
+---
+
+## Problema actual
+
+Hasta este punto, cualquier usuario autenticado puede consumir endpoints como:
+
+```txt
+PUT /api/products/{id}
+PATCH /api/products/{id}
+DELETE /api/products/{id}
+```
+
+Esto significa que un usuario podría modificar o eliminar productos que pertenecen a otro usuario.
+
+Ejemplo del problema:
+
+```txt
+Usuario A crea Producto #1
+Producto #1 tiene owner_id = Usuario A
+
+Usuario B inicia sesión
+Usuario B intenta eliminar Producto #1
+
+Resultado actual:
+Podría eliminarlo si solo se valida que tenga token.
+```
+
+Esto no es correcto.
+
+La regla de negocio debe ser:
+
+```txt
+Un usuario con ROLE_USER solo puede modificar o eliminar sus propios productos.
+Un usuario con ROLE_ADMIN puede modificar o eliminar cualquier producto.
+```
+
+---
+
+## Objetivo de la práctica
+
+ ¿Qué es Ownership?**
 
 **Ownership (Propiedad)** significa que un recurso pertenece a un usuario específico. Solo el dueño (o usuarios con permisos especiales) pueden modificarlo o eliminarlo.
 
@@ -83,280 +132,587 @@ Response: 403 Forbidden
 ```
 
 
-# **2. Implementación del Controlador**
+## Flujo general de ownership
 
-## **2.1. Extraer Usuario Autenticado en el Controlador**
+```txt
+Cliente
+  ↓
+PUT /api/products/{id}
+  ↓
+Authorization: Bearer <token>
+  ↓
+JwtAuthenticationFilter
+  ↓
+SecurityContext con UserDetailsImpl
+  ↓
+ProductsController
+  ↓
+@AuthenticationPrincipal UserDetailsImpl currentUser
+  ↓
+ProductServiceImpl.update(id, dto, currentUser)
+  ↓
+findActiveProductOrThrow(id)
+  ↓
+validateOwnership(product, currentUser)
+  ↓
+Si es ADMIN → permite
+Si es owner → permite
+Si no es owner → 403 Forbidden
+```
 
-El controlador debe extraer el usuario del JWT y pasarlo al servicio como parámetro.
+---
 
-Archivo: `products/controllers/ProductController.java`
+## Reglas de autorización contextual
+
+En esta práctica se aplicarán estas reglas:
+
+| Acción | ROLE_USER | ROLE_ADMIN |
+| ------ | --------- | ---------- |
+| Crear producto | Sí | Sí |
+| Editar producto propio | Sí | Sí |
+| Editar producto ajeno | No | Sí |
+| Eliminar producto propio | Sí | Sí |
+| Eliminar producto ajeno | No | Sí |
+| Consultar productos paginados | Sí | Sí |
+| Consultar todos los productos sin paginación | No | Sí |
+
+La consulta total sin paginación ya fue protegida en la práctica 12:
 
 ```java
-@RestController
-@RequestMapping("/api/products")
-public class ProductController {
-
-    private final ProductService productService;
-
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
-
-    // ... otros endpoints (GET, POST, etc.)
-
-    /**
-     * Actualizar producto (solo dueño, ADMIN o MODERATOR)
-     * 
-     * El usuario autenticado se extrae del JWT mediante @AuthenticationPrincipal
-     * y se pasa al servicio para validar ownership
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductResponseDto> update(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateProductDto dto,
-            @AuthenticationPrincipal UserDetailsImpl currentUser) {  // ← Usuario del JWT
-        
-        ProductResponseDto updated = productService.update(id, dto, currentUser);
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Eliminar producto (solo dueño, ADMIN o MODERATOR)
-     * 
-     * El usuario autenticado se extrae del JWT mediante @AuthenticationPrincipal
-     * y se pasa al servicio para validar ownership
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetailsImpl currentUser) {  // ← Usuario del JWT
-        
-        productService.delete(id, currentUser);
-        return ResponseEntity.noContent().build();
-    }
+@PreAuthorize("hasRole('ADMIN')")
+@GetMapping
+public List<ProductResponseDto> findAll() {
+    return service.findAll();
 }
 ```
 
-**Ventajas de este enfoque**:
-- **Más explícito**: Se ve claramente que el servicio necesita el usuario
-- **Más testeable**: No depende de `SecurityContextHolder` estático
-- **Menos acoplamiento**: El servicio no depende de Spring Security directamente
-- **Más claro**: En el controlador se ve de dónde viene el usuario
+En esta práctica se protegerán las acciones que dependen del dueño del recurso.
+
+---
+
+# 2. Ajuste necesario en creación de productos
+
+Antes de esta práctica, el `CreateProductDto` podía tener un campo como:
+
+```java
+private Long userId;
+```
+
+Eso no es recomendable en una API segura.
+
+Si el cliente puede enviar el `userId`, un usuario podría crear productos a nombre de otro usuario.
+
+Ejemplo del problema:
+
+```json
+{
+  "name": "Laptop",
+  "price": 900,
+  "stock": 10,
+  "userId": 5,
+  "categoryIds": [1, 2]
+}
+```
+
+Un usuario autenticado con id `2` podría intentar crear un producto para el usuario con id `5`.
+
+Por eso, desde esta práctica el owner debe salir del token JWT, no del body.
+
+La regla será:
+
+```txt
+El usuario autenticado será automáticamente el owner del producto.
+```
 
 
-# **3. Implementación en ProductService**
 
-## **3.1. Estructura del Servicio**
+# 3. Actualización de ProductService
 
-Archivo: `products/services/ProductService.java`
+Archivo:
+
+```txt
+products/services/ProductService.java
+```
+
+Se deben actualizar los métodos que modifican datos para recibir al usuario autenticado.
+
+Código:
+
+```java
+/*
+ * Servicio que define las operaciones disponibles
+ * para la gestión de productos.
+ */
+public interface ProductService {
+
+    // Métodos de consulta existentes
+
+    /*
+     * Crea un producto usando como owner al usuario autenticado.
+     */
+    ProductResponseDto create(
+            CreateProductDto dto,
+            UserDetailsImpl currentUser
+    );
+
+    /*
+     * Actualiza completamente un producto.
+     *
+     * Se valida ownership en el servicio.
+     */
+    ProductResponseDto update(
+            Long id,
+            UpdateProductDto dto,
+            UserDetailsImpl currentUser
+    );
+
+    /*
+     * Actualiza parcialmente un producto.
+     *
+     * Se valida ownership en el servicio.
+     */
+    ProductResponseDto partialUpdate(
+            Long id,
+            PartialUpdateProductDto dto,
+            UserDetailsImpl currentUser
+    );
+
+    /*
+     * Elimina lógicamente un producto.
+     *
+     * Se valida ownership en el servicio.
+     */
+    void delete(
+            Long id,
+            UserDetailsImpl currentUser
+    );
+}
+```
+
+---
+
+# 4. Actualización de ProductsController
+
+Archivo:
+
+```txt
+products/controllers/ProductsController.java
+```
+
+Se debe extraer el usuario autenticado usando:
+
+```java
+@AuthenticationPrincipal UserDetailsImpl currentUser
+```
+
+Código actualizado de los endpoints que modifican datos:
+
+```java
+/*
+ * Controlador REST encargado de exponer endpoints HTTP
+ * para la gestión de productos.
+ */
+@RestController
+@RequestMapping("/products")
+public class ProductsController {
+
+      /*
+     * Crear producto.
+     *
+     * POST /api/products
+     *
+     * El owner ya no se toma desde el body.
+     * El owner se obtiene desde el token JWT mediante @AuthenticationPrincipal.
+     */
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProductResponseDto create(
+            @Valid @RequestBody CreateProductDto dto,
+            @AuthenticationPrincipal UserDetailsImpl currentUser
+    ) {
+        return service.create(dto, currentUser);
+    }
+
+
+    // Implementación de update, partialUpdate y delete similar, usando @AuthenticationPrincipal
+    // @AuthenticationPrincipal UserDetailsImpl currentUser
+
+}
+```
+
+Imports necesarios:
+
+```java
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
+```
+
+---
+
+# 5. Actualización de UserRepository
+
+Para obtener el usuario autenticado como entidad JPA, se recomienda agregar este método.
+
+Archivo:
+
+```txt
+users/repositories/UserRepository.java
+```
+
+Código:
+
+```java
+// Adcionar en UserRepository
+Optional<UserEntity> findByIdAndDeletedFalse(Long id);
+```
+
+Este método se usará para convertir el `UserDetailsImpl` del token en un `UserEntity` persistente:
+
+```java
+findByIdAndDeletedFalse(currentUser.getId())
+```
+
+---
+
+# 6. Implementación en ProductServiceImpl
+
+Archivo:
+
+```txt
+products/services/ProductServiceImpl.java
+```
+
+
+Debe integrarse con los métodos que ya existen en el servicio.
+
+
+```java
+/*
+ * Servicio encargado de la lógica de negocio de productos.
+ */
+@Service
+public class ProductServiceImpl implements ProductService {
+
+    /*
+     * Crea un producto usando como owner al usuario autenticado.
+     *
+     * El owner ya no se toma desde el DTO.
+     * Esto evita que un usuario cree productos a nombre de otro usuario.
+     */
+    @Override
+    @Transactional
+    public ProductResponseDto create(
+            CreateProductDto dto,
+            UserDetailsImpl currentUser
+    ) {
+
+        // Se obtiene el usuario autenticado como entidad JPA
+        UserEntity owner = findCurrentUserEntity(currentUser);
+
+        // resto de la lógica de creación...
+    }
+
+    /*
+     * Actualiza completamente un producto.
+     *
+     * Primero se busca el producto activo.
+     * Luego se valida si el usuario actual puede modificarlo.
+     */
+    @Override
+    @Transactional
+    public ProductResponseDto update(
+            Long id,
+            UpdateProductDto dto,
+            UserDetailsImpl currentUser
+    ) {
+        ProductEntity entity = findActiveProductOrThrow(id);
+
+        // SE VALIDA QUE EL USUARIO AUTENTICADO PUEDA MODIFICAR ESTE PRODUCTO
+        validateOwnership(entity, currentUser);
+        
+        // resto de la lógica de actualización...
+    }
+
+    /*
+     * Actualiza parcialmente un producto.
+     *
+     * Solo modifica los campos que llegan en el DTO.
+     * También valida ownership antes de hacer cambios.
+     */
+    @Override
+    @Transactional
+    public ProductResponseDto partialUpdate(
+            Long id,
+            PartialUpdateProductDto dto,
+            UserDetailsImpl currentUser
+    ) {
+        ProductEntity entity = findActiveProductOrThrow(id);
+
+        // SE VALIDA QUE EL USUARIO AUTENTICADO PUEDA MODIFICAR ESTE PRODUCTO
+        validateOwnership(entity, currentUser);
+        
+        // resto de la lógica de actualización parcial...
+    }
+
+    /*
+     * Elimina lógicamente un producto.
+     *
+     * No se elimina físicamente de la base de datos.
+     * Se marca como deleted = true.
+     */
+    @Override
+    @Transactional
+    public void delete(
+            Long id,
+            UserDetailsImpl currentUser
+    ) {
+        ProductEntity entity = findActiveProductOrThrow(id);
+
+        // SE VALIDA QUE EL USUARIO AUTENTICADO PUEDA ELIMINAR ESTE PRODUCTO
+        validateOwnership(entity, currentUser);
+
+        // REsto de la lógica de eliminación...
+
+
+
+    }
+
+```
+
+
+## 6.1 . Métodos privados de validación
+
+Como el validar un producto y el usuario autenticado se repite en varios métodos, se recomienda extraerlo a un método privado:
+
+```java
+    /*
+     * Busca un producto activo.
+     *
+     * Si no existe o está eliminado, devuelve 404.
+     */
+    private ProductEntity findActiveProductOrThrow(Long id) {
+        return productRepository.findById(id)
+                .filter(product -> !product.isDeleted())
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+    }
+
+```
+
+
+## 6.2 Métodos privados de ownership 
+
+Crear metodos privados para validar ownership y obtener el usuario autenticado como entidad JPA:
+
+
+```java
+    /*
+     * Obtiene el usuario autenticado como entidad JPA.
+     *
+     * currentUser viene desde el token JWT.
+     * Luego se consulta en base para asegurar que siga existiendo
+     * y no esté eliminado lógicamente.
+     */
+    private UserEntity findCurrentUserEntity(UserDetailsImpl currentUser) {
+
+        if (currentUser == null) {
+            throw new AccessDeniedException("Usuario no autenticado");
+        }
+
+        return userRepository.findByIdAndDeletedFalse(currentUser.getId())
+                .orElseThrow(() -> new AccessDeniedException("Usuario no autorizado"));
+    }
+```
+
+Adicionar un método privado para verificar roles, el cual se usará en `validateOwnership`, y otros métodos que requieran validación de rol. 
 
 ```java
 
-
-public class ProductService {
-
-    // ============== MÉTODOS DE CONSULTA ==============
-
-
-    // ============== MÉTODOS DE MODIFICACIÓN CON VALIDACIÓN DE OWNERSHIP ==============
-
-    /**
-     * Actualizar producto con validación de ownership
-     * 
-     * Validación:
-     * - Si eres ADMIN o MODERATOR → Puedes actualizar cualquier producto
-     * - Si eres USER → Solo puedes actualizar TUS productos
-     * 
-     * @param id ID del producto a actualizar
-     * @param dto Datos para actualizar
-     * @param currentUser Usuario autenticado (del JWT)
-     * @throws AccessDeniedException si no eres dueño ni tienes rol privilegiado
+    /*
+     * Valida si el usuario autenticado puede modificar o eliminar el producto.
+     *
+     * Reglas:
+     * 1. ROLE_ADMIN puede modificar cualquier producto.
+     * 2. ROLE_USER solo puede modificar productos propios.
      */
-    @Transactional
-    public ProductResponseDto update(Long id, UpdateProductDto dto, UserDetailsImpl currentUser) {
-
-
-        // 1. BUSCAR PRODUCTO EXISTENTE
-
-        
-        // 2. VALIDACIÓN DE OWNERSHIP (pasando el usuario)
-        validateOwnership(product, currentUser);
-
-        // Si pasa la validación, actualizar
-        // 3. VALIDAR Y OBTENER CATEGORÍAS
-
-        // 4. ACTUALIZAR USANDO DOMINIO
-
-        // 5. CONVERTIR A ENTIDAD MANTENIENDO OWNER ORIGINAL
-        
-        // 6. PERSISTIR Y RESPONDER
-        ProductEntity saved = productRepo.save(updated);
-
-        return productMapper.toDto(updated);
-    }
-
-    /**
-     * Eliminar producto con validación de ownership
-     * 
-     * Validación:
-     * - Si eres ADMIN o MODERATOR → Puedes eliminar cualquier producto
-     * - Si eres USER → Solo puedes eliminar TUS productos
-     * 
-     * @param id ID del producto a eliminar
-     * @param currentUser Usuario autenticado (del JWT)
-     * @throws AccessDeniedException si no eres dueño ni tienes rol privilegiado
-     */
-    @Transactional
-    public void delete(Long id, UserDetailsImpl currentUser) {
-        ProductEntity product = findProductOrThrow(id);
-        
-        // ← VALIDACIÓN DE OWNERSHIP (pasando el usuario)
-        validateOwnership(product, currentUser);
-
-        // Si pasa la validación, eliminar
-        productRepository.delete(product);
-    }
-
-    // ============== MÉTODOS DE VALIDACIÓN Y UTILIDADES ==============
-
-    /**
-     * Valida si el usuario puede modificar/eliminar el producto
-     * 
-     * Lógica:
-     * 1. Si tiene ROLE_ADMIN → Puede modificar cualquier producto
-     * 2. Si tiene ROLE_MODERATOR → Puede modificar cualquier producto
-     * 3. Si es ROLE_USER → Solo puede modificar sus propios productos
-     * 
-     * @param product Producto a validar
-     * @param currentUser Usuario autenticado (del JWT)
-     * @throws AccessDeniedException si no tiene permisos
-     */
-    private void validateOwnership(ProductEntity product, UserDetailsImpl currentUser) {
-        // ADMIN y MODERATOR pueden modificar cualquier producto
-        if (hasAnyRole(currentUser, "ROLE_ADMIN", "ROLE_MODERATOR")) {
-            return;  // ← Pasa la validación automáticamente
+    private void validateOwnership(
+            ProductEntity product,
+            UserDetailsImpl currentUser
+    ) {
+        if (currentUser == null) {
+            throw new AccessDeniedException("Usuario no autenticado");
         }
 
-        // USER solo puede modificar sus propios productos
+        // Esta validación permite que un ADMIN pueda modificar cualquier producto
+        if (hasRole(currentUser, "ROLE_ADMIN")) {
+            return;
+        }
+
+        if (product.getOwner() == null || product.getOwner().getId() == null) {
+            throw new AccessDeniedException("El producto no tiene propietario válido");
+        }
+
         if (!product.getOwner().getId().equals(currentUser.getId())) {
-            // ← Lanza excepción que será capturada por GlobalExceptionHandler
             throw new AccessDeniedException("No puedes modificar productos ajenos");
         }
-
-        // Si llega aquí, es el dueño → Pasa la validación
     }
+```
 
-    /**
-     * Verifica si el usuario tiene alguno de los roles especificados
-     * 
-     * @param user Usuario a verificar
-     * @param roles Roles a buscar
-     * @return true si tiene al menos uno de los roles
+## 6.3 Métodos privados de validación de roles
+
+Puede ser usado para validar si el usuario tiene `ROLE_ADMIN` o cualquier otro rol que se requiera y realizar acciones específicas según el rol del usuario.
+
+
+```java
+    /*
+     * Verifica si el usuario tiene un rol específico.
+     *
+     * Las authorities vienen desde UserDetailsImpl.
+     * Ejemplo:
+     * ROLE_USER
+     * ROLE_ADMIN
      */
-    private boolean hasAnyRole(UserDetailsImpl user, String... roles) {
-        for (String role : roles) {
-            for (GrantedAuthority authority : user.getAuthorities()) {
-                if (authority.getAuthority().equals(role)) {
-                    return true;
-                }
-            }
+    private boolean hasRole(
+            UserDetailsImpl user,
+            String role
+    ) {
+        return user.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals(role));
+    }
+```
+
+## 6.4 Métodos privados helper de validación de producto y categorías
+
+El metodo `validateProductNameForCreate`, `validateProductNameForUpdate` y `findActiveCategories` son métodos de validación que ya existían en la clase `ProductServiceImpl`. Se mantienen para asegurar que los nombres de productos sean únicos y que las categorías asociadas sean válidas y activas.
+
+```java
+
+    /*
+     * Valida que el nombre no esté registrado al crear.
+     */
+    private void validateProductNameForCreate(String name) {
+
+        if (productRepository.findByNameIgnoreCaseAndDeletedFalse(name.trim()).isPresent()) {
+            throw new ConflictException("Product name already registered");
         }
-        return false;
     }
 
- 
-
-    /**
-     * Crea Pageable con ordenamiento dinámico
+    /*
+     * Valida que el nombre no esté registrado en otro producto al actualizar.
+     *
+     * Se permite que el producto conserve su mismo nombre.
      */
-    private Pageable createPageable(int page, int size, String[] sort) {
-        String sortField = sort[0];
-        Sort.Direction sortDirection = sort.length > 1 && sort[1].equalsIgnoreCase("desc")
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-
-        return PageRequest.of(page, size, Sort.by(sortDirection, sortField));
+    private void validateProductNameForUpdate(
+            Long currentProductId,
+            String name
+    ) {
+        productRepository.findByNameIgnoreCaseAndDeletedFalse(name.trim())
+                .filter(product -> !product.getId().equals(currentProductId))
+                .ifPresent(product -> {
+                    throw new ConflictException("Product name already registered");
+                });
     }
+
+    /*
+     * Busca categorías activas por ids.
+     *
+     * Si una categoría no existe o está eliminada, se rechaza la operación.
+     */
+    private Set<CategoryEntity> findActiveCategories(Set<Long> categoryIds) {
+
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            throw new BadRequestException("Debe seleccionar al menos una categoría");
+        }
+
+        Set<Long> uniqueIds = new HashSet<>(categoryIds);
+
+        Set<CategoryEntity> categories = categoryRepository.findAllById(uniqueIds)
+                .stream()
+                .filter(category -> !category.isDeleted())
+                .collect(Collectors.toSet());
+
+        if (categories.size() != uniqueIds.size()) {
+            throw new NotFoundException("One or more categories were not found");
+        }
+
+        return categories;
+    }
+
+   
 }
 ```
 
-## **3.2. Flujo de validateOwnership()**
+---
 
-```
-Controlador: @AuthenticationPrincipal UserDetailsImpl currentUser
-        ↓
-Servicio: validateOwnership(product, currentUser)
-        ↓
-1. ¿Tiene ROLE_ADMIN?
-   → SÍ → return (pasa validación)
-   → NO → Continuar
-        ↓
-3. ¿Tiene ROLE_MODERATOR?
-   → SÍ → return (pasa validación)
-   → NO → Continuar
-        ↓
-4. ¿Es el dueño? (product.owner.id == currentUser.id)
-   → SÍ → return (pasa validación)
-   → NO → throw AccessDeniedException("No puedes modificar productos ajenos")
-        ↓
-5. GlobalExceptionHandler captura AccessDeniedException
-   → Devuelve 403 con mensaje personalizado
-```
+# 7. Consideración sobre `ProductMapper`
 
-
-# **4. Manejo Automático de Excepciones**
-
-## **4.1. La Excepción AccessDeniedException**
-
-Cuando un usuario intenta modificar un producto que no le pertenece y no tiene rol privilegiado, el servicio lanza:
+Si el proyecto ya tiene un método directo:
 
 ```java
-throw new AccessDeniedException("No puedes modificar productos ajenos");
+ProductMapper.toResponseFromEntity(entity)
 ```
 
-**Esta excepción YA está manejada** en el `GlobalExceptionHandler` (Práctica 12):
+puedes reemplazar:
 
 ```java
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-    
-    /**
-     * Maneja AccessDeniedException (Spring Security legacy)
-     * 
-     * Se lanza desde:
-     * - Validación de ownership en servicios
-     * - Configuraciones de seguridad antiguas
-     */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-            AccessDeniedException ex,
-            HttpServletRequest request) {
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.FORBIDDEN,
-                "Acceso denegado. No tienes los permisos necesarios",
-                request.getRequestURI());
-
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(response);
-    }
-}
+ProductModel model = ProductMapper.toModelFromEntity(entity);
+return ProductMapper.toResponse(model);
 ```
 
-
-## **4.2. Personalizar el Mensaje por Contexto**
-
-Si quieres que el mensaje sea más específico, puedes usar el mensaje de la excepción:
+por:
 
 ```java
+return ProductMapper.toResponseFromEntity(entity);
+```
+
+Esto es útil cuando `ProductResponseDto` necesita devolver información anidada como:
+
+```txt
+owner
+categories
+```
+
+---
+
+# 8. Actualización de GlobalExceptionHandler
+
+En la práctica 12 ya se agregó manejo para `AccessDeniedException`.
+
+Para esta práctica se recomienda ajustar el handler para usar el mensaje específico de la excepción.
+
+Archivo:
+
+```txt
+core/exceptions/handler/GlobalExceptionHandler.java
+```
+
+Código actualizado:
+
+```java
+/*
+ * Maneja errores de acceso denegado.
+ *
+ * Se usa cuando:
+ * - Un usuario autenticado no tiene permiso.
+ * - Un usuario intenta modificar un producto ajeno.
+ */
 @ExceptionHandler(AccessDeniedException.class)
 public ResponseEntity<ErrorResponse> handleAccessDeniedException(
         AccessDeniedException ex,
-        HttpServletRequest request) {
+        HttpServletRequest request
+) {
+    String message = ex.getMessage();
+
+    if (message == null || message.isBlank()) {
+        message = "Acceso denegado";
+    }
+
     ErrorResponse response = new ErrorResponse(
             HttpStatus.FORBIDDEN,
-            ex.getMessage(),  // ← Usa el mensaje personalizado de la excepción
-            request.getRequestURI());
+            message,
+            request.getRequestURI()
+    );
 
     return ResponseEntity
             .status(HttpStatus.FORBIDDEN)
@@ -364,58 +720,321 @@ public ResponseEntity<ErrorResponse> handleAccessDeniedException(
 }
 ```
 
-**Ahora la respuesta será**:
+Con esto, cuando el servicio lance:
+
+```java
+throw new AccessDeniedException("No puedes modificar recursos ajenos");
+```
+
+la API responderá:
 
 ```json
 {
+  "timestamp": "2026-01-15T10:30:00",
   "status": 403,
   "error": "Forbidden",
-  "message": "No puedes modificar productos ajenos",  ← Mensaje específico
+  "message": "No puedes modificar recursos ajenos",
   "path": "/api/products/1"
 }
 ```
 
+---
 
-# **5. Ejemplos de Peticiones**
+# 9. Diferencia entre 401, 403 por rol y 403 por ownership
 
-## **5.1. Usuario USER intenta modificar su propio producto (PERMITIDO)**
+| Caso | Validación | Dónde ocurre | Código |
+| ---- | ---------- | ------------ | ------ |
+| Sin token | Autenticación | `JwtAuthenticationEntryPoint` | `401 Unauthorized` |
+| Token inválido | Autenticación | `JwtAuthenticationEntryPoint` | `401 Unauthorized` |
+| Token válido sin rol requerido | Autorización por rol | `@PreAuthorize` | `403 Forbidden` |
+| Token válido pero recurso ajeno | Ownership | `ProductServiceImpl` | `403 Forbidden` |
+
+---
+
+# 10. Flujo completo de validación
+
+## 10.1. Usuario modifica producto propio
+
+```txt
+PUT /api/products/1
+Authorization: Bearer <token-user-a>
+```
+
+Flujo:
+
+```txt
+JwtAuthenticationFilter valida token
+  ↓
+SecurityContext contiene Usuario A
+  ↓
+ProductsController.update()
+  ↓
+@AuthenticationPrincipal currentUser = Usuario A
+  ↓
+ProductServiceImpl.update()
+  ↓
+Producto #1 pertenece a Usuario A
+  ↓
+validateOwnership() permite
+  ↓
+Producto actualizado
+  ↓
+200 OK
+```
+
+---
+
+## 10.2. Usuario modifica producto ajeno
+
+```txt
+PUT /api/products/1
+Authorization: Bearer <token-user-b>
+```
+
+Flujo:
+
+```txt
+JwtAuthenticationFilter valida token
+  ↓
+SecurityContext contiene Usuario B
+  ↓
+ProductsController.update()
+  ↓
+@AuthenticationPrincipal currentUser = Usuario B
+  ↓
+ProductServiceImpl.update()
+  ↓
+Producto #1 pertenece a Usuario A
+  ↓
+validateOwnership() rechaza
+  ↓
+AccessDeniedException
+  ↓
+GlobalExceptionHandler
+  ↓
+403 Forbidden
+```
+
+---
+
+## 10.3. ADMIN modifica cualquier producto
+
+```txt
+PUT /api/products/1
+Authorization: Bearer <token-admin>
+```
+
+Flujo:
+
+```txt
+JwtAuthenticationFilter valida token
+  ↓
+SecurityContext contiene usuario con ROLE_ADMIN
+  ↓
+ProductServiceImpl.update()
+  ↓
+validateOwnership() detecta ROLE_ADMIN
+  ↓
+permite modificar cualquier producto
+  ↓
+200 OK
+```
+
+---
+
+# 11. Consultas SQL de apoyo
+
+## 11.1. Ver usuarios
+
+```sql
+SELECT id, name, email, deleted
+FROM users
+ORDER BY id;
+```
+
+---
+
+## 11.2. Ver roles por usuario
+
+```sql
+SELECT 
+    u.id AS user_id,
+    u.email,
+    r.name AS role
+FROM users u
+INNER JOIN user_roles ur ON ur.user_id = u.id
+INNER JOIN roles r ON r.id = ur.role_id
+ORDER BY u.id;
+```
+
+---
+
+## 11.3. Ver productos y propietarios
+
+Si la columna de usuario en `products` se llama `user_id`:
+
+```sql
+SELECT 
+    p.id AS product_id,
+    p.name AS product_name,
+    p.user_id AS owner_id,
+    u.email AS owner_email,
+    p.deleted
+FROM products p
+INNER JOIN users u ON u.id = p.user_id
+ORDER BY p.id;
+```
+
+Si la columna se llama `owner_id`, usa:
+
+```sql
+SELECT 
+    p.id AS product_id,
+    p.name AS product_name,
+    p.owner_id AS owner_id,
+    u.email AS owner_email,
+    p.deleted
+FROM products p
+INNER JOIN users u ON u.id = p.owner_id
+ORDER BY p.id;
+```
+
+---
+
+## 11.4. Asignar ROLE_ADMIN a un usuario
+
+```sql
+INSERT INTO user_roles (user_id, role_id)
+SELECT 1, r.id
+FROM roles r
+WHERE r.name = 'ROLE_ADMIN'
+ON CONFLICT DO NOTHING;
+```
+
+---
+
+# 12. Pruebas sugeridas en Bruno o Postman
+
+## 12.1. Registrar usuario A
 
 ```http
-# Usuario A es dueño del Producto #1
-PUT http://localhost:8080/api/products/1
-Authorization: Bearer <token-Usuario-A>
-Body:
-{
-  "name": "Laptop Actualizada",
-  "price": 1200
-}
+POST /api/auth/register
+Content-Type: application/json
 
-→ 200 OK
 {
-  "id": 1,
-  "name": "Laptop Actualizada",
-  "price": 1200,
-  "owner": {
-    "id": 1,
-    "name": "Usuario A"
-  }
+  "name": "Usuario A",
+  "email": "usera@ups.edu.ec",
+  "password": "Password123"
 }
 ```
 
-## **5.2. Usuario USER intenta modificar producto ajeno (DENEGADO)**
+Resultado esperado:
+
+```txt
+201 Created
+ROLE_USER
+token
+```
+
+---
+
+## 12.2. Registrar usuario B
 
 ```http
-# Usuario B intenta modificar Producto #1 (dueño es Usuario A)
-PUT http://localhost:8080/api/products/1
-Authorization: Bearer <token-Usuario-B>
-Body:
-{
-  "name": "Intento de modificar",
-  "price": 1500
-}
+POST /api/auth/register
+Content-Type: application/json
 
-→ 403 Forbidden
 {
+  "name": "Usuario B",
+  "email": "userb@ups.edu.ec",
+  "password": "Password123"
+}
+```
+
+Resultado esperado:
+
+```txt
+201 Created
+ROLE_USER
+token
+```
+
+---
+
+## 12.3. Crear producto con Usuario A
+
+```http
+POST /api/products
+Authorization: Bearer <token-user-a>
+Content-Type: application/json
+
+{
+  "name": "Laptop Usuario A",
+  "price": 900,
+  "stock": 10,
+  "categoryIds": [1, 2]
+}
+```
+
+Resultado esperado:
+
+```txt
+201 Created
+```
+
+El producto debe quedar con owner igual al Usuario A.
+
+---
+
+## 12.4. Usuario A actualiza su propio producto
+
+```http
+PUT /api/products/1
+Authorization: Bearer <token-user-a>
+Content-Type: application/json
+
+{
+  "name": "Laptop Usuario A Actualizada",
+  "price": 950,
+  "stock": 8,
+  "categoryIds": [1, 2]
+}
+```
+
+Resultado esperado:
+
+```txt
+200 OK
+```
+
+---
+
+## 12.5. Usuario B intenta actualizar producto de Usuario A
+
+```http
+PUT /api/products/1
+Authorization: Bearer <token-user-b>
+Content-Type: application/json
+
+{
+  "name": "Intento de modificación ajena",
+  "price": 1000,
+  "stock": 5,
+  "categoryIds": [1, 2]
+}
+```
+
+Resultado esperado:
+
+```txt
+403 Forbidden
+```
+
+Respuesta esperada:
+
+```json
+{
+  "timestamp": "2026-01-15T10:30:00",
   "status": 403,
   "error": "Forbidden",
   "message": "No puedes modificar productos ajenos",
@@ -423,317 +1042,194 @@ Body:
 }
 ```
 
-## **5.3. Usuario ADMIN modifica cualquier producto (PERMITIDO)**
+---
+
+## 12.6. Usuario B intenta eliminar producto de Usuario A
 
 ```http
-# ADMIN puede modificar productos de cualquier usuario
-PUT http://localhost:8080/api/products/1
-Authorization: Bearer <token-ADMIN>
-Body:
-{
-  "name": "Laptop Moderada por Admin",
-  "price": 1100
-}
+DELETE /api/products/1
+Authorization: Bearer <token-user-b>
+```
 
-→ 200 OK
+Resultado esperado:
+
+```txt
+403 Forbidden
+```
+
+---
+
+## 12.7. ADMIN actualiza producto de Usuario A
+
+Primero iniciar sesión con un usuario que tenga `ROLE_ADMIN`.
+
+```http
+PUT /api/products/1
+Authorization: Bearer <token-admin>
+Content-Type: application/json
+
 {
-  "id": 1,
-  "name": "Laptop Moderada por Admin",
+  "name": "Laptop modificada por ADMIN",
   "price": 1100,
-  "owner": {
-    "id": 1,
-    "name": "Usuario A"
-  }
+  "stock": 20,
+  "categoryIds": [1, 2]
 }
 ```
 
-## **5.4. Usuario MODERATOR elimina producto ajeno (PERMITIDO)**
+Resultado esperado:
+
+```txt
+200 OK
+```
+
+---
+
+## 12.8. ADMIN elimina producto de cualquier usuario
 
 ```http
-# MODERATOR puede eliminar productos de cualquier usuario
-DELETE http://localhost:8080/api/products/2
-Authorization: Bearer <token-MODERATOR>
-
-→ 204 No Content
+DELETE /api/products/1
+Authorization: Bearer <token-admin>
 ```
 
-## **5.5. Usuario USER elimina producto ajeno (DENEGADO)**
+Resultado esperado:
 
-```http
-# Usuario C intenta eliminar Producto #3 (dueño es Usuario D)
-DELETE http://localhost:8080/api/products/3
-Authorization: Bearer <token-Usuario-C>
-
-→ 403 Forbidden
-{
-  "status": 403,
-  "error": "Forbidden",
-  "message": "No puedes modificar productos ajenos",
-  "path": "/api/products/3"
-}
+```txt
+204 No Content
 ```
 
+---
 
-# **6. Tabla Comparativa de Validaciones**
+# 17. Actividad práctica
 
-| Nivel | ¿Qué valida? | ¿Dónde se valida? | Excepción si falla | Código HTTP |
-|-------|--------------|-------------------|-------------------|-------------|
-| **Autenticación** | ¿Tiene token válido? | JwtAuthenticationFilter | AuthenticationException | 401 Unauthorized |
-| **Autorización por Rol** | ¿Tiene el rol necesario? | @PreAuthorize / SecurityConfig | AuthorizationDeniedException | 403 Forbidden |
-| **Ownership** | ¿Es dueño del recurso? | Servicio (validateOwnership) | AccessDeniedException | 403 Forbidden |
+Se debe implementar validación de ownership en productos.
 
-## **6.1. Ejemplos Prácticos**
+---
 
-### **Caso 1: Usuario sin token**
-```
-GET /api/products/paginated
-Sin header Authorization
-→ 401 Unauthorized (Autenticación)
-```
+- 1. Actualizar `CreateProductDto`
 
-### **Caso 2: Usuario USER intenta acceder a endpoint ADMIN**
-```
-GET /api/products
-Authorization: Bearer <token-ROLE_USER>
-→ 403 Forbidden (Autorización por Rol)
-```
+- 2. Actualizar `ProductService`
 
-### **Caso 3: Usuario USER intenta modificar producto ajeno**
-```
-PUT /api/products/1
-Authorization: Bearer <token-Usuario-B>
-Producto #1 pertenece a Usuario A
-→ 403 Forbidden (Ownership)
+- 3. Actualizar `ProductsController`
+
+- 4. Actualizar `ProductServiceImpl`
+
+- 5. Actualizar `GlobalExceptionHandler`
+
+- 6. Probar escenarios
+
+Probar:
+
+```txt
+usuario actualiza producto propio
+usuario actualiza producto ajeno
+usuario elimina producto propio
+usuario elimina producto ajeno
+ADMIN actualiza producto ajeno
+ADMIN elimina producto ajeno
 ```
 
-### **Caso 4: ADMIN modifica producto ajeno**
-```
-PUT /api/products/1
-Authorization: Bearer <token-ADMIN>
-Producto #1 pertenece a Usuario A
-→ 200 OK (ADMIN tiene permiso global)
-```
+---
 
+# 18. Resultados y evidencias
 
-# **7. Mejores Prácticas**
+En la nueva entrada del README, se debe agregar:
 
-## **7.1. Pasar Usuario desde Controlador al Servicio**
+---
 
-**Correcto** (Enfoque recomendado):
-```java
-// Controlador
-@PutMapping("/{id}")
-public ResponseEntity<ProductResponseDto> update(
-        @PathVariable Long id,
-        @Valid @RequestBody UpdateProductDto dto,
-        @AuthenticationPrincipal UserDetailsImpl currentUser) {  // ← Extraer aquí
-    
-    ProductResponseDto updated = productService.update(id, dto, currentUser);
-    return ResponseEntity.ok(updated);
-}
+## Captura de creación de producto con usuario autenticado
 
-// Servicio
-@Service
-public class ProductService {
-    @Transactional
-    public ProductResponseDto update(Long id, UpdateProductDto dto, UserDetailsImpl currentUser) {
-        ProductEntity product = findProductOrThrow(id);
-        validateOwnership(product, currentUser);  // ← Pasar usuario
-        // ... actualizar
-    }
-}
+Endpoint:
+
+```txt
+POST /api/products
 ```
 
-**Alternativa** (Usando SecurityContextHolder en el servicio):
-```java
-// Servicio
-@Service
-public class ProductService {
-    @Transactional
-    public ProductResponseDto update(Long id, UpdateProductDto dto) {
-        ProductEntity product = findProductOrThrow(id);
-        UserDetailsImpl currentUser = getCurrentUser();  // ← Obtener del contexto
-        validateOwnership(product, currentUser);
-        // ... actualizar
-    }
-}
+Debe evidenciar:
+
+```txt
+201 Created
+producto creado
+owner corresponde al usuario autenticado
 ```
 
-**Ventajas del enfoque recomendado**:
-- Más testeable (no usa estado global)
-- Más explícito (se ve qué métodos necesitan el usuario)
-- Menos acoplado (no depende de Spring Security internamente)
+---
+
+## Captura de bloqueo por producto ajeno
+
+Endpoint:
+
+```txt
+PUT /api/products/{id}
 ```
 
-**Incorrecto** :
-```java
-@RestController
-public class ProductController {
-    @PutMapping("/{id}")
-    @PreAuthorize("@productService.isOwner(#id, authentication.principal.id)")
-    public ResponseEntity<ProductResponseDto> update(@PathVariable Long id) {
-        // Lógica compleja en @PreAuthorize
-    }
-}
+Usar token de otro usuario.
+
+Debe evidenciar:
+
+```txt
+403 Forbidden
+No puedes modificar productos ajenos
 ```
 
-**Razones**:
-- Lógica de negocio debe estar en el servicio
-- Más fácil de testear
-- Reutilizable desde otros lugares
-- Expresión SpEL puede ser compleja y difícil de mantener
+---
 
-## **7.2. Roles Privilegiados pueden Saltarse Ownership**
+## Captura de eliminación de producto ajeno bloqueada
 
-```java
-private void validateOwnership(ProductEntity product, UserDetailsImpl currentUser) {
+Endpoint:
 
-    // ADMIN y MODERATOR tienen permiso global
-    if (hasAnyRole(currentUser, "ROLE_ADMIN", "ROLE_MODERATOR")) {
-        return;  // ← Saltarse validación
-    }
-
-    // Resto de usuarios solo sus recursos
-    if (!product.getOwner().getId().equals(currentUser.getId())) {
-        throw new AccessDeniedException("No puedes modificar productos ajenos");
-    }
-}
+```txt
+DELETE /api/products/{id}
 ```
 
-## **7.3. Mensajes de Error Claros**
+Usar token de otro usuario.
 
-```java
-// Específico
-throw new AccessDeniedException("No puedes modificar productos ajenos");
+Debe evidenciar:
 
-// Genérico 
-throw new AccessDeniedException("Access denied");
+```txt
+403 Forbidden
 ```
 
-## **6.4. No Exponer Información Sensible**
+---
 
-**Correcto**:
-```java
-throw new AccessDeniedException("No puedes modificar productos ajenos");
+## Captura de ADMIN modificando producto ajeno
+
+Endpoint:
+
+```txt
+PUT /api/products/{id}
 ```
 
-**Incorrecto** :
-```java
-throw new AccessDeniedException(
-    "No puedes modificar el producto #1 porque pertenece al usuario juan@example.com"
-);
-// ← Expone información de otros usuarios
+Usar token con:
+
+```txt
+ROLE_ADMIN
 ```
 
+Debe evidenciar:
 
-# **8. Actividad Práctica**
+```txt
+200 OK
+```
 
-**Objetivo**: Implementar validación de ownership en tu API.
+---
 
-**Pasos**:
+## Explicación breve
 
-1. **Modificar el Controlador** para extraer el usuario del JWT:
-   ```java
-   @PutMapping("/{id}")
-   public ResponseEntity<ProductResponseDto> update(
-           @PathVariable Long id,
-           @Valid @RequestBody UpdateProductDto dto,
-           @AuthenticationPrincipal UserDetailsImpl currentUser) {
-       // ...
-   }
-   ```
+El estudiante debe responder:
 
-2. **Actualizar métodos del Servicio** para recibir el usuario:
-   - `update(Long id, UpdateProductDto dto, UserDetailsImpl currentUser)`
-   - `delete(Long id, UserDetailsImpl currentUser)`
+```txt
+¿Qué es ownership?
+```
 
-3. **Agregar método de validación** en ProductService:
-   - `validateOwnership(ProductEntity product, UserDetailsImpl currentUser)`
-   - `hasAnyRole(UserDetailsImpl user, String... roles)`
+También debe responder:
 
-3. **Verificar que tienes el manejador** en GlobalExceptionHandler:
-   ```java
-   @ExceptionHandler(AccessDeniedException.class)
-   public ResponseEntity<ErrorResponse> handleAccessDeniedException(...)
-   ```
+```txt
+¿Por qué no es seguro recibir userId en CreateProductDto?
+```
 
-4. **Crear usuarios de prueba** con diferentes roles:
-   ```sql
-   -- Usuario A con ROLE_USER
-   -- Usuario B con ROLE_USER
-   -- Usuario C con ROLE_ADMIN
-   ```
+Y:
 
-5. **Crear productos** con diferentes propietarios:
-   ```sql
-   -- Producto #1 → owner_id = Usuario A
-   -- Producto #2 → owner_id = Usuario B
-   ```
+```txt
+¿Cuál es la diferencia entre autorización por rol y autorización por ownership?
+```
 
-6. **Probar con Postman**:
-
-   a. Usuario A actualiza su propio producto (#1):
-   ```http
-   PUT /api/products/1
-   Authorization: Bearer <token-Usuario-A>
-   → 200 OK
-   ```
-
-   b. Usuario B intenta actualizar producto de A (#1):
-   ```http
-   PUT /api/products/1
-   Authorization: Bearer <token-Usuario-B>
-   → 403 Forbidden con mensaje "No puedes modificar productos ajenos"
-   ```
-
-   c. Usuario ADMIN actualiza producto de A (#1):
-   ```http
-   PUT /api/products/1
-   Authorization: Bearer <token-ADMIN>
-   → 200 OK
-   ```
-
-   d. Usuario B elimina su propio producto (#2):
-   ```http
-   DELETE /api/products/2
-   Authorization: Bearer <token-Usuario-B>
-   → 204 No Content
-   ```
-
-   e. Usuario A intenta eliminar producto de B (ya eliminado):
-   ```http
-   DELETE /api/products/2
-   Authorization: Bearer <token-Usuario-A>
-   → 404 Not Found (porque ya fue eliminado)
-   ```
-
-**Resultado esperado**:
-- Usuarios pueden modificar/eliminar sus propios recursos
-- Usuarios NO pueden modificar/eliminar recursos ajenos (403)
-- ADMIN y MODERATOR pueden modificar/eliminar cualquier recurso
-- Mensajes de error claros y específicos
-
-
-# **9. Conclusiones**
-
-**@AuthenticationPrincipal** en el controlador extrae el usuario del JWT automáticamente
-
-**Validación de ownership** se hace en el servicio recibiendo el usuario como parámetro
-
-**Enfoque testeable**: No depende de `SecurityContextHolder` estático
-
-**AccessDeniedException** se lanza automáticamente cuando no eres dueño
-
-**GlobalExceptionHandler** ya maneja la excepción (si tienes el manejador de la Práctica 12)
-
-**ADMIN y MODERATOR** pueden saltarse validación de ownership
-
-**Mensajes claros** ayudan al frontend a mostrar errores específicos
-
-**3 capas de seguridad**: Autenticación → Autorización por rol → Ownership
-
-**Próximos pasos**:
-- Implementar ownership en otros recursos (comentarios, órdenes, etc.)
-- Agregar auditoría (quién modificó qué y cuándo)
-- Implementar soft delete para recursos sensibles
-- Agregar logs de intentos de acceso no autorizado
