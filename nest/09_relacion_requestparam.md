@@ -831,7 +831,7 @@ export class UserModule {}
 
 ## **9.1. Implementación requerida**
 
-El estudiante debe implementar:
+Se debe  implementar:
 
 1. **Actualizar User entity** con relación `@OneToMany` hacia productos
 2. **Implementar endpoints** en `UserController`:

@@ -1355,7 +1355,7 @@ Debe evidenciar:
 
 ## Explicación breve
 
-El estudiante debe explicar:
+Se debe  explicar:
 
 ```txt
 ¿Cuál es la diferencia entre Page y Slice?

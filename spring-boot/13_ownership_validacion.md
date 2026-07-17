@@ -1215,7 +1215,7 @@ Debe evidenciar:
 
 ## Explicación breve
 
-El estudiante debe responder:
+Se debe  responder:
 
 ```txt
 ¿Qué es ownership?

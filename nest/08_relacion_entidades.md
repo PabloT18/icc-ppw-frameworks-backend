@@ -1492,7 +1492,7 @@ export class ProductModule {}
 
 # **13. Actividad Práctica Completa**
 
-El estudiante debe implementar **ambos enfoques** para entender las diferencias.
+Se debe  implementar **ambos enfoques** para entender las diferencias.
 
 ## **13.1. PARTE A: Implementar relación 1:N (básica)**
 

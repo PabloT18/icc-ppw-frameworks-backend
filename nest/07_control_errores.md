@@ -1323,7 +1323,7 @@ con campo `details`.
 
 ## Explicación breve
 
-El estudiante debe explicar:
+Se debe  explicar:
 
 ```txt
 ¿Cómo el AllExceptionsFilter centraliza los errores de validación, negocio y errores inesperados?

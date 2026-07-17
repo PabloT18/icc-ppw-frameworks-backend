@@ -1332,7 +1332,7 @@ export class ProductService {
 
 ## **9.1. Implementación requerida**
 
-El estudiante debe implementar:
+Se debe  implementar:
 
 1. **Crear DTOs de paginación**:
    - `PaginationQueryDto` con validaciones

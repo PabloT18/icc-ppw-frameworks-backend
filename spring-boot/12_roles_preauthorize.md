@@ -1215,7 +1215,7 @@ Debe evidenciar:
 
 ## Explicación breve
 
-El estudiante debe responder:
+Se debe  responder:
 
 ```txt
 ¿Cuál es la diferencia entre autenticación y autorización?

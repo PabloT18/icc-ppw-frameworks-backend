@@ -425,7 +425,7 @@ Además, los repositorios de ambos frameworks requieren:
 
 # 10. Resultados esperados
 
-Al finalizar este documento, el estudiante debe:
+Al finalizar este documento, Se debe :
 
 * comprender qué es un contenedor de base de datos
 * crear un servidor PostgreSQL con datos persistentes

@@ -313,7 +313,7 @@ Referencia: [`core/docs/commit-guidelines.md`](./.core/docs/commit-guidelines.md
 
 ## README del proyecto del estudiante
 
-El proyecto personal del estudiante debe incluir un `README.md` con esta estructura mínima:
+El proyecto personal dSe debe  incluir un `README.md` con esta estructura mínima:
 
 ````md
 # Proyecto Backend - [Spring Boot / NestJS]

@@ -1918,7 +1918,7 @@ GET /api/categories/2/products?userId=1
 
 ## Explicación breve
 
-El estudiante debe explicar:
+Se debe  explicar:
 
 ```txt
 ¿Por qué se usa ProductService y ProductRepository para consultar productos aunque el endpoint esté dentro del contexto /users/{id}/products o /categories/{id}/products?
