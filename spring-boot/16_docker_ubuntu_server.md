@@ -500,6 +500,26 @@ Configurar el usuario para ejecutar Docker sin `sudo`:
 sudo usermod -aG docker $USER
 ```
 
+### Crear Red virtual en Virtual Box
+
+Para que la máquina virtual Ubuntu Server pueda conectarse a la base de datos PostgreSQL instalada en la HOST anfitriona, se debe crear una red Host-Only en VirtualBox. 
+
+```bash
+VBoxManage hostonlynet add \
+  --name=HostOnly \
+  --netmask=255.255.255.0 \
+  --lower-ip=192.168.56.1 \
+  --upper-ip=192.168.56.254 \
+  --enable
+```
+
+
+La maquina virtual Ubuntu Server debe estar conectada a esta red Host-Only. Tendra 2 adaptadores de red: uno NAT para salir a Internet y otro Host-Only para conectarse a la HOST anfitriona.
+
+En la configuración de red de la máquina virtual, debera seleccionarse el adaptador Host-Only.
+
+
+
 
 ### **5.1. Obtener el código fuente**
 
