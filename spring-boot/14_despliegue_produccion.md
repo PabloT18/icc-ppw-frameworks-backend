@@ -406,7 +406,7 @@ ExecStart=/usr/bin/java -jar /opt/mi-api/mi-api.jar
 
 ### **Verificar configuración del plugin**
 
-```kotlin
+```java
 plugins {
     id("org.springframework.boot") version "3.2.0"
     id("io.spring.dependency-management") version "1.1.4"
@@ -431,7 +431,7 @@ tasks.bootJar {
 
 ### **Dependencias opcionales para producción**
 
-```kotlin
+```java
 dependencies {
     // Spring Boot Actuator para health checks
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -789,155 +789,463 @@ sudo certbot --nginx -d api.midominio.com
 sudo systemctl status certbot.timer
 ```
 
----
-
 # **5. Despliegue con Docker**
 
-## **5.1. Dockerfile Multi-Stage Optimizado**
+## **5.1. Dockerfile Multi-Stage con Spring Boot por capas**
 
-### **¿Por qué Multi-Stage?**
+### **Objetivo**
 
-**Problema**: Si compilas dentro del contenedor, la imagen final incluye Maven, código fuente, etc. (imagen pesada y menos segura).
+Construir una imagen Docker para una aplicación Spring Boot utilizando dos etapas:
 
-**Solución**: Usar dos etapas:
-1. **Build Stage**: Imagen con Maven para compilar
-2. **Runtime Stage**: Imagen ligera solo con JRE y JAR
+1. Una etapa de compilación con JDK 21 y Gradle Wrapper.
+2. Una etapa de ejecución con JRE 21.
 
-**Resultado**: Imagen final más pequeña (150-200 MB vs 500+ MB)
+En lugar de copiar el JAR completo a la imagen final, el artefacto se descomprime y se separa en:
 
-### **Dockerfile (enfoque completo)**
+* Dependencias externas.
+* Metadatos.
+* Clases y recursos de la aplicación.
+
+Esta organización permite que Docker reutilice la capa de dependencias cuando únicamente cambia el código fuente.
+
+### **Configuración del JAR**
+
+En `build.gradle.kts`, definir un nombre fijo para el JAR ejecutable:
+
+```kotlin
+tasks.bootJar {
+    archiveFileName.set("app.jar")
+}
+
+tasks.jar {
+    enabled = false
+}
+```
+
+Gradle generará:
+
+```text
+build/libs/app.jar
+```
+
+### **Dockerfile**
+
+Crear un archivo denominado `Dockerfile` en la raíz del proyecto:
 
 ```dockerfile
+# syntax=docker/dockerfile:1.7
+
 # ============================================
 # ETAPA 1: BUILD
 # ============================================
-# Imagen base con Gradle y JDK para compilar
-FROM gradle:8.5-eclipse-temurin-17 AS builder
+# Imagen con JDK 21 para compilar la aplicación
+FROM eclipse-temurin:21-jdk AS builder
 
 # Directorio de trabajo
-WORKDIR /build
+WORKDIR /workspace/app
 
-# Copiar archivos de Gradle primero (aprovechar caché de Docker)
-# Si build.gradle.kts no cambia, Docker reutiliza esta capa
-COPY build.gradle.kts gradle.properties settings.gradle.kts ./
+# Copiar Gradle Wrapper y archivos de configuración
+COPY gradlew ./
 COPY gradle ./gradle
+COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 
-# Descargar dependencias (se cachea si build.gradle.kts no cambia)
-RUN gradle dependencies --no-daemon
+# Dar permiso de ejecución al Wrapper
+RUN chmod +x gradlew
 
-# Copiar código fuente
+# Copiar el código fuente
 COPY src ./src
 
-# Compilar aplicación (sin tests para producción)
-RUN gradle build -x test --no-daemon
+# Compilar la aplicación utilizando caché para Gradle
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew bootJar -x test --no-daemon
 
-# Verificar que JAR existe
-RUN ls -lh build/libs/
+# Crear el directorio donde se descomprimirá el JAR
+RUN mkdir -p build/dependency \
+    && cd build/dependency \
+    && jar -xf ../libs/app.jar
+
 
 # ============================================
 # ETAPA 2: RUNTIME
 # ============================================
-# Imagen ligera solo con JRE (sin Maven, sin código fuente)
-FROM eclipse-temurin:17-jre-alpine
+# Imagen con JRE 21 para ejecutar la aplicación
+FROM eclipse-temurin:21-jre AS runtime
 
-# Crear usuario no-root (seguridad)
-RUN addgroup -S spring && adduser -S spring -G spring
-
-# Directorio de trabajo
+# Directorio de ejecución
 WORKDIR /app
 
-# Copiar JAR desde la etapa de build
-COPY --from=builder /build/build/libs/*.jar app.jar
+# Crear usuario y grupo sin privilegios
+RUN groupadd --system spring \
+    && useradd --system --gid spring spring
 
-# Cambiar ownership
-RUN chown spring:spring app.jar
+# Ruta de los archivos extraídos en la etapa anterior
+ARG DEPENDENCY=/workspace/app/build/dependency
 
-# Cambiar a usuario no-root
+# Copiar las dependencias externas
+COPY --from=builder --chown=spring:spring \
+    ${DEPENDENCY}/BOOT-INF/lib /app/lib
+
+# Copiar metadatos del JAR
+COPY --from=builder --chown=spring:spring \
+    ${DEPENDENCY}/META-INF /app/META-INF
+
+# Copiar clases y recursos de la aplicación
+COPY --from=builder --chown=spring:spring \
+    ${DEPENDENCY}/BOOT-INF/classes /app
+
+# Ejecutar como usuario no-root
 USER spring:spring
 
-# Exponer puerto (documentación, no abre el puerto)
+# Documentar el puerto de Spring Boot
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+# Configurar zona horaria de la JVM
+ENV TZ=America/Guayaquil
 
-# Variables de entorno por defecto (se sobreescriben en runtime)
-ENV SPRING_PROFILES_ACTIVE=prod
-
-# Comando de inicio
+# Ejecutar la clase principal utilizando el classpath generado
 ENTRYPOINT ["java", \
-    "-Djava.security.egd=file:/dev/./urandom", \
     "-Xms256m", \
     "-Xmx512m", \
-    "-jar", \
-    "app.jar"]
+    "-cp", \
+    "/app:/app/lib/*", \
+    "ec.edu.ups.icc.fundamentos01.Fundamentos01Application"]
 ```
 
-### **Explicación línea por línea**
+Se debe verificar que la clase principal definida en `build.gradle.kts` coincide con la clase especificada en el `ENTRYPOINT` del Dockerfile:
 
-```dockerfile
-FROM gradle:8.5-eclipse-temurin-17 AS builder
+```text
+ec.edu.ups.icc.fundamentos01.Fundamentos01Application
 ```
-- Imagen base para compilar
-- `AS builder`: Nombra esta etapa para referenciarla después
-- Incluye Gradle y JDK 17
+
+---
+
+### Explicación del Dockerfile
+#### **Explicación del Build Stage**
 
 ```dockerfile
-COPY build.gradle.kts gradle.properties settings.gradle.kts ./
+FROM eclipse-temurin:21-jdk AS builder
+```
+
+Esta etapa utiliza una imagen con JDK 21. El JDK incluye las herramientas necesarias para compilar el proyecto y manipular el archivo JAR.
+
+El nombre `builder` permite referenciar esta etapa posteriormente:
+
+```dockerfile
+COPY --from=builder ...
+```
+
+#### **Directorio de trabajo**
+
+```dockerfile
+WORKDIR /workspace/app
+```
+
+Define el directorio interno donde se copiará y compilará el proyecto.
+
+Las instrucciones posteriores se ejecutan desde:
+
+```text
+/workspace/app
+```
+
+#### **Gradle Wrapper**
+
+```dockerfile
+COPY gradlew ./
 COPY gradle ./gradle
-RUN gradle dependencies --no-daemon
+COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 ```
-- Descargar dependencias antes de copiar código
-- Si `build.gradle.kts` no cambia, Docker reutiliza esta capa (build más rápido)
+
+Se copia el Gradle Wrapper y la configuración del proyecto.
+
+El Wrapper utiliza la versión declarada en:
+
+```text
+gradle/wrapper/gradle-wrapper.properties
+```
+
+Esto evita depender de una instalación global de Gradle dentro de la imagen.
+
+#### **Permiso de ejecución**
 
 ```dockerfile
-FROM eclipse-temurin:17-jre-alpine
+RUN chmod +x gradlew
 ```
-- Imagen ligera con solo JRE (sin JDK ni Gradle)
-- `alpine`: Distribución Linux minimalista (5 MB base)
+
+Permite ejecutar el archivo `gradlew` en Linux.
+
+#### **Copiar el código**
 
 ```dockerfile
-RUN addgroup -S spring && adduser -S spring -G spring
+COPY src ./src
+```
+
+Copia el código fuente y los recursos del proyecto.
+
+#### **Compilación con caché de BuildKit**
+
+```dockerfile
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew bootJar -x test --no-daemon
+```
+
+Esta instrucción:
+
+* Utiliza el Gradle Wrapper.
+* Ejecuta `bootJar`.
+* Omite los tests mediante `-x test`.
+* Evita iniciar el daemon de Gradle.
+* Conserva las dependencias descargadas en una caché de BuildKit.
+
+La caché:
+
+```text
+/root/.gradle
+```
+
+reduce el tiempo de compilaciones posteriores.
+
+La opción `--mount=type=cache` requiere Docker BuildKit, disponible por defecto en versiones actuales de Docker.
+
+#### **Extracción del JAR**
+
+```dockerfile
+RUN mkdir -p build/dependency \
+    && cd build/dependency \
+    && jar -xf ../libs/app.jar
+```
+
+El JAR ejecutable de Spring Boot se descomprime en:
+
+```text
+build/dependency/
+```
+
+La estructura resultante contiene:
+
+```text
+build/dependency/
+├── BOOT-INF/
+│   ├── classes/
+│   └── lib/
+├── META-INF/
+└── org/
+```
+
+Los directorios utilizados en la imagen final son:
+
+```text
+BOOT-INF/lib
+BOOT-INF/classes
+META-INF
+```
+
+---
+
+#### **Explicación del Runtime Stage**
+
+```dockerfile
+FROM eclipse-temurin:21-jre AS runtime
+```
+
+Esta etapa incluye únicamente el entorno necesario para ejecutar Java 21.
+
+No contiene:
+
+* Gradle.
+* Compilador Java.
+* Código fuente.
+* Archivos temporales de construcción.
+
+#### **Usuario no-root**
+
+```dockerfile
+RUN groupadd --system spring \
+    && useradd --system --gid spring spring
+```
+
+Crea:
+
+* Un grupo del sistema denominado `spring`.
+* Un usuario del sistema denominado `spring`.
+
+La aplicación no se ejecutará como `root`.
+
+#### **Separación por capas**
+
+```dockerfile
+COPY --from=builder --chown=spring:spring \
+    ${DEPENDENCY}/BOOT-INF/lib /app/lib
+```
+
+Copia las dependencias externas de la aplicación:
+
+```text
+Spring Framework
+Hibernate
+Jackson
+PostgreSQL Driver
+Spring Security
+```
+
+Estas dependencias cambian con menor frecuencia que el código fuente.
+
+```dockerfile
+COPY --from=builder --chown=spring:spring \
+    ${DEPENDENCY}/META-INF /app/META-INF
+```
+
+Copia los metadatos del artefacto.
+
+```dockerfile
+COPY --from=builder --chown=spring:spring \
+    ${DEPENDENCY}/BOOT-INF/classes /app
+```
+
+Copia:
+
+* Clases compiladas.
+* Archivos `application.properties`.
+* Recursos estáticos.
+* Plantillas.
+* Configuraciones de la aplicación.
+
+Cuando únicamente cambia el código, Docker puede reutilizar la capa de dependencias y reconstruir principalmente la capa de clases.
+
+#### **Permisos del archivo**
+
+La opción:
+
+```dockerfile
+--chown=spring:spring
+```
+
+asigna directamente los archivos al usuario y grupo `spring`.
+
+Esto evita una instrucción adicional como:
+
+```dockerfile
+RUN chown -R spring:spring /app
+```
+
+#### **Ejecución como usuario limitado**
+
+```dockerfile
 USER spring:spring
 ```
-- Crear usuario no-root
-- Ejecutar aplicación con usuario limitado (seguridad)
+
+Todas las instrucciones de ejecución posteriores utilizan el usuario `spring`.
+
+#### **Puerto**
 
 ```dockerfile
-COPY --from=builder /build/build/libs/*.jar app.jar
+EXPOSE 8080
 ```
-- Copiar JAR compilado desde la etapa `builder`
-- Solo el JAR, no todo el código fuente
 
-```dockerfile
-HEALTHCHECK --interval=30s --timeout=3s ...
-```
-- Docker verifica cada 30s que la app esté healthy
-- Si falla 3 veces, marca contenedor como unhealthy
+Documenta que la aplicación escucha en el puerto 8080.
 
-```dockerfile
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", ...]
-```
-- `-Djava.security.egd`: Mejora performance de generación de números aleatorios en Docker
-- `-Xms256m -Xmx512m`: Limitar memoria heap
-
-### **Construir imagen**
+No publica automáticamente el puerto. Para acceder desde el host se requiere:
 
 ```bash
-# Desde el directorio del proyecto
-docker build -t mi-api:1.0 .
-
-# Ver tamaño de imagen
-docker images mi-api:1.0
-# REPOSITORY   TAG   SIZE
-# mi-api       1.0   180MB  ← Mucho más pequeña que 500+ MB sin multi-stage
+-p 8080:8080
 ```
 
-### **Ejecutar contenedor**
+#### **Zona horaria**
+
+```dockerfile
+ENV TZ=America/Guayaquil
+```
+
+Define la zona horaria utilizada por la aplicación.
+
+También puede configurarse directamente en la JVM:
+
+```dockerfile
+"-Duser.timezone=America/Guayaquil"
+```
+
+#### **Ejecución mediante classpath**
+
+```dockerfile
+ENTRYPOINT ["java", \
+    "-Xms256m", \
+    "-Xmx512m", \
+    "-cp", \
+    "/app:/app/lib/*", \
+    "ec.edu.ups.mob_parking.Main"]
+```
+
+El parámetro:
+
+```text
+-cp
+```
+
+define el classpath de Java.
+
+El classpath incluye:
+
+```text
+/app
+```
+
+para las clases de la aplicación, y:
+
+```text
+/app/lib/*
+```
+
+para las dependencias externas.
+
+Los parámetros de memoria son:
+
+```text
+-Xms256m
+```
+
+Memoria inicial del heap.
+
+```text
+-Xmx512m
+```
+
+Memoria máxima del heap.
+
+La última posición corresponde a la clase que contiene el método:
+
+```java
+public static void main(String[] args)
+```
+
+---
+
+#### **Construir la imagen**
+
+Desde la raíz del proyecto:
 
 ```bash
-# Ejecutar con variables de entorno
+docker build --pull -t mi-api:1.0 .
+```
+
+Para visualizar detalladamente la compilación:
+
+```bash
+docker build \
+  --pull \
+  --progress=plain \
+  -t mi-api:1.0 \
+  .
+```
+
+Verificar la imagen:
+
+```bash
+docker images mi-api
+```
+
+### **Ejecutar el contenedor**
+
+```bash
 docker run -d \
   --name mi-api \
   -p 8080:8080 \
@@ -945,17 +1253,430 @@ docker run -d \
   -e DB_USERNAME=postgres \
   -e DB_PASSWORD=postgres \
   -e JWT_SECRET=my-secret-key \
-  -e SPRING_PROFILES_ACTIVE=prod \
   mi-api:1.0
-
-# Ver logs
-docker logs -f mi-api
-
-# Ver estado de salud
-docker inspect mi-api | grep -A 10 Health
 ```
 
-## **5.2. Docker Compose Completo**
+### **Verificar el contenedor**
+
+```bash
+docker ps
+```
+
+### **Consultar logs**
+
+```bash
+docker logs -f mi-api
+```
+
+### **Probar la aplicación**
+
+Desde Ubuntu Server:
+
+```bash
+curl http://localhost:8080
+```
+
+Desde la máquina anfitriona:
+
+```bash
+curl http://192.168.56.2:8080
+```
+
+### **Detener y eliminar el contenedor**
+
+```bash
+docker stop mi-api
+docker rm mi-api
+```
+
+---
+
+## **5.2. Archivo `.dockerignore`**
+
+### **Objetivo**
+
+El archivo `.dockerignore` evita que Docker envíe archivos innecesarios al contexto de construcción.
+
+Crear el archivo en la raíz del proyecto:
+
+```text
+.dockerignore
+```
+
+### **Contenido recomendado**
+
+```dockerignore
+# Gradle
+.gradle/
+build/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Variables de entorno
+.env
+.env.*
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp
+*.swp
+
+# Documentación
+README.md
+
+# Configuración local de Docker Compose
+compose.override.yaml
+docker-compose.override.yml
+```
+
+### **Archivos que deben permanecer disponibles**
+
+El Dockerfile requiere:
+
+```text
+gradlew
+gradle/
+build.gradle.kts
+settings.gradle.kts
+gradle.properties
+src/
+```
+
+Estos archivos no deben incluirse en `.dockerignore`.
+
+### **Verificación**
+
+```bash
+docker build \
+  --progress=plain \
+  -t mi-api:1.0 \
+  .
+```
+
+La salida mostrará el tamaño del contexto enviado a Docker.
+
+---
+
+## **5.3. Levantar Nginx en Docker**
+
+### **Arquitectura**
+
+Nginx funcionará como reverse proxy:
+
+```text
+Cliente
+   |
+   | Puerto 80
+   v
+Nginx
+   |
+   | Puerto 8080
+   v
+Spring Boot
+```
+
+Spring Boot no necesita publicar el puerto 8080 directamente en el host. Nginx se comunicará con la aplicación mediante una red Docker privada.
+
+### **Crear una red Docker**
+
+```bash
+docker network create app-network
+```
+
+Verificar:
+
+```bash
+docker network ls
+```
+
+### **Levantar Spring Boot**
+
+```bash
+docker run -d \
+  --name mi-api \
+  --network app-network \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e DATABASE_URL=jdbc:postgresql://host.docker.internal:5432/prod_db \
+  -e DB_USERNAME=postgres \
+  -e DB_PASSWORD=postgres \
+  -e JWT_SECRET=my-secret-key \
+  mi-api:1.0
+```
+
+No se publica el puerto:
+
+```bash
+-p 8080:8080
+```
+
+porque Nginx accederá a `mi-api:8080` desde la red interna.
+
+### **Estructura de Nginx**
+
+Crear:
+
+```text
+nginx/
+└── default.conf
+```
+
+### **Configuración de Nginx**
+
+Archivo `nginx/default.conf`:
+
+```nginx
+upstream spring_backend {
+    server mi-api:8080;
+}
+
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://spring_backend;
+
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+```
+
+### **Backend**
+
+```nginx
+upstream spring_backend {
+    server mi-api:8080;
+}
+```
+
+`mi-api` es el nombre del contenedor Spring Boot.
+
+Docker resuelve ese nombre mediante DNS interno porque ambos contenedores pertenecen a:
+
+```text
+app-network
+```
+
+No debe configurarse:
+
+```nginx
+server localhost:8080;
+```
+
+Dentro del contenedor Nginx, `localhost` representa al propio contenedor Nginx.
+
+### **Levantar Nginx**
+
+```bash
+docker run -d \
+  --name nginx \
+  --network app-network \
+  -p 80:80 \
+  -v "$(pwd)/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro" \
+  nginx:alpine
+```
+
+### **Verificar la configuración**
+
+```bash
+docker exec nginx nginx -t
+```
+
+Salida esperada:
+
+```text
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+```
+
+### **Verificar contenedores**
+
+```bash
+docker ps
+```
+
+Ejemplo:
+
+```text
+CONTAINER ID   IMAGE          NAME      PORTS
+abc123         nginx:alpine   nginx     0.0.0.0:80->80/tcp
+def456         mi-api:1.0     mi-api    8080/tcp
+```
+
+### **Probar desde Ubuntu Server**
+
+```bash
+curl http://localhost
+```
+
+### **Probar desde la Mac**
+
+```bash
+curl http://192.168.56.2
+```
+
+También puede accederse desde un navegador:
+
+```text
+http://192.168.56.2
+```
+
+### **Flujo de la solicitud**
+
+```text
+Mac
+ |
+ | HTTP puerto 80
+ v
+Ubuntu Server
+ |
+ v
+Contenedor Nginx
+ |
+ | http://mi-api:8080
+ v
+Contenedor Spring Boot
+```
+
+### **Consultar logs**
+
+Nginx:
+
+```bash
+docker logs -f nginx
+```
+
+Spring Boot:
+
+```bash
+docker logs -f mi-api
+```
+
+### **Inspeccionar la red**
+
+```bash
+docker network inspect app-network
+```
+
+La salida debe incluir los contenedores:
+
+```text
+mi-api
+nginx
+```
+
+### **Detener los servicios**
+
+```bash
+docker stop nginx mi-api
+```
+
+### **Eliminar contenedores**
+
+```bash
+docker rm nginx mi-api
+```
+
+### **Eliminar la red**
+
+```bash
+docker network rm app-network
+```
+
+### **Error `502 Bad Gateway`**
+
+Revisar el contenedor Spring Boot:
+
+```bash
+docker ps
+docker logs mi-api
+```
+
+Comprobar que ambos contenedores estén conectados a la misma red:
+
+```bash
+docker network inspect app-network
+```
+
+Comprobar resolución DNS desde Nginx:
+
+```bash
+docker exec nginx getent hosts mi-api
+```
+
+### **La aplicación no inicia**
+
+Consultar:
+
+```bash
+docker logs mi-api
+```
+
+Causas frecuentes:
+
+* Variables de entorno incorrectas.
+* Base de datos no disponible.
+* Clase principal incorrecta en `ENTRYPOINT`.
+* Perfil `prod` sin configuración.
+* Puerto diferente de `8080`.
+* Error durante la compilación del proyecto.
+
+### **No se puede acceder desde el host**
+
+Verificar la publicación del puerto de Nginx:
+
+```bash
+docker port nginx
+```
+
+Salida esperada:
+
+```text
+80/tcp -> 0.0.0.0:80
+```
+
+Verificar la IP del servidor:
+
+```bash
+ip a
+```
+
+Probar desde la Mac:
+
+```bash
+curl http://192.168.56.2
+```
+
+
+
+
+
+# **5.B Docker Compose Completo**
 
 ### **docker-compose.yml**
 
@@ -1152,50 +1873,6 @@ curl http://localhost/api/products
 docker-compose logs api | grep "Started"
 ```
 
-## **5.3. .dockerignore**
-
-Crear archivo `.dockerignore` para no copiar archivos innecesarios:
-
-```
-# Gradle
-build/
-.gradle/
-gradle-app.setting
-.gradletasknamecache
-
-# IDE
-.idea/
-.vscode/
-*.iml
-*.ipr
-*.iws
-.project
-.classpath
-.settings/
-
-# Git
-.git/
-.gitignore
-.gitattributes
-
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
-
-# Logs
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Docs
-README.md
-docs/
-```
-
----
 
 # **6. Despliegue en PaaS (Platform as a Service)**
 
@@ -2149,4 +2826,3 @@ Has aprendido a:
 | **PaaS (Render/Railway)** | Baja | Alta | Alta | Portafolio, MVP |
 | **Kubernetes** | Muy alta | Máxima | Máxima | Empresarial |
 
-**Para tu proyecto académico**: Recomendamos **Docker local** + **Render/Railway para demo online**.
