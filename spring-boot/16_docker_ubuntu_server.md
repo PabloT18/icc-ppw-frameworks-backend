@@ -518,7 +518,7 @@ La maquina virtual Ubuntu Server debe estar conectada a esta red Host-Only. Tend
 
 En la configuración de red de la máquina virtual, debera seleccionarse el adaptador Host-Only.
 
-
+![alt text](assets/16-n5.png)
 
 
 ### **5.1. Obtener el código fuente**
