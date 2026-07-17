@@ -39,6 +39,8 @@ Flujo HTTP final:
 HOST → http://192.168.56.2/api/... → Nginx:80 → fundamentos-api:8080 → PostgreSQL
 ```
 
+
+![alt text](assets/16-n1.png)
 ---
 
 # **Preparación y despliegue portable con Docker**
